@@ -10,8 +10,9 @@ function initDeck(emojis, pairs) {
   return deck;
 }
 
-function flipCard(deck, flipped, matched, locked, cardId) {
-  if (locked || flipped.includes(cardId)) return { flipped, matched, locked };
+function flipCard(deck, flipped, matched, showcasing, locked, cardId) {
+  if (locked || flipped.includes(cardId)) return { flipped, matched, showcasing, locked };
+  if (showcasing.has(cardId)) return { flipped, matched, showcasing, locked };
 
   const newFlipped = [...flipped, cardId];
   const card = deck.find(c => c.id === cardId);
@@ -23,16 +24,22 @@ function flipCard(deck, flipped, matched, locked, cardId) {
     const b = deck.find(c => c.id === bId);
 
     if (a.emoji === b.emoji) {
-      const newMatched = new Set(matched);
-      newMatched.add(aId);
-      newMatched.add(bId);
-      return { flipped: [], matched: newMatched, locked: false };
+      const newShowcasing = new Set(showcasing);
+      newShowcasing.add(aId);
+      newShowcasing.add(bId);
+      return { flipped: [], matched, showcasing: newShowcasing, locked: true };
     } else {
-      return { flipped: newFlipped, matched, locked: true };
+      return { flipped: newFlipped, matched, showcasing, locked: true };
     }
   }
 
-  return { flipped: newFlipped, matched, locked: false };
+  return { flipped: newFlipped, matched, showcasing, locked: false };
+}
+
+function resolveShowcase(matched, showcasing) {
+  const newMatched = new Set(matched);
+  showcasing.forEach(id => newMatched.add(id));
+  return { matched: newMatched, showcasing: new Set(), locked: false };
 }
 
 function resolveMismatch(deck, flipped) {
@@ -58,40 +65,58 @@ describe('Memory game behavior', () => {
     Object.values(counts).forEach(count => expect(count).toBe(2));
   });
 
-  it('two matching cards are detected correctly after shuffle', () => {
+  it('two matching cards enter showcase phase instead of immediate match', () => {
     const deck = initDeck(emojis, 3);
     const a = deck[0];
     const b = deck.find(c => c.emoji === a.emoji && c.id !== a.id);
 
-    const result = flipCard(deck, [], new Set(), false, a.id);
-    expect(result.flipped).toEqual([a.id]);
+    const empty = new Set();
+    const r1 = flipCard(deck, [], empty, empty, false, a.id);
+    const r2 = flipCard(deck, r1.flipped, r1.matched, r1.showcasing, r1.locked, b.id);
 
-    const result2 = flipCard(deck, result.flipped, result.matched, result.locked, b.id);
-    expect(result2.matched.has(a.id)).toBe(true);
-    expect(result2.matched.has(b.id)).toBe(true);
-    expect(result2.flipped).toEqual([]);
-    expect(result2.locked).toBe(false);
+    expect(r2.matched.size).toBe(0);
+    expect(r2.showcasing.has(a.id)).toBe(true);
+    expect(r2.showcasing.has(b.id)).toBe(true);
+    expect(r2.locked).toBe(true);
+    expect(r2.flipped).toEqual([]);
+  });
+
+  it('showcase resolves to matched after delay', () => {
+    const deck = initDeck(emojis, 3);
+    const a = deck[0];
+    const b = deck.find(c => c.emoji === a.emoji && c.id !== a.id);
+
+    const showcasing = new Set([a.id, b.id]);
+    const resolved = resolveShowcase(new Set(), showcasing);
+
+    expect(resolved.matched.has(a.id)).toBe(true);
+    expect(resolved.matched.has(b.id)).toBe(true);
+    expect(resolved.showcasing.size).toBe(0);
+    expect(resolved.locked).toBe(false);
   });
 
   it('two non-matching cards are locked after flipping', () => {
     const deck = initDeck(emojis, 3);
     const a = deck[0];
     const b = deck.find(c => c.emoji !== a.emoji);
+    const empty = new Set();
 
-    const r1 = flipCard(deck, [], new Set(), false, a.id);
-    const r2 = flipCard(deck, r1.flipped, r1.matched, r1.locked, b.id);
+    const r1 = flipCard(deck, [], empty, empty, false, a.id);
+    const r2 = flipCard(deck, r1.flipped, r1.matched, r1.showcasing, r1.locked, b.id);
     expect(r2.locked).toBe(true);
     expect(r2.matched.size).toBe(0);
+    expect(r2.showcasing.size).toBe(0);
   });
 
   it('non-matching cards flip back after resolve', () => {
     const deck = initDeck(emojis, 3);
     const a = deck[0];
     const b = deck.find(c => c.emoji !== a.emoji);
+    const empty = new Set();
 
-    const r1 = flipCard(deck, [], new Set(), false, a.id);
+    const r1 = flipCard(deck, [], empty, empty, false, a.id);
     a.flipped = true;
-    const r2 = flipCard(deck, r1.flipped, r1.matched, r1.locked, b.id);
+    const r2 = flipCard(deck, r1.flipped, r1.matched, r1.showcasing, r1.locked, b.id);
     b.flipped = true;
 
     const resolved = resolveMismatch(deck, r2.flipped);
@@ -106,12 +131,29 @@ describe('Memory game behavior', () => {
     const a = deck[0];
     const b = deck.find(c => c.emoji !== a.emoji);
     const c = deck.find(c => c.id !== a.id && c.id !== b.id);
+    const empty = new Set();
 
-    const r1 = flipCard(deck, [], new Set(), false, a.id);
-    const r2 = flipCard(deck, r1.flipped, r1.matched, r1.locked, b.id);
+    const r1 = flipCard(deck, [], empty, empty, false, a.id);
+    const r2 = flipCard(deck, r1.flipped, r1.matched, r1.showcasing, r1.locked, b.id);
     expect(r2.locked).toBe(true);
 
-    const r3 = flipCard(deck, r2.flipped, r2.matched, r2.locked, c.id);
+    const r3 = flipCard(deck, r2.flipped, r2.matched, r2.showcasing, r2.locked, c.id);
     expect(r3.flipped).toEqual(r2.flipped);
+  });
+
+  it('locking prevents flipping cards during showcase phase', () => {
+    const deck = initDeck(emojis, 3);
+    const a = deck[0];
+    const b = deck.find(c => c.emoji === a.emoji && c.id !== a.id);
+    const c = deck.find(c => c.id !== a.id && c.id !== b.id);
+    const empty = new Set();
+
+    const r1 = flipCard(deck, [], empty, empty, false, a.id);
+    const r2 = flipCard(deck, r1.flipped, r1.matched, r1.showcasing, r1.locked, b.id);
+    expect(r2.locked).toBe(true);
+
+    const r3 = flipCard(deck, r2.flipped, r2.matched, r2.showcasing, r2.locked, c.id);
+    expect(r3.flipped).toEqual([]);
+    expect(r3.matched.size).toBe(0);
   });
 });

@@ -21,6 +21,7 @@ function _page($$renderer, $$props) {
 		];
 		let cards = [];
 		let matched = /* @__PURE__ */ new Set();
+		let showcasing = /* @__PURE__ */ new Set();
 		let won = false;
 		function initGame() {
 			const pairs = store_get($$store_subs ??= {}, "$settings", settings).ageLevel <= 2 ? 3 : store_get($$store_subs ??= {}, "$settings", settings).ageLevel === 3 ? 4 : store_get($$store_subs ??= {}, "$settings", settings).ageLevel === 4 ? 6 : 8;
@@ -36,6 +37,7 @@ function _page($$renderer, $$props) {
 			}
 			cards = deck;
 			matched = /* @__PURE__ */ new Set();
+			showcasing = /* @__PURE__ */ new Set();
 			won = false;
 		}
 		derived(() => store_get($$store_subs ??= {}, "$settings", settings).ageLevel <= 3 ? store_get($$store_subs ??= {}, "$settings", settings).ageLevel <= 2 ? 3 : 4 : 4);
@@ -45,9 +47,15 @@ function _page($$renderer, $$props) {
 		for (let $$index = 0, $$length = each_array.length; $$index < $$length; $$index++) {
 			let card = each_array[$$index];
 			$$renderer.push(`<button${attr_class("card svelte-9c3864", void 0, {
-				"flipped": card.flipped || matched.has(card.id),
+				"flipped": card.flipped || matched.has(card.id) || showcasing.has(card.id),
+				"showcasing": showcasing.has(card.id),
 				"matched": matched.has(card.id)
-			})}><span class="card-front svelte-9c3864">${escape_html(card.emoji)}</span> <span class="card-back svelte-9c3864">?</span></button>`);
+			})}><span class="card-front svelte-9c3864">${escape_html(card.emoji)}</span> <span class="card-back svelte-9c3864">?</span> `);
+			if (showcasing.has(card.id)) {
+				$$renderer.push("<!--[0-->");
+				$$renderer.push(`<span class="sparkle s1 svelte-9c3864">⭐</span> <span class="sparkle s2 svelte-9c3864">✨</span> <span class="sparkle s3 svelte-9c3864">💫</span>`);
+			} else $$renderer.push("<!--[-1-->");
+			$$renderer.push(`<!--]--></button>`);
 		}
 		$$renderer.push(`<!--]--></div> `);
 		if (won) {
