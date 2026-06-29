@@ -2,6 +2,7 @@
   import { onMount } from 'svelte';
   import { page } from '$app/stores';
   import { settings } from '$lib/stores/settings';
+  import { _ } from '$lib/stores/locale';
   import BackButton from '$lib/components/BackButton.svelte';
   import SoundToggle from '$lib/components/SoundToggle.svelte';
   import '../app.css';
@@ -47,8 +48,8 @@
 
   {#if showInstall}
     <div class="install-banner">
-      <span>Install Kids Games</span>
-      <button class="install-btn" onclick={installApp}>Install</button>
+      <span>{$_('install')}</span>
+      <button class="install-btn" onclick={installApp}>{$_('installBtn')}</button>
       <button class="dismiss-btn" onclick={() => showInstall = false}>&times;</button>
     </div>
   {/if}

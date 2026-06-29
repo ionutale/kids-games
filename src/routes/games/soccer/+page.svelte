@@ -1,5 +1,6 @@
 <script>
   import { settings } from '$lib/stores/settings';
+  import { _ } from '$lib/stores/locale';
   import { playTap, playGoal as playGoalSound } from '$lib/sounds/audioManager';
   import Confetti from '$lib/components/Confetti.svelte';
 
@@ -100,10 +101,10 @@
       ⚽
     </div>
     {#if !gameOver}
-      <div class="score-display">Score: {score}/{levelTargets(level).targetScore}</div>
+      <div class="score-display">{$_('score')}: {score}/{levelTargets(level).targetScore}</div>
     {/if}
     {#if !ballMoving && !gameOver}
-      <div class="aim-hint">Tap where you want to kick!</div>
+      <div class="aim-hint">{$_('tapToKick')}</div>
     {/if}
   </div>
 
@@ -113,9 +114,9 @@
 
   {#if gameOver}
     <div class="win-overlay">
-      <p class="win-text">Great game!</p>
-      <p class="win-score">Goals: {score}</p>
-      <button class="replay-btn" onclick={resetGame}>Play Again</button>
+      <p class="win-text">{$_('greatGame')}</p>
+      <p class="win-score">{$_('goals')}: {score}</p>
+      <button class="replay-btn" onclick={resetGame}>{$_('playAgain')}</button>
     </div>
   {/if}
 

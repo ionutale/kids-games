@@ -34,7 +34,8 @@
     "imports": [
       "_server.js",
       "_client.js",
-      "_audioManager.js"
+      "_audioManager.js",
+      "_locale.js"
     ],
     "css": [
       "_app/immutable/assets/SoundToggle.BIWPpODx.css"
@@ -95,6 +96,14 @@
       "_index-server.js",
       "_internal.js",
       "_server.js"
+    ]
+  },
+  "_locale.js": {
+    "file": "chunks/locale.js",
+    "name": "locale",
+    "imports": [
+      "_server.js",
+      "_index-server2.js"
     ]
   },
   "_server.js": {
@@ -179,6 +188,7 @@
       "_server.js",
       "_client.js",
       "_audioManager.js",
+      "_locale.js",
       "_SoundToggle.js"
     ],
     "css": [
@@ -194,10 +204,11 @@
       "_index-server.js",
       "_server.js",
       "_audioManager.js",
+      "_locale.js",
       "_SoundToggle.js"
     ],
     "css": [
-      "_app/immutable/assets/_page.I68K3Pm_.css"
+      "_app/immutable/assets/_page.vOzo0USW.css"
     ]
   },
   "src/routes/games/memory/+page.svelte": {
@@ -208,6 +219,7 @@
     "imports": [
       "_server.js",
       "_audioManager.js",
+      "_locale.js",
       "_Confetti.js"
     ],
     "css": [
@@ -236,7 +248,8 @@
     "imports": [
       "_index-server.js",
       "_server.js",
-      "_audioManager.js"
+      "_audioManager.js",
+      "_locale.js"
     ],
     "css": [
       "_app/immutable/assets/_page.GN4MhGV7.css"
@@ -250,6 +263,7 @@
     "imports": [
       "_server.js",
       "_audioManager.js",
+      "_locale.js",
       "_Confetti.js"
     ],
     "css": [
@@ -264,6 +278,7 @@
     "imports": [
       "_server.js",
       "_audioManager.js",
+      "_locale.js",
       "_Confetti.js"
     ],
     "css": [
@@ -278,6 +293,7 @@
     "imports": [
       "_server.js",
       "_audioManager.js",
+      "_locale.js",
       "_Confetti.js"
     ],
     "css": [

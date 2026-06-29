@@ -1,5 +1,6 @@
-import { S as escape_html, c as unsubscribe_stores, i as ensure_array_like, t as attr_class } from "../../../../chunks/server.js";
+import { S as escape_html, c as unsubscribe_stores, i as ensure_array_like, o as store_get, t as attr_class } from "../../../../chunks/server.js";
 import "../../../../chunks/audioManager.js";
+import { t as _ } from "../../../../chunks/locale.js";
 import { t as Confetti } from "../../../../chunks/Confetti.js";
 //#region src/routes/games/sorting/+page.svelte
 function _page($$renderer, $$props) {
@@ -136,16 +137,16 @@ function _page($$renderer, $$props) {
 		$$renderer.push(`<!--]--></div> `);
 		if (selected !== null) {
 			$$renderer.push("<!--[0-->");
-			$$renderer.push(`<p class="hint svelte-4wh2ej">Now tap a basket!</p>`);
+			$$renderer.push(`<p class="hint svelte-4wh2ej">${escape_html(store_get($$store_subs ??= {}, "$_", _)("tapBasket"))}</p>`);
 		} else if (sorted.size > 0 && sorted.size < items.length) {
 			$$renderer.push("<!--[1-->");
-			$$renderer.push(`<p class="hint svelte-4wh2ej">Tap an item, then a basket</p>`);
+			$$renderer.push(`<p class="hint svelte-4wh2ej">${escape_html(store_get($$store_subs ??= {}, "$_", _)("tapItemThenBasket"))}</p>`);
 		} else {
 			$$renderer.push("<!--[-1-->");
 			$$renderer.push(`<p class="hint svelte-4wh2ej">`);
 			if (items.length > 0) {
 				$$renderer.push("<!--[0-->");
-				$$renderer.push(`Tap an item to start`);
+				$$renderer.push(`${escape_html(store_get($$store_subs ??= {}, "$_", _)("tapItem"))}`);
 			} else $$renderer.push("<!--[-1-->");
 			$$renderer.push(`<!--]--></p>`);
 		}
@@ -165,7 +166,7 @@ function _page($$renderer, $$props) {
 		if (won) {
 			$$renderer.push("<!--[0-->");
 			Confetti($$renderer, {});
-			$$renderer.push(`<!----> <div class="win-overlay svelte-4wh2ej"><p class="win-text svelte-4wh2ej">All sorted!</p> <button class="replay-btn svelte-4wh2ej">Again!</button></div>`);
+			$$renderer.push(`<!----> <div class="win-overlay svelte-4wh2ej"><p class="win-text svelte-4wh2ej">${escape_html(store_get($$store_subs ??= {}, "$_", _)("allSorted"))}</p> <button class="replay-btn svelte-4wh2ej">${escape_html(store_get($$store_subs ??= {}, "$_", _)("again"))}</button></div>`);
 		} else $$renderer.push("<!--[-1-->");
 		$$renderer.push(`<!--]--></div>`);
 		if ($$store_subs) unsubscribe_stores($$store_subs);

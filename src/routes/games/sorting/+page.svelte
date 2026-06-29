@@ -1,5 +1,6 @@
 <script>
   import { settings } from '$lib/stores/settings';
+  import { _ } from '$lib/stores/locale';
   import { playTap, playMatch, playError, playWin } from '$lib/sounds/audioManager';
   import Confetti from '$lib/components/Confetti.svelte';
 
@@ -98,11 +99,11 @@
   </div>
 
   {#if selected !== null}
-    <p class="hint">Now tap a basket!</p>
+    <p class="hint">{$_('tapBasket')}</p>
   {:else if sorted.size > 0 && sorted.size < items.length}
-    <p class="hint">Tap an item, then a basket</p>
+    <p class="hint">{$_('tapItemThenBasket')}</p>
   {:else}
-    <p class="hint">{#if items.length > 0}Tap an item to start{/if}</p>
+    <p class="hint">{#if items.length > 0}{$_('tapItem')}{/if}</p>
   {/if}
 
   <div class="baskets-row">
@@ -130,8 +131,8 @@
   {#if won}
     <Confetti />
     <div class="win-overlay">
-      <p class="win-text">All sorted!</p>
-      <button class="replay-btn" onclick={initGame}>Again!</button>
+      <p class="win-text">{$_('allSorted')}</p>
+      <button class="replay-btn" onclick={initGame}>{$_('again')}</button>
     </div>
   {/if}
 </div>

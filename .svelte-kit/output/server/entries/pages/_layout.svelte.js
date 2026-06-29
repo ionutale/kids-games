@@ -1,7 +1,8 @@
 import "../../chunks/index-server.js";
-import { c as unsubscribe_stores, o as store_get, p as getContext, r as derived } from "../../chunks/server.js";
+import { c as unsubscribe_stores, o as store_get, p as getContext, r as derived, x as attr } from "../../chunks/server.js";
 import "../../chunks/client.js";
 import "../../chunks/audioManager.js";
+import { t as _ } from "../../chunks/locale.js";
 import { t as SoundToggle } from "../../chunks/SoundToggle.js";
 //#region node_modules/.pnpm/@sveltejs+kit@2.68.0_@sveltejs+vite-plugin-svelte@7.1.2_svelte@5.56.4_vite@8.1.0_terser_92cd6391677923dcfe4fa79ac66478d5/node_modules/@sveltejs/kit/src/runtime/app/stores.js
 /**
@@ -36,8 +37,10 @@ var page = { subscribe(fn) {
 //#region src/lib/components/BackButton.svelte
 function BackButton($$renderer, $$props) {
 	$$renderer.component(($$renderer) => {
+		var $$store_subs;
 		let { to = "/" } = $$props;
-		$$renderer.push(`<button class="back-btn svelte-iugoeh" aria-label="Back to games"><span class="arrow">←</span></button>`);
+		$$renderer.push(`<button class="back-btn svelte-iugoeh"${attr("aria-label", store_get($$store_subs ??= {}, "$_", _)("back"))}><span class="arrow">←</span></button>`);
+		if ($$store_subs) unsubscribe_stores($$store_subs);
 	});
 }
 //#endregion

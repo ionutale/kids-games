@@ -1,5 +1,6 @@
-import { S as escape_html, c as unsubscribe_stores, i as ensure_array_like, n as attr_style, r as derived, s as stringify, t as attr_class } from "../../../../chunks/server.js";
+import { S as escape_html, c as unsubscribe_stores, i as ensure_array_like, n as attr_style, o as store_get, r as derived, s as stringify, t as attr_class } from "../../../../chunks/server.js";
 import "../../../../chunks/audioManager.js";
+import { t as _ } from "../../../../chunks/locale.js";
 import { t as Confetti } from "../../../../chunks/Confetti.js";
 //#region src/routes/games/memory/+page.svelte
 function _page($$renderer, $$props) {
@@ -60,7 +61,7 @@ function _page($$renderer, $$props) {
 		let cols = derived(() => colsFromCount(cards.length));
 		loadUnlocked();
 		initGame();
-		$$renderer.push(`<div class="memory-game svelte-9c3864"><div class="level-indicator svelte-9c3864"><span class="level-label svelte-9c3864">Level ${escape_html(level)}</span> <div class="level-dots svelte-9c3864"><!--[-->`);
+		$$renderer.push(`<div class="memory-game svelte-9c3864"><div class="level-indicator svelte-9c3864"><span class="level-label svelte-9c3864">${escape_html(store_get($$store_subs ??= {}, "$_", _)("level"))} ${escape_html(level)}</span> <div class="level-dots svelte-9c3864"><!--[-->`);
 		const each_array = ensure_array_like(Array(10));
 		for (let i = 0, $$length = each_array.length; i < $$length; i++) {
 			each_array[i];
@@ -89,12 +90,12 @@ function _page($$renderer, $$props) {
 		if (won) {
 			$$renderer.push("<!--[0-->");
 			Confetti($$renderer, {});
-			$$renderer.push(`<!----> <div class="win-overlay svelte-9c3864"><p class="win-text svelte-9c3864">Great job!</p> <p class="win-sub svelte-9c3864">Level ${escape_html(level)} complete!</p> `);
+			$$renderer.push(`<!----> <div class="win-overlay svelte-9c3864"><p class="win-text svelte-9c3864">${escape_html(store_get($$store_subs ??= {}, "$_", _)("greatJob"))}</p> <p class="win-sub svelte-9c3864">${escape_html(store_get($$store_subs ??= {}, "$_", _)("levelComplete", { n: level }))}</p> `);
 			if (level < 10) {
 				$$renderer.push("<!--[0-->");
-				$$renderer.push(`<button class="next-btn svelte-9c3864">Next Level</button>`);
+				$$renderer.push(`<button class="next-btn svelte-9c3864">${escape_html(store_get($$store_subs ??= {}, "$_", _)("nextLevel"))}</button>`);
 			} else $$renderer.push("<!--[-1-->");
-			$$renderer.push(`<!--]--> <button class="replay-btn svelte-9c3864">Replay</button></div>`);
+			$$renderer.push(`<!--]--> <button class="replay-btn svelte-9c3864">${escape_html(store_get($$store_subs ??= {}, "$_", _)("replay"))}</button></div>`);
 		} else $$renderer.push("<!--[-1-->");
 		$$renderer.push(`<!--]--></div>`);
 		if ($$store_subs) unsubscribe_stores($$store_subs);

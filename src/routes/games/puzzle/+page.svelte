@@ -1,5 +1,6 @@
 <script>
   import { settings } from '$lib/stores/settings';
+  import { _ } from '$lib/stores/locale';
   import { playTap, playMatch, playWin } from '$lib/sounds/audioManager';
   import Confetti from '$lib/components/Confetti.svelte';
 
@@ -150,8 +151,8 @@
   {#if won}
     <Confetti />
     <div class="win-overlay">
-      <p class="win-text">Puzzle done!</p>
-      <button class="replay-btn" onclick={initGame}>New Puzzle</button>
+      <p class="win-text">{$_('puzzleDone')}</p>
+      <button class="replay-btn" onclick={initGame}>{$_('newPuzzle')}</button>
     </div>
   {/if}
 </div>

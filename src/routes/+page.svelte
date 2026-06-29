@@ -1,21 +1,24 @@
 <script>
   import { goto } from '$app/navigation';
   import { onMount } from 'svelte';
+  import { _, locale } from '$lib/stores/locale';
   import SoundToggle from '$lib/components/SoundToggle.svelte';
   import AgeSelector from '$lib/components/AgeSelector.svelte';
 
   const games = [
-    { id: 'paint', icon: '🎨', label: 'Paint' },
-    { id: 'stickers', icon: '🌟', label: 'Stickers' },
-    { id: 'memory', icon: '🧠', label: 'Memory' },
-    { id: 'puzzle', icon: '🧩', label: 'Puzzle' },
-    { id: 'pop', icon: '🫧', label: 'Pop' },
-    { id: 'soccer', icon: '⚽', label: 'Soccer' },
-    { id: 'sorting', icon: '📦', label: 'Sorting' },
-    { id: 'splash', icon: '🌈', label: 'Splash' }
+    { id: 'paint', icon: '🎨', key: 'paint' },
+    { id: 'stickers', icon: '🌟', key: 'stickers' },
+    { id: 'memory', icon: '🧠', key: 'memory' },
+    { id: 'puzzle', icon: '🧩', key: 'puzzle' },
+    { id: 'pop', icon: '🫧', key: 'pop' },
+    { id: 'soccer', icon: '⚽', key: 'soccer' },
+    { id: 'sorting', icon: '📦', key: 'sorting' },
+    { id: 'splash', icon: '🌈', key: 'splash' }
   ];
 
   let showSettings = $state(false);
+  let lang = $derived($locale);
+  let { setLang } = locale;
 
   function toggleSettings() {
     showSettings = !showSettings;
@@ -33,13 +36,13 @@
 </script>
 
 <div class="hub">
-  <h1 class="title">🎮 Kids Games</h1>
+  <h1 class="title">🎮 {$_('title')}</h1>
 
   <div class="grid">
     {#each games as game (game.id)}
       <button class="game-btn" onclick={() => goToGame(game.id)}>
         <span class="icon">{game.icon}</span>
-        <span class="label">{game.label}</span>
+        <span class="label">{$_(game.key)}</span>
       </button>
     {/each}
   </div>
@@ -48,7 +51,10 @@
     <div class="settings-bar">
       <SoundToggle />
       <AgeSelector />
-      <button class="close-settings" onclick={() => showSettings = false}>Done</button>
+      <button class="lang-btn en" class:active={$lang === 'en'} onclick={() => setLang('en')}>EN</button>
+      <button class="lang-btn it" class:active={$lang === 'it'} onclick={() => setLang('it')}>IT</button>
+      <button class="lang-btn ro" class:active={$lang === 'ro'} onclick={() => setLang('ro')}>RO</button>
+      <button class="close-settings" onclick={() => showSettings = false}>{$_('done')}</button>
     </div>
   {:else}
     <button
@@ -126,5 +132,18 @@
     border-radius: 16px;
     font-weight: 600;
     font-size: 14px;
+  }
+  .lang-btn {
+    padding: 4px 10px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 700;
+    color: #999;
+    background: rgba(255,255,255,0.6);
+    letter-spacing: 0.5px;
+  }
+  .lang-btn.active {
+    color: white;
+    background: var(--color-primary);
   }
 </style>

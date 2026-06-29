@@ -1,5 +1,6 @@
 <script>
   import { goto } from '$app/navigation';
+  import { _ } from '$lib/stores/locale';
 
   let { to = '/' } = $props();
 
@@ -11,7 +12,7 @@
 <button
   class="back-btn"
   onclick={goBack}
-  aria-label="Back to games"
+  aria-label={$_('back')}
 >
   <span class="arrow">&#8592;</span>
 </button>

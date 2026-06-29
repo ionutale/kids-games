@@ -1,5 +1,6 @@
 <script>
   import { settings } from '$lib/stores/settings';
+  import { _, locale } from '$lib/stores/locale';
   import { playTap, playMatch, playWin, playError } from '$lib/sounds/audioManager';
   import Confetti from '$lib/components/Confetti.svelte';
 
@@ -113,7 +114,7 @@
 
 <div class="memory-game">
   <div class="level-indicator">
-    <span class="level-label">Level {level}</span>
+    <span class="level-label">{$_('level')} {level}</span>
     <div class="level-dots">
       {#each Array(10) as _, i}
         <span
@@ -149,12 +150,12 @@
   {#if won}
     <Confetti />
     <div class="win-overlay">
-      <p class="win-text">Great job!</p>
-      <p class="win-sub">Level {level} complete!</p>
+      <p class="win-text">{$_('greatJob')}</p>
+      <p class="win-sub">{$_('levelComplete', { n: level })}</p>
       {#if level < 10}
-        <button class="next-btn" onclick={advanceLevel}>Next Level</button>
+        <button class="next-btn" onclick={advanceLevel}>{$_('nextLevel')}</button>
       {/if}
-      <button class="replay-btn" onclick={replayLevel}>Replay</button>
+      <button class="replay-btn" onclick={replayLevel}>{$_('replay')}</button>
     </div>
   {/if}
 </div>

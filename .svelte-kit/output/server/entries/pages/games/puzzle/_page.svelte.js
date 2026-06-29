@@ -1,5 +1,6 @@
-import { S as escape_html, c as unsubscribe_stores, i as ensure_array_like, n as attr_style, t as attr_class } from "../../../../chunks/server.js";
+import { S as escape_html, c as unsubscribe_stores, i as ensure_array_like, n as attr_style, o as store_get, t as attr_class } from "../../../../chunks/server.js";
 import "../../../../chunks/audioManager.js";
+import { t as _ } from "../../../../chunks/locale.js";
 import { t as Confetti } from "../../../../chunks/Confetti.js";
 //#region src/routes/games/puzzle/+page.svelte
 function _page($$renderer, $$props) {
@@ -91,7 +92,7 @@ function _page($$renderer, $$props) {
 		if (won) {
 			$$renderer.push("<!--[0-->");
 			Confetti($$renderer, {});
-			$$renderer.push(`<!----> <div class="win-overlay svelte-culilx"><p class="win-text svelte-culilx">Puzzle done!</p> <button class="replay-btn svelte-culilx">New Puzzle</button></div>`);
+			$$renderer.push(`<!----> <div class="win-overlay svelte-culilx"><p class="win-text svelte-culilx">${escape_html(store_get($$store_subs ??= {}, "$_", _)("puzzleDone"))}</p> <button class="replay-btn svelte-culilx">${escape_html(store_get($$store_subs ??= {}, "$_", _)("newPuzzle"))}</button></div>`);
 		} else $$renderer.push("<!--[-1-->");
 		$$renderer.push(`<!--]--></div>`);
 		if ($$store_subs) unsubscribe_stores($$store_subs);

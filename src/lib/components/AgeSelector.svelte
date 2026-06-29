@@ -1,11 +1,12 @@
 <script>
   import { settings } from '$lib/stores/settings';
+  import { _ } from '$lib/stores/locale';
 
   let age = $derived($settings.ageLevel);
 </script>
 
 <div class="age-selector">
-  <span class="label">Age:</span>
+  <span class="label">{$_('age')}:</span>
   <div class="slider-track">
     <input
       type="range"

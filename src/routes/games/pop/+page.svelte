@@ -1,6 +1,7 @@
 <script>
   import { onMount } from 'svelte';
   import { settings } from '$lib/stores/settings';
+  import { _ } from '$lib/stores/locale';
   import { playPop, playWin } from '$lib/sounds/audioManager';
 
   const items = ['🫧', '🐟', '🦋', '⭐', '🌟', '💫', '🌸', '🍎'];
@@ -78,14 +79,14 @@
 <div class="pop-game">
   {#if !playing && timeLeft <= 0}
     <div class="win-overlay">
-      <p class="score-text">Score: {score}</p>
-      <button class="replay-btn" onclick={startGame}>Play Again</button>
+      <p class="score-text">{$_('score')}: {score}</p>
+      <button class="replay-btn" onclick={startGame}>{$_('playAgain')}</button>
     </div>
   {/if}
 
   <div class="hud">
-    <span class="hud-item">Score: {score}</span>
-    <span class="hud-item" class:hud-warn={timeLeft <= 5}>Time: {timeLeft}s</span>
+    <span class="hud-item">{$_('score')}: {score}</span>
+    <span class="hud-item" class:hud-warn={timeLeft <= 5}>{$_('time')}: {timeLeft}s</span>
   </div>
 
   {#each bubbles as b (b.id)}

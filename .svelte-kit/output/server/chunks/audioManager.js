@@ -1,4 +1,4 @@
-import { T as writable } from "./server.js";
+import { E as writable } from "./server.js";
 import "./index-server2.js";
 //#region src/lib/stores/settings.js
 var STORAGE_KEY = "kids-games-settings";

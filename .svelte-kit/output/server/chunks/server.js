@@ -2784,6 +2784,73 @@ function writable(value, start = noop) {
 		subscribe
 	};
 }
+/**
+* Derived value store by synchronizing one or more readable stores and
+* applying an aggregation function over its input values.
+*
+* @template {Stores} S
+* @template T
+* @overload
+* @param {S} stores
+* @param {(values: StoresValues<S>, set: (value: T) => void, update: (fn: Updater<T>) => void) => Unsubscriber | void} fn
+* @param {T} [initial_value]
+* @returns {Readable<T>}
+*/
+/**
+* Derived value store by synchronizing one or more readable stores and
+* applying an aggregation function over its input values.
+*
+* @template {Stores} S
+* @template T
+* @overload
+* @param {S} stores
+* @param {(values: StoresValues<S>) => T} fn
+* @param {T} [initial_value]
+* @returns {Readable<T>}
+*/
+/**
+* @template {Stores} S
+* @template T
+* @param {S} stores
+* @param {Function} fn
+* @param {T} [initial_value]
+* @returns {Readable<T>}
+*/
+function derived$1(stores, fn, initial_value) {
+	const single = !Array.isArray(stores);
+	/** @type {Array<Readable<any>>} */
+	const stores_array = single ? [stores] : stores;
+	if (!stores_array.every(Boolean)) throw new Error("derived() expects stores as input, got a falsy value");
+	const auto = fn.length < 2;
+	return readable(initial_value, (set, update) => {
+		let started = false;
+		/** @type {T[]} */
+		const values = [];
+		let pending = 0;
+		let cleanup = noop;
+		const sync = () => {
+			if (pending) return;
+			cleanup();
+			const result = fn(single ? values[0] : values, set, update);
+			if (auto) set(result);
+			else cleanup = typeof result === "function" ? result : noop;
+		};
+		const unsubscribers = stores_array.map((store, i) => subscribe_to_store(store, (value) => {
+			values[i] = value;
+			pending &= ~(1 << i);
+			if (started) sync();
+		}, () => {
+			pending |= 1 << i;
+		}));
+		started = true;
+		sync();
+		return function stop() {
+			run_all(unsubscribers);
+			cleanup();
+			started = false;
+		};
+	});
+}
 //#endregion
 //#region node_modules/.pnpm/svelte@5.56.4/node_modules/svelte/src/utils.js
 /**
@@ -4136,4 +4203,4 @@ function derived(fn) {
 	};
 }
 //#endregion
-export { hydration_failed as $, set_active_reaction as A, boundary as B, is_passive_event as C, active_reaction as D, active_effect as E, get_next_sibling as F, hydrate_node as G, pop$1 as H, init_operations as I, set_hydrating as J, hydrating as K, mutable_source as L, clear_text_content as M, create_text as N, get as O, get_first_child as P, HYDRATION_ERROR as Q, set as R, escape_html as S, writable as T, push$1 as U, component_context as V, async_mode_flag as W, lifecycle_double_unmount as X, hydration_mismatch as Y, state_proxy_unmount as Z, hydratable_clobbering as _, render as a, noop as at, getAbortSignal as b, unsubscribe_stores as c, createContext as d, experimental_async_required as et, getAllContexts as f, ssr_context as g, setContext as h, ensure_array_like as i, define_property as it, component_root as j, set_active_effect as k, get_user_code_location as l, hasContext as m, attr_style as n, STATE_SYMBOL as nt, store_get as o, run as ot, getContext as p, set_hydrate_node as q, derived as r, array_from as rt, stringify as s, attr_class as t, LEGACY_PROPS as tt, get_render_context as u, hydratable_serialization_failed as v, readable as w, attr as x, lifecycle_function_unavailable as y, flushSync as z };
+export { HYDRATION_ERROR as $, set_active_effect as A, flushSync as B, is_passive_event as C, active_effect as D, writable as E, get_first_child as F, async_mode_flag as G, component_context as H, get_next_sibling as I, set_hydrate_node as J, hydrate_node as K, init_operations as L, component_root as M, clear_text_content as N, active_reaction as O, create_text as P, state_proxy_unmount as Q, mutable_source as R, escape_html as S, readable as T, pop$1 as U, boundary as V, push$1 as W, hydration_mismatch as X, set_hydrating as Y, lifecycle_double_unmount as Z, hydratable_clobbering as _, render as a, define_property as at, getAbortSignal as b, unsubscribe_stores as c, createContext as d, hydration_failed as et, getAllContexts as f, ssr_context as g, setContext as h, ensure_array_like as i, array_from as it, set_active_reaction as j, get as k, get_user_code_location as l, hasContext as m, attr_style as n, LEGACY_PROPS as nt, store_get as o, noop as ot, getContext as p, hydrating as q, derived as r, STATE_SYMBOL as rt, stringify as s, run as st, attr_class as t, experimental_async_required as tt, get_render_context as u, hydratable_serialization_failed as v, derived$1 as w, attr as x, lifecycle_function_unavailable as y, set as z };

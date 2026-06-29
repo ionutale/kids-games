@@ -1,5 +1,6 @@
 <script>
   import { settings } from '$lib/stores/settings';
+  import { _ } from '$lib/stores/locale';
   import { playTap } from '$lib/sounds/audioManager';
 
   let soundOn = $derived($settings.soundEnabled);
@@ -13,7 +14,7 @@
 <button
   class="sound-btn"
   onclick={handleToggle}
-  aria-label={soundOn ? 'Mute sounds' : 'Enable sounds'}
+  aria-label={$_('sound')}
 >
   {soundOn ? '🔊' : '🔇'}
 </button>

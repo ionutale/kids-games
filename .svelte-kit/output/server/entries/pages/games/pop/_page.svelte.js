@@ -1,6 +1,7 @@
 import "../../../../chunks/index-server.js";
-import { S as escape_html, c as unsubscribe_stores, i as ensure_array_like, n as attr_style, s as stringify, t as attr_class } from "../../../../chunks/server.js";
+import { S as escape_html, c as unsubscribe_stores, i as ensure_array_like, n as attr_style, o as store_get, s as stringify, t as attr_class } from "../../../../chunks/server.js";
 import "../../../../chunks/audioManager.js";
+import { t as _ } from "../../../../chunks/locale.js";
 //#region src/routes/games/pop/+page.svelte
 function _page($$renderer, $$props) {
 	$$renderer.component(($$renderer) => {
@@ -11,7 +12,7 @@ function _page($$renderer, $$props) {
 		let level = 3;
 		$$renderer.push(`<div class="pop-game svelte-dhi6h0">`);
 		$$renderer.push("<!--[-1-->");
-		$$renderer.push(`<!--]--> <div class="hud svelte-dhi6h0"><span class="hud-item svelte-dhi6h0">Score: ${escape_html(score)}</span> <span${attr_class("hud-item svelte-dhi6h0", void 0, { "hud-warn": false })}>Time: ${escape_html(timeLeft)}s</span></div> <!--[-->`);
+		$$renderer.push(`<!--]--> <div class="hud svelte-dhi6h0"><span class="hud-item svelte-dhi6h0">${escape_html(store_get($$store_subs ??= {}, "$_", _)("score"))}: ${escape_html(score)}</span> <span${attr_class("hud-item svelte-dhi6h0", void 0, { "hud-warn": false })}>${escape_html(store_get($$store_subs ??= {}, "$_", _)("time"))}: ${escape_html(timeLeft)}s</span></div> <!--[-->`);
 		const each_array = ensure_array_like(bubbles);
 		for (let $$index = 0, $$length = each_array.length; $$index < $$length; $$index++) {
 			let b = each_array[$$index];

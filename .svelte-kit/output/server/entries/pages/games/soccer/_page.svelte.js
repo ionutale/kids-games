@@ -1,5 +1,6 @@
-import { S as escape_html, c as unsubscribe_stores, i as ensure_array_like, n as attr_style, s as stringify, t as attr_class } from "../../../../chunks/server.js";
+import { S as escape_html, c as unsubscribe_stores, i as ensure_array_like, n as attr_style, o as store_get, s as stringify, t as attr_class } from "../../../../chunks/server.js";
 import "../../../../chunks/audioManager.js";
+import { t as _ } from "../../../../chunks/locale.js";
 import "../../../../chunks/Confetti.js";
 //#region src/routes/games/soccer/+page.svelte
 function _page($$renderer, $$props) {
@@ -21,10 +22,10 @@ function _page($$renderer, $$props) {
 			top: `${stringify(ballY)}%`
 		})}>⚽</div> `);
 		$$renderer.push("<!--[0-->");
-		$$renderer.push(`<div class="score-display svelte-etwtpk">Score: ${escape_html(score)}/${escape_html(levelTargets(level).targetScore)}</div>`);
+		$$renderer.push(`<div class="score-display svelte-etwtpk">${escape_html(store_get($$store_subs ??= {}, "$_", _)("score"))}: ${escape_html(score)}/${escape_html(levelTargets(level).targetScore)}</div>`);
 		$$renderer.push(`<!--]--> `);
 		$$renderer.push("<!--[0-->");
-		$$renderer.push(`<div class="aim-hint svelte-etwtpk">Tap where you want to kick!</div>`);
+		$$renderer.push(`<div class="aim-hint svelte-etwtpk">${escape_html(store_get($$store_subs ??= {}, "$_", _)("tapToKick"))}</div>`);
 		$$renderer.push(`<!--]--></div> `);
 		$$renderer.push("<!--[-1-->");
 		$$renderer.push(`<!--]--> `);
