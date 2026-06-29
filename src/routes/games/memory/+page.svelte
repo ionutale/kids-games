@@ -11,9 +11,22 @@
   let showcasing = $state(new Set());
   let locked = $state(false);
   let won = $state(false);
+  let difficulty = $state(4);
+
+  function pairsFromLevel(level) {
+    if (level >= 10) return 12;
+    return level + 1;
+  }
+
+  function colsFromCount(count) {
+    if (count <= 8) return 2;
+    if (count <= 16) return 4;
+    return 4;
+  }
 
   function initGame() {
-    const pairs = $settings.ageLevel <= 2 ? 3 : $settings.ageLevel === 3 ? 4 : $settings.ageLevel === 4 ? 6 : 8;
+    const c = pairsFromLevel(difficulty) * 2;
+    const pairs = pairsFromLevel(difficulty);
     const selected = emojis.slice(0, pairs);
     const deck = [...selected, ...selected].map((emoji, i) => ({ id: i, emoji, flipped: false }));
     for (let i = deck.length - 1; i > 0; i--) {
@@ -59,18 +72,23 @@
           );
           flipped = [];
           locked = false;
-        }, $settings.ageLevel <= 2 ? 1500 : 800);
+        }, 1500 - difficulty * 100);
       }
     }
   }
 
-  let cols = $derived($settings.ageLevel <= 3 ? $settings.ageLevel <= 2 ? 3 : 4 : 4);
+  function setLevel(l) {
+    difficulty = l;
+    initGame();
+  }
+
+  let cols = $derived(colsFromCount(cards.length));
 
   initGame();
 </script>
 
 <div class="memory-game">
-  <div class="grid" style:grid-template-columns="repeat({$settings.ageLevel <= 2 ? 3 : 4}, 1fr)">
+  <div class="grid" style:grid-template-columns="repeat({cols}, 1fr)">
     {#each cards as card (card.id)}
       <button
         class="card"
@@ -90,6 +108,21 @@
     {/each}
   </div>
 
+  <div class="diff-bar">
+    <span class="diff-label">Level</span>
+    <div class="diff-buttons">
+      {#each Array(10) as _, i}
+        <button
+          class="diff-btn"
+          class:active={difficulty === i + 1}
+          onclick={() => setLevel(i + 1)}
+        >
+          {i + 1}
+        </button>
+      {/each}
+    </div>
+  </div>
+
   {#if won}
     <Confetti />
     <div class="win-overlay">
@@ -104,9 +137,41 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: center;
     flex: 1;
     padding: 16px;
+  }
+  .diff-bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 12px;
+    margin-bottom: calc(8px + var(--safe-bottom));
+    flex-shrink: 0;
+  }
+  .diff-label {
+    font-size: 14px;
+    font-weight: 600;
+    color: #999;
+    margin-right: 4px;
+  }
+  .diff-buttons {
+    display: flex;
+    gap: 4px;
+  }
+  .diff-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #999;
+    background: rgba(255,255,255,0.7);
+    transition: all 0.15s;
+  }
+  .diff-btn.active {
+    color: white;
+    background: var(--color-primary);
+    box-shadow: 0 1px 4px rgba(0,0,0,0.2);
   }
   .grid {
     display: grid;

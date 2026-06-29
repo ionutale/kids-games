@@ -1,9 +1,9 @@
 import { test, expect } from '@playwright/test';
 
 test.describe('Memory E2E', () => {
-  test('loads with 8 cards for age 3', async ({ page }) => {
+  test('loads with 10 cards for default difficulty 4', async ({ page }) => {
     await page.goto('/games/memory');
-    await expect(page.locator('.card')).toHaveCount(8);
+    await expect(page.locator('.card')).toHaveCount(10);
   });
 
   test('clicking a card flips it', async ({ page }) => {

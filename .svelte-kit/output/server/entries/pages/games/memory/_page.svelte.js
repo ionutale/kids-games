@@ -1,5 +1,5 @@
-import { S as escape_html, c as unsubscribe_stores, i as ensure_array_like, n as attr_style, o as store_get, r as derived, s as stringify, t as attr_class } from "../../../../chunks/server.js";
-import { t as settings } from "../../../../chunks/settings.js";
+import { S as escape_html, c as unsubscribe_stores, i as ensure_array_like, n as attr_style, r as derived, s as stringify, t as attr_class } from "../../../../chunks/server.js";
+import "../../../../chunks/settings.js";
 import { t as Confetti } from "../../../../chunks/Confetti.js";
 //#region src/routes/games/memory/+page.svelte
 function _page($$renderer, $$props) {
@@ -23,8 +23,19 @@ function _page($$renderer, $$props) {
 		let matched = /* @__PURE__ */ new Set();
 		let showcasing = /* @__PURE__ */ new Set();
 		let won = false;
+		let difficulty = 4;
+		function pairsFromLevel(level) {
+			if (level >= 10) return 12;
+			return level + 1;
+		}
+		function colsFromCount(count) {
+			if (count <= 8) return 2;
+			if (count <= 16) return 4;
+			return 4;
+		}
 		function initGame() {
-			const pairs = store_get($$store_subs ??= {}, "$settings", settings).ageLevel <= 2 ? 3 : store_get($$store_subs ??= {}, "$settings", settings).ageLevel === 3 ? 4 : store_get($$store_subs ??= {}, "$settings", settings).ageLevel === 4 ? 6 : 8;
+			pairsFromLevel(difficulty) * 2;
+			const pairs = pairsFromLevel(difficulty);
 			const selected = emojis.slice(0, pairs);
 			const deck = [...selected, ...selected].map((emoji, i) => ({
 				id: i,
@@ -40,9 +51,9 @@ function _page($$renderer, $$props) {
 			showcasing = /* @__PURE__ */ new Set();
 			won = false;
 		}
-		derived(() => store_get($$store_subs ??= {}, "$settings", settings).ageLevel <= 3 ? store_get($$store_subs ??= {}, "$settings", settings).ageLevel <= 2 ? 3 : 4 : 4);
+		let cols = derived(() => colsFromCount(cards.length));
 		initGame();
-		$$renderer.push(`<div class="memory-game svelte-9c3864"><div class="grid svelte-9c3864"${attr_style("", { "grid-template-columns": `repeat(${stringify(store_get($$store_subs ??= {}, "$settings", settings).ageLevel <= 2 ? 3 : 4)}, 1fr)` })}><!--[-->`);
+		$$renderer.push(`<div class="memory-game svelte-9c3864"><div class="grid svelte-9c3864"${attr_style("", { "grid-template-columns": `repeat(${stringify(cols())}, 1fr)` })}><!--[-->`);
 		const each_array = ensure_array_like(cards);
 		for (let $$index = 0, $$length = each_array.length; $$index < $$length; $$index++) {
 			let card = each_array[$$index];
@@ -57,7 +68,13 @@ function _page($$renderer, $$props) {
 			} else $$renderer.push("<!--[-1-->");
 			$$renderer.push(`<!--]--></button>`);
 		}
-		$$renderer.push(`<!--]--></div> `);
+		$$renderer.push(`<!--]--></div> <div class="diff-bar svelte-9c3864"><span class="diff-label svelte-9c3864">Level</span> <div class="diff-buttons svelte-9c3864"><!--[-->`);
+		const each_array_1 = ensure_array_like(Array(10));
+		for (let i = 0, $$length = each_array_1.length; i < $$length; i++) {
+			each_array_1[i];
+			$$renderer.push(`<button${attr_class("diff-btn svelte-9c3864", void 0, { "active": difficulty === i + 1 })}>${escape_html(i + 1)}</button>`);
+		}
+		$$renderer.push(`<!--]--></div></div> `);
 		if (won) {
 			$$renderer.push("<!--[0-->");
 			Confetti($$renderer, {});
