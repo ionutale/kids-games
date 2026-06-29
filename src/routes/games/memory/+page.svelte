@@ -33,9 +33,11 @@
     if ($settings.soundEnabled) playTap();
     if (flipped.length === 2) {
       locked = true;
-      const [a, b] = flipped;
-      if (cards[a].emoji === cards[b].emoji) {
-        matched = new Set([...matched, a, b]);
+      const [aId, bId] = flipped;
+      const a = cards.find(c => c.id === aId);
+      const b = cards.find(c => c.id === bId);
+      if (a.emoji === b.emoji) {
+        matched = new Set([...matched, aId, bId]);
         flipped = [];
         locked = false;
         if ($settings.soundEnabled) playMatch();
@@ -45,9 +47,9 @@
       } else {
         if ($settings.soundEnabled) playError();
         setTimeout(() => {
-          cards[a].flipped = false;
-          cards[b].flipped = false;
-          cards = [...cards];
+          cards = cards.map(c =>
+            c.id === aId || c.id === bId ? { ...c, flipped: false } : c
+          );
           flipped = [];
           locked = false;
         }, $settings.ageLevel <= 2 ? 1500 : 800);
