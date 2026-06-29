@@ -118,15 +118,21 @@
           {#each Array(gridSize) as _, c}
             {@const tower = gameState.towers.find(t => t.row === r && t.col === c)}
             {@const enemy = enemyAt(r, c)}
+            {@const isSelected = selectedTower?.row === r && selectedTower?.col === c}
             <button
               class="td-cell"
               class:path={isPath(r, c)}
               class:tower-spot={canPlaceTower(r, c) && !tower}
               class:has-tower={!!tower}
               class:drag-over={dragTower && canPlaceTower(r, c) && !tower && !enemy}
-              class:selected={selectedTower?.row === r && selectedTower?.col === c}
+              class:selected={isSelected}
               onclick={() => handleCellClick(r, c)}
             >
+              {#if isSelected}
+                {@const mult = 1 + selectedTower.level * 0.5}
+                {@const range = Math.round(selectedTower.type.range * mult)}
+                <span class="range-circle" style:--range="{(range * 100) / gridSize}%"></span>
+              {/if}
               {#if enemy}
                 <span class="enemy" style:background="rgba(255,0,0,{1 - enemy.health/enemy.maxHealth})">{enemy.emoji}</span>
               {:else if tower}
@@ -190,8 +196,21 @@
         <button class="td-replay" onclick={() => { initGame(); }}>🔄 {$_('tryAgain')}</button>
       </div>
     {/if}
-  </div>
-{/if}
+      </div>
+
+      {#if gameState?.projectiles?.length}
+        <div class="proj-layer" style:--grid="{gridSize}">
+          {#each gameState.projectiles as proj (proj.id)}
+            <span
+              class="projectile"
+              style:--r="{proj.fromRow}"
+              style:--c="{proj.fromCol}"
+              style:--p="{proj.progress}"
+            >💥</span>
+          {/each}
+        </div>
+      {/if}
+    {/if}
 
 <style>
   .td-menu, .td-game { display: flex; flex-direction: column; align-items: center; flex: 1; padding: 12px; }
@@ -210,6 +229,36 @@
   .td-cell.has-tower { background: #fff3e0; border-color: #ffcc80; }
   .td-cell.drag-over { background: #c8e6c9; border-color: #66bb6a; border-width: 2px; }
   .td-cell.selected { box-shadow: 0 0 0 3px var(--color-primary); z-index: 2; }
+  .range-circle {
+    position: absolute;
+    width: var(--range);
+    height: var(--range);
+    border-radius: 50%;
+    border: 2px dashed rgba(79, 195, 247, 0.5);
+    background: rgba(79, 195, 247, 0.06);
+    pointer-events: none;
+    z-index: 5;
+  }
+  .proj-layer {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 4;
+  }
+  .projectile {
+    position: absolute;
+    font-size: 12px;
+    left: calc((var(--c) + 0.5) / var(--grid, 6) * 100%);
+    top: calc((var(--r) + 0.5) / var(--grid, 6) * 100%);
+    transform: translate(-50%, -50%);
+    animation: projFly 0.25s ease-out forwards;
+  }
+  @keyframes projFly {
+    0% { opacity: 1; transform: translate(-50%, -50%) scale(0.5); }
+    100% { opacity: 0; transform: translate(-50%, -50%) scale(1.5); }
+  }
   .spot-hint { opacity: 0.3; font-size: 14px; }
   .path-dot { color: #ccc; font-size: 10px; }
   .tower-e { font-size: 22px; }

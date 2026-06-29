@@ -11,6 +11,7 @@ export function createEngine(mapData, onUpdate) {
     phase: 'setup',
     towers: [],
     enemies: [],
+    projectiles: [],
     pathCells,
     waveQueue: [],
     spawnTimer: 0,
@@ -20,6 +21,7 @@ export function createEngine(mapData, onUpdate) {
     lastTime: 0,
     won: false,
     lost: false,
+    gridSize: mapData.grid,
   };
 
   function getTowerAt(row, col) {
@@ -141,19 +143,40 @@ export function createEngine(mapData, onUpdate) {
 
         if (target) {
           tower.cooldown = tower.type.fireRate;
-          target.health -= damage;
-          if (tower.type.slow > 0) {
-            target.speed = target._baseSpeed || target.speed;
-            if (!target._baseSpeed) target._baseSpeed = target.speed;
-            target.speed = target._baseSpeed * (1 - tower.type.slow);
-            setTimeout(() => { if (target?.alive) target.speed = target._baseSpeed; }, 2000);
+          state.projectiles.push({
+            id: Math.random(),
+            fromRow: tower.row,
+            fromCol: tower.col,
+            targetId: target.id,
+            speed: 4,
+            progress: 0,
+            damage,
+            slow: tower.type.slow,
+          });
+        }
+      }
+
+      for (const proj of state.projectiles) {
+        proj.progress += proj.speed * dt;
+      }
+
+      for (const proj of state.projectiles) {
+        if (proj.progress < 1) continue;
+        const tgt = state.enemies.find(e => e.id === proj.targetId && e.alive);
+        if (tgt) {
+          tgt.health -= proj.damage;
+          if (proj.slow > 0) {
+            tgt.speed = tgt._baseSpeed || tgt.speed;
+            if (!tgt._baseSpeed) tgt._baseSpeed = tgt.speed;
+            tgt.speed = tgt._baseSpeed * (1 - proj.slow);
           }
-          if (target.health <= 0) {
-            target.alive = false;
-            state.coins += target.reward;
+          if (tgt.health <= 0) {
+            tgt.alive = false;
+            state.coins += tgt.reward;
           }
         }
       }
+      state.projectiles = state.projectiles.filter(p => p.progress < 1);
 
       state.enemies = state.enemies.filter(e => e.alive);
       const allSpawned = state.spawnIndex >= state.waveQueue.length;
@@ -168,7 +191,7 @@ export function createEngine(mapData, onUpdate) {
       }
     }
 
-    onUpdate({ ...state, towers: [...state.towers], enemies: state.enemies.map(e => ({ ...e })) });
+    onUpdate({ ...state, towers: [...state.towers], enemies: state.enemies.map(e => ({ ...e })), projectiles: state.projectiles.map(p => ({ ...p })) });
     if (!state.lost && !state.won) {
       state.frameId = requestAnimationFrame(loop);
     }
