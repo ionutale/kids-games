@@ -8,7 +8,7 @@ function set_read_implementation(fn) {
 }
 function set_manifest(_) {}
 //#endregion
-//#region node_modules/svelte/src/internal/client/dom/elements/events.js
+//#region node_modules/.pnpm/svelte@5.56.4/node_modules/svelte/src/internal/client/dom/elements/events.js
 /**
 * Used on elements, as a map of event type -> event handler,
 * and on events themselves to track which element handled an event
@@ -92,7 +92,7 @@ function handle_event_propagation(event) {
 }
 globalThis?.window?.trustedTypes;
 //#endregion
-//#region node_modules/svelte/src/internal/client/dom/template.js
+//#region node_modules/.pnpm/svelte@5.56.4/node_modules/svelte/src/internal/client/dom/template.js
 /**
 * @param {TemplateNode} start
 * @param {TemplateNode | null} end
@@ -282,7 +282,7 @@ function unmount(component, options) {
 	return Promise.resolve();
 }
 //#endregion
-//#region node_modules/svelte/src/legacy/legacy-client.js
+//#region node_modules/.pnpm/svelte@5.56.4/node_modules/svelte/src/legacy/legacy-client.js
 /** @import { ComponentConstructorOptions, ComponentType, SvelteComponent, Component } from 'svelte' */
 /**
 * Takes the component function and returns a Svelte 4 compatible component constructor.
@@ -407,7 +407,7 @@ var Svelte4Component = class {
 	}
 };
 //#endregion
-//#region node_modules/svelte/src/legacy/legacy-server.js
+//#region node_modules/.pnpm/svelte@5.56.4/node_modules/svelte/src/legacy/legacy-server.js
 /** @import { SvelteComponent } from '../index.js' */
 /** @import { Csp } from '#server' */
 /** @typedef {{ head: string, html: string, css: { code: string, map: null }; hashes?: { script: `sha256-${string}`[] } }} LegacyRenderResult */
@@ -571,7 +571,7 @@ var options = {
 		app: ({ head, body, assets, nonce, env }) => "<!doctype html>\n<html lang=\"en\">\n  <head>\n    <meta charset=\"utf-8\" />\n    <link rel=\"icon\" href=\"" + assets + "/icons/icon-192.svg\" />\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover\" />\n    <meta name=\"theme-color\" content=\"#4FC3F7\" />\n    <meta name=\"apple-mobile-web-app-capable\" content=\"yes\" />\n    <meta name=\"apple-mobile-web-app-status-bar-style\" content=\"default\" />\n    <link rel=\"apple-touch-icon\" href=\"" + assets + "/icons/icon-192.svg\" />\n    " + head + "\n  </head>\n  <body>\n    <div style=\"display: contents\">" + body + "</div>\n  </body>\n</html>\n",
 		error: error_template_default
 	},
-	version_hash: "61uybd"
+	version_hash: "1rjnvpt"
 };
 async function get_hooks() {
 	let handle;

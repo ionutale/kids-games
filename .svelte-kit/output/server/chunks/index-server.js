@@ -12,7 +12,7 @@ var __exportAll = (all, no_symbols) => {
 	return target;
 };
 //#endregion
-//#region node_modules/svelte/src/internal/server/hydratable.js
+//#region node_modules/.pnpm/svelte@5.56.4/node_modules/svelte/src/internal/server/hydratable.js
 /** @import { HydratableLookupEntry } from '#server' */
 /**
 * @template T
@@ -74,7 +74,7 @@ function serialization_stack(root_stack, uneval_stack) {
 	return out || "<missing stack trace>";
 }
 //#endregion
-//#region node_modules/svelte/src/internal/server/blocks/snippet.js
+//#region node_modules/.pnpm/svelte@5.56.4/node_modules/svelte/src/internal/server/blocks/snippet.js
 /** @import { Snippet } from 'svelte' */
 /** @import { Renderer } from '../renderer' */
 /** @import { Getters } from '#shared' */
@@ -94,7 +94,7 @@ function createRawSnippet(fn) {
 	};
 }
 //#endregion
-//#region node_modules/svelte/src/index-server.js
+//#region node_modules/.pnpm/svelte@5.56.4/node_modules/svelte/src/index-server.js
 /** @import { SSRContext } from '#server' */
 /** @import { Renderer } from './internal/server/renderer.js' */
 var index_server_exports = /* @__PURE__ */ __exportAll({

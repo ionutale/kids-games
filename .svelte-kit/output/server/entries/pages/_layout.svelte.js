@@ -3,7 +3,7 @@ import { c as unsubscribe_stores, o as store_get, p as getContext, r as derived 
 import "../../chunks/client.js";
 import "../../chunks/settings.js";
 import { t as SoundToggle } from "../../chunks/SoundToggle.js";
-//#region node_modules/@sveltejs/kit/src/runtime/app/stores.js
+//#region node_modules/.pnpm/@sveltejs+kit@2.68.0_@sveltejs+vite-plugin-svelte@7.1.2_svelte@5.56.4_vite@8.1.0_terser_92cd6391677923dcfe4fa79ac66478d5/node_modules/@sveltejs/kit/src/runtime/app/stores.js
 /**
 * A function that returns all of the contextual stores. On the server, this must be called during component initialization.
 * Only use this if you need to defer store subscription until after the component has mounted, for some reason.

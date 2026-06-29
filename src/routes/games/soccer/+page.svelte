@@ -59,7 +59,12 @@
 </script>
 
 <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
-<div class="soccer-game" role="application" ontouchstart={kick} onmousedown={kick}>
+<div
+  class="soccer-game"
+  role="application"
+  ontouchstart={kick}
+  onmousedown={kick}
+>
   <div class="field">
     <div class="goal-area"></div>
     <div
