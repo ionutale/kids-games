@@ -1,5 +1,5 @@
 import { t as index_server_exports } from "./index-server.js";
-import { _ as noop } from "./shared.js";
+import { y as noop } from "./shared.js";
 import "./internal.js";
 import "./exports.js";
 import { T as writable, at as noop$1 } from "./server.js";

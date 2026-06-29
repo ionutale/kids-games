@@ -1,7 +1,8 @@
+import { t as uneval } from "./uneval.js";
 import { W as async_mode_flag, at as noop, b as getAbortSignal, d as createContext, et as experimental_async_required, f as getAllContexts, g as ssr_context, h as setContext, m as hasContext, ot as run, p as getContext, u as get_render_context, v as hydratable_serialization_failed, y as lifecycle_function_unavailable } from "./server.js";
-import * as devalue from "devalue";
 //#region \0rolldown/runtime.js
 var __defProp = Object.defineProperty;
+var __commonJSMin = (cb, mod) => () => (mod || (cb((mod = { exports: {} }).exports, mod), cb = null), mod.exports);
 var __exportAll = (all, no_symbols) => {
 	let target = {};
 	for (var name in all) __defProp(target, name, {
@@ -42,7 +43,7 @@ function encode(key, value, unresolved) {
 		serialized: ""
 	};
 	let uid = 1;
-	entry.serialized = devalue.uneval(entry.value, (value, uneval) => {
+	entry.serialized = uneval(entry.value, (value, uneval) => {
 		if (is_promise(value)) {
 			const placeholder = `"${uid++}"`;
 			const p = value.then((v) => {
@@ -142,4 +143,4 @@ function fork() {
 async function tick() {}
 async function settled() {}
 //#endregion
-export { tick as n, index_server_exports as t };
+export { tick as n, __commonJSMin as r, index_server_exports as t };

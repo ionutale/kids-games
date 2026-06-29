@@ -65,6 +65,7 @@
     "file": "chunks/index-server.js",
     "name": "index-server",
     "imports": [
+      "_uneval.js",
       "_server.js"
     ]
   },
@@ -90,7 +91,10 @@
   },
   "_server.js": {
     "file": "chunks/server.js",
-    "name": "server"
+    "name": "server",
+    "imports": [
+      "_uneval.js"
+    ]
   },
   "_settings.js": {
     "file": "chunks/settings.js",
@@ -102,13 +106,21 @@
   },
   "_shared.js": {
     "file": "chunks/shared.js",
-    "name": "shared"
+    "name": "shared",
+    "imports": [
+      "_uneval.js"
+    ]
+  },
+  "_uneval.js": {
+    "file": "chunks/uneval.js",
+    "name": "uneval"
   },
   "_utils.js": {
     "file": "chunks/utils.js",
     "name": "utils",
     "imports": [
-      "_shared.js"
+      "_shared.js",
+      "_uneval.js"
     ]
   },
   "node_modules/.pnpm/@sveltejs+kit@2.68.0_@sveltejs+vite-plugin-svelte@7.1.2_svelte@5.56.4_vite@8.1.0_terser_92cd6391677923dcfe4fa79ac66478d5/node_modules/@sveltejs/kit/src/runtime/app/server/remote/index.js": {
@@ -139,9 +151,11 @@
     "src": "node_modules/.pnpm/@sveltejs+kit@2.68.0_@sveltejs+vite-plugin-svelte@7.1.2_svelte@5.56.4_vite@8.1.0_terser_92cd6391677923dcfe4fa79ac66478d5/node_modules/@sveltejs/kit/src/runtime/server/index.js",
     "isEntry": true,
     "imports": [
+      "_index-server.js",
       "_shared.js",
       "_internal.js",
       "_utils.js",
+      "_uneval.js",
       "_exports.js",
       "_server.js",
       "_index-server2.js",

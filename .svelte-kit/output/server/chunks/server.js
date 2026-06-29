@@ -1,5 +1,4 @@
-import * as devalue from "devalue";
-import { clsx } from "clsx";
+import { t as uneval } from "./uneval.js";
 //#region node_modules/.pnpm/svelte@5.56.4/node_modules/svelte/src/internal/shared/utils.js
 var is_array = Array.isArray;
 var index_of = Array.prototype.indexOf;
@@ -2869,6 +2868,21 @@ function escape_html(value, is_attr) {
 	return escaped + str.substring(last);
 }
 //#endregion
+//#region node_modules/.pnpm/clsx@2.1.1/node_modules/clsx/dist/clsx.mjs
+function r(e) {
+	var t, f, n = "";
+	if ("string" == typeof e || "number" == typeof e) n += e;
+	else if ("object" == typeof e) if (Array.isArray(e)) {
+		var o = e.length;
+		for (t = 0; t < o; t++) e[t] && (f = r(e[t])) && (n && (n += " "), n += f);
+	} else for (f in e) e[f] && (n && (n += " "), n += f);
+	return n;
+}
+function clsx$1() {
+	for (var e, t, f = 0, n = "", o = arguments.length; f < o; f++) (e = arguments[f]) && (t = r(e)) && (n && (n += " "), n += t);
+	return n;
+}
+//#endregion
 //#region node_modules/.pnpm/svelte@5.56.4/node_modules/svelte/src/internal/shared/attributes.js
 /**
 * `<div translate={false}>` should be rendered as `<div translate="no">` and _not_
@@ -2895,8 +2909,8 @@ function attr(name, value, is_boolean = false) {
 * TODO Svelte 6 revisit this, and likely turn all falsy values into the empty string (what clsx also does)
 * @param  {any} value
 */
-function clsx$1(value) {
-	if (typeof value === "object") return clsx(value);
+function clsx(value) {
+	if (typeof value === "object") return clsx$1(value);
 	else return value ?? "";
 }
 var whitespace = [..." 	\n\r\f\xA0\v﻿"];
@@ -3900,7 +3914,7 @@ var Renderer = class Renderer {
 				has_promises = true;
 				for (const p of v.promises) await p;
 			}
-			entries.push(`[${devalue.uneval(k)},${v.serialized}]`);
+			entries.push(`[${uneval(k)},${v.serialized}]`);
 		}
 		let prelude = `const h = (window.__svelte ??= {}).h ??= new Map();`;
 		if (has_promises) prelude = `const r = (v) => Promise.resolve(v);
@@ -4014,7 +4028,7 @@ function render(component, options = {}) {
 */
 function attributes(attrs, css_hash, classes, styles, flags = 0) {
 	if (styles) attrs.style = to_style(attrs.style, styles);
-	if (attrs.class) attrs.class = clsx$1(attrs.class);
+	if (attrs.class) attrs.class = clsx(attrs.class);
 	if (css_hash || classes) attrs.class = to_class(attrs.class, css_hash, classes);
 	let attr_str = "";
 	let name;
