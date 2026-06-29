@@ -13,7 +13,8 @@
     { id: 'pop', icon: '🫧', key: 'pop' },
     { id: 'soccer', icon: '⚽', key: 'soccer' },
     { id: 'sorting', icon: '📦', key: 'sorting' },
-    { id: 'splash', icon: '🌈', key: 'splash' }
+    { id: 'splash', icon: '🌈', key: 'splash' },
+    { id: 'tower-defense', icon: '🛡️', key: 'towerDefense' },
   ];
 
   let showSettings = $state(false);

@@ -10,7 +10,7 @@ return {
 	assets: new Set(["icons/icon-192.svg","icons/icon-512.svg","manifest.json","robots.txt","screenshots/memory.png","screenshots/paint.png","screenshots/pop.png","screenshots/puzzle.png","screenshots/soccer.png","screenshots/sorting.png","screenshots/splash.png","screenshots/stickers.png"]),
 	mimeTypes: {".svg":"image/svg+xml",".json":"application/json",".txt":"text/plain",".png":"image/png"},
 	_: {
-		client: {start:"_app/immutable/entry/start.CF2-HDlB.js",app:"_app/immutable/entry/app.Corl02KU.js",imports:["_app/immutable/entry/start.CF2-HDlB.js","_app/immutable/chunks/DdbnWinr.js","_app/immutable/chunks/BSv9Qnj4.js","_app/immutable/chunks/BQhukxEd.js","_app/immutable/entry/app.Corl02KU.js","_app/immutable/chunks/BSv9Qnj4.js","_app/immutable/chunks/DYl5dUZ5.js","_app/immutable/chunks/xihTtKlq.js"],stylesheets:[],fonts:[],uses_env_dynamic_public:false},
+		client: {start:"_app/immutable/entry/start.oOCqYueR.js",app:"_app/immutable/entry/app.CF_5TVwf.js",imports:["_app/immutable/entry/start.oOCqYueR.js","_app/immutable/chunks/C0iX065b.js","_app/immutable/chunks/Bf7y44CB.js","_app/immutable/chunks/CrDGfbjk.js","_app/immutable/entry/app.CF_5TVwf.js","_app/immutable/chunks/Bf7y44CB.js","_app/immutable/chunks/DYl5dUZ5.js","_app/immutable/chunks/xihTtKlq.js"],stylesheets:[],fonts:[],uses_env_dynamic_public:false},
 		nodes: [
 			__memo(() => import('./nodes/0.js')),
 			__memo(() => import('./nodes/1.js')),
@@ -22,7 +22,8 @@ return {
 			__memo(() => import('./nodes/7.js')),
 			__memo(() => import('./nodes/8.js')),
 			__memo(() => import('./nodes/9.js')),
-			__memo(() => import('./nodes/10.js'))
+			__memo(() => import('./nodes/10.js')),
+			__memo(() => import('./nodes/11.js'))
 		],
 		remotes: {
 			
@@ -89,6 +90,13 @@ return {
 				pattern: /^\/games\/stickers\/?$/,
 				params: [],
 				page: { layouts: [0,], errors: [1,], leaf: 10 },
+				endpoint: null
+			},
+			{
+				id: "/games/tower-defense",
+				pattern: /^\/games\/tower-defense\/?$/,
+				params: [],
+				page: { layouts: [0,], errors: [1,], leaf: 11 },
 				endpoint: null
 			}
 		],

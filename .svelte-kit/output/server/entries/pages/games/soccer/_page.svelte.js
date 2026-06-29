@@ -1,5 +1,5 @@
 import { S as escape_html, c as unsubscribe_stores, i as ensure_array_like, n as attr_style, o as store_get, s as stringify, t as attr_class } from "../../../../chunks/server.js";
-import "../../../../chunks/audioManager.js";
+import "../../../../chunks/settings.js";
 import { t as _ } from "../../../../chunks/locale.js";
 import "../../../../chunks/Confetti.js";
 //#region src/routes/games/soccer/+page.svelte

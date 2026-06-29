@@ -1,6 +1,6 @@
 import "../../chunks/index-server.js";
 import { S as escape_html, c as unsubscribe_stores, i as ensure_array_like, o as store_get, r as derived } from "../../chunks/server.js";
-import "../../chunks/audioManager.js";
+import "../../chunks/settings.js";
 import { n as locale, t as _ } from "../../chunks/locale.js";
 import "../../chunks/SoundToggle.js";
 //#region src/routes/+page.svelte
@@ -47,6 +47,11 @@ function _page($$renderer, $$props) {
 				id: "splash",
 				icon: "🌈",
 				key: "splash"
+			},
+			{
+				id: "tower-defense",
+				icon: "🛡️",
+				key: "towerDefense"
 			}
 		];
 		derived(() => store_get($$store_subs ??= {}, "$locale", locale));

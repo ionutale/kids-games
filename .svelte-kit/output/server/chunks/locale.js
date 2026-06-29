@@ -37,7 +37,16 @@ var translations = {
 		back: "Back to games",
 		settings: "Settings",
 		install: "Install Kids Games",
-		installBtn: "Install"
+		installBtn: "Install",
+		towerDefense: "Tower Defense",
+		startWave: "Start Wave",
+		nextWave: "Next Wave",
+		waveInProgress: "Wave in progress...",
+		upgrade: "Upgrade",
+		sell: "Sell",
+		youWin: "You Win!",
+		gameOver: "Game Over!",
+		tryAgain: "Try Again"
 	},
 	it: {
 		title: "Giochi Bambini",
@@ -73,7 +82,16 @@ var translations = {
 		back: "Torna ai giochi",
 		settings: "Impostazioni",
 		install: "Installa Giochi",
-		installBtn: "Installa"
+		installBtn: "Installa",
+		towerDefense: "Torre Difesa",
+		startWave: "Inizia Onda",
+		nextWave: "Prossima Onda",
+		waveInProgress: "Onda in corso...",
+		upgrade: "Migliora",
+		sell: "Vendi",
+		youWin: "Hai Vinto!",
+		gameOver: "Game Over!",
+		tryAgain: "Riprova"
 	},
 	ro: {
 		title: "Jocuri Copii",
@@ -109,7 +127,16 @@ var translations = {
 		back: "Înapoi la jocuri",
 		settings: "Setări",
 		install: "Instalează Jocuri",
-		installBtn: "Instalează"
+		installBtn: "Instalează",
+		towerDefense: "Apărare Turn",
+		startWave: "Începe Valul",
+		nextWave: "Următorul Val",
+		waveInProgress: "Val în desfășurare...",
+		upgrade: "Îmbunătățește",
+		sell: "Vinde",
+		youWin: "Ai Câștigat!",
+		gameOver: "Game Over!",
+		tryAgain: "Încearcă din nou"
 	}
 };
 var defaultLocale = "en";

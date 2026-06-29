@@ -143,4 +143,4 @@ function fork() {
 async function tick() {}
 async function settled() {}
 //#endregion
-export { tick as n, __commonJSMin as r, index_server_exports as t };
+export { __commonJSMin as i, onDestroy as n, tick as r, index_server_exports as t };

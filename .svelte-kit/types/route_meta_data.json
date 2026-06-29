@@ -26,5 +26,9 @@
 	],
 	"/games/stickers": [
 		"src/routes/+layout.js"
+	],
+	"/games/tower-defense": [
+		"src/routes/games/tower-defense/+page.js",
+		"src/routes/+layout.js"
 	]
 }
