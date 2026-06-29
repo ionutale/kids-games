@@ -1,42 +1,51 @@
-# sv
+# Kids Games
 
-Everything you need to build a Svelte project, powered by [`sv`](https://github.com/sveltejs/cli).
+8 touch games for ages 2-5, inspired by McDonald's Italy in-store displays. Built as a PWA with SvelteKit.
 
-## Creating a project
+## Games
 
-If you're seeing this, you've probably already done this step. Congrats!
+| | |
+|---|---|
+| 🎨 **Paint** | 🌟 **Stickers** |
+| <img src="static/screenshots/paint.png" width="180"> | <img src="static/screenshots/stickers.png" width="180"> |
+| 🧠 **Memory** | 🧩 **Puzzle** |
+| <img src="static/screenshots/memory.png" width="180"> | <img src="static/screenshots/puzzle.png" width="180"> |
+| 🫧 **Pop** | ⚽ **Soccer** |
+| <img src="static/screenshots/pop.png" width="180"> | <img src="static/screenshots/soccer.png" width="180"> |
+| 📦 **Sorting** | 🌈 **Splash** |
+| <img src="static/screenshots/sorting.png" width="180"> | <img src="static/screenshots/splash.png" width="180"> |
 
-```sh
-# create a new project
-npx sv create my-app
-```
-
-To recreate this project with the same configuration:
-
-```sh
-# recreate this project
-npx sv@0.16.1 create --template minimal --no-types --no-install .
-```
-
-## Developing
-
-Once you've created a project and installed dependencies with `npm install` (or `pnpm install` or `yarn`), start a development server:
+## Development
 
 ```sh
-npm run dev
-
-# or start the server and open the app in a new browser tab
-npm run dev -- --open
+pnpm install
+pnpm dev
 ```
 
-## Building
+## Scripts
 
-To create a production version of your app:
+| Command | Description |
+|---------|-------------|
+| `pnpm dev` | Start dev server |
+| `pnpm build` | Build for production |
+| `pnpm preview` | Preview production build |
+| `pnpm check` | Svelte type check |
+| `pnpm lint` | Svelte lint |
+| `pnpm test` | Unit + behavioral tests (vitest) |
+| `pnpm test:e2e` | E2E tests (Playwright, headless) |
+| `pnpm test:e2e:headed` | E2E tests with browser visible |
+| `pnpm test:all` | All tests |
 
-```sh
-npm run build
-```
+## Stack
 
-You can preview the production build with `npm run preview`.
+- **Framework:** Svelte 5 + SvelteKit
+- **PWA:** vite-plugin-pwa (offline support)
+- **Audio:** Web Audio API (synth sounds)
+- **Testing:** Vitest + Playwright
+- **Deploy:** Vercel (static export)
 
-> To deploy your app, you may need to install an [adapter](https://svelte.dev/docs/kit/adapters) for your target environment.
+## Age Scaling
+
+Each game adapts to the child's age (2-5):
+- **Age 2:** Big targets, 2-3 items, simple rules, always succeeds
+- **Age 5:** More items, faster pace, actual challenge
