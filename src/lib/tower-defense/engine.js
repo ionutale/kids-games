@@ -1,8 +1,7 @@
-import { getPathCells, getTowerSpots } from './maps.js';
+import { getPathCells } from './maps.js';
 
 export function createEngine(mapData, onUpdate) {
   const pathCells = getPathCells(mapData.layout);
-  const towerSpots = getTowerSpots(mapData.layout);
 
   const state = {
     coins: mapData.startCoins,
@@ -27,9 +26,13 @@ export function createEngine(mapData, onUpdate) {
     return state.towers.find(t => t.row === row && t.col === col) || null;
   }
 
+  function isPath(row, col) {
+    const v = mapData.layout[row]?.[col];
+    return v === 'path' || v === 'spawn' || v === 'end';
+  }
+
   function placeTower(row, col, towerType) {
-    const spot = towerSpots.find(s => s.row === row && s.col === col);
-    if (!spot) return false;
+    if (isPath(row, col)) return false;
     if (getTowerAt(row, col)) return false;
     if (state.coins < towerType.cost) return false;
     state.coins -= towerType.cost;
@@ -63,10 +66,10 @@ export function createEngine(mapData, onUpdate) {
     const difficulty = (waveIdx + 1) / totalWaves;
     const count = 3 + Math.floor(difficulty * (level * 2));
     const types = [
-      { emoji: '🟢', speed: 1,   health: 20,   reward: 10 },
-      { emoji: '🔵', speed: 2,   health: 10,   reward: 15 },
-      { emoji: '🟠', speed: 0.7, health: 60,   reward: 25 },
-      { emoji: '🔴', speed: 0.5, health: 200,  reward: 50 },
+      { emoji: '🐗', speed: 1,   health: 20,   reward: 10 },
+      { emoji: '🐺', speed: 2,   health: 10,   reward: 15 },
+      { emoji: '🐻', speed: 0.7, health: 60,   reward: 25 },
+      { emoji: '🐉', speed: 0.5, health: 200,  reward: 50 },
     ];
     const available = types.filter((_, i) => i <= level - 1);
     if (available.length === 0) available.push(types[0]);
@@ -181,5 +184,5 @@ export function createEngine(mapData, onUpdate) {
     state.frameId = null;
   }
 
-  return { state, placeTower, upgradeTower, sellTower, startWave, start, stop, towerSpots };
+  return { state, placeTower, upgradeTower, sellTower, startWave, start, stop };
 }

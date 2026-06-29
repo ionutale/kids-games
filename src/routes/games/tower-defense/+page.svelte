@@ -61,10 +61,9 @@
     }
   }
 
-  function isTowerSpot(row, col) {
+  function canPlaceTower(row, col) {
     if (!gameState) return false;
-    const mapData = MAPS[selectedLevel - 1];
-    return mapData.layout[row]?.[col] === 'tower';
+    return !isPath(row, col);
   }
 
   function isPath(row, col) {
@@ -122,9 +121,9 @@
             <button
               class="td-cell"
               class:path={isPath(r, c)}
-              class:tower-spot={isTowerSpot(r, c) && !tower}
+              class:tower-spot={canPlaceTower(r, c) && !tower}
               class:has-tower={!!tower}
-              class:drag-over={dragTower && isTowerSpot(r, c) && !tower && !enemy}
+              class:drag-over={dragTower && canPlaceTower(r, c) && !tower && !enemy}
               class:selected={selectedTower?.row === r && selectedTower?.col === c}
               onclick={() => handleCellClick(r, c)}
             >
@@ -132,7 +131,7 @@
                 <span class="enemy" style:background="rgba(255,0,0,{1 - enemy.health/enemy.maxHealth})">{enemy.emoji}</span>
               {:else if tower}
                 <span class="tower-e" class:upgraded={tower.level > 0}>{tower.type.emoji}</span>
-              {:else if isTowerSpot(r, c)}
+              {:else if canPlaceTower(r, c)}
                 <span class="spot-hint">⬜</span>
               {:else if isPath(r, c)}
                 <span class="path-dot">·</span>

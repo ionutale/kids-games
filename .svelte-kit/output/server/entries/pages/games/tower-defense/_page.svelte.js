@@ -48,7 +48,7 @@ var MAPS = [
 				null,
 				null,
 				"path",
-				"tower",
+				null,
 				null
 			],
 			[
@@ -73,15 +73,6 @@ var MAPS = [
 				"path",
 				null,
 				null,
-				"tower",
-				null,
-				null
-			],
-			[
-				null,
-				"path",
-				null,
-				null,
 				null,
 				null,
 				null
@@ -89,6 +80,15 @@ var MAPS = [
 			[
 				null,
 				"path",
+				null,
+				null,
+				null,
+				null,
+				null
+			],
+			[
+				null,
+				"path",
 				"path",
 				"path",
 				"path",
@@ -105,7 +105,7 @@ var MAPS = [
 				null
 			],
 			[
-				"tower",
+				null,
 				null,
 				null,
 				null,
@@ -147,24 +147,14 @@ var MAPS = [
 				null,
 				null,
 				null,
-				"tower",
-				null
-			],
-			[
-				null,
-				"path",
-				null,
-				null,
-				null,
-				null,
 				null,
 				null
 			],
 			[
 				null,
 				"path",
-				"path",
-				"path",
+				null,
+				null,
 				null,
 				null,
 				null,
@@ -172,8 +162,8 @@ var MAPS = [
 			],
 			[
 				null,
-				null,
-				null,
+				"path",
+				"path",
 				"path",
 				null,
 				null,
@@ -185,6 +175,16 @@ var MAPS = [
 				null,
 				null,
 				"path",
+				null,
+				null,
+				null,
+				null
+			],
+			[
+				null,
+				null,
+				null,
+				"path",
 				"path",
 				"path",
 				null,
@@ -201,7 +201,7 @@ var MAPS = [
 				null
 			],
 			[
-				"tower",
+				null,
 				null,
 				null,
 				null,
@@ -248,26 +248,15 @@ var MAPS = [
 				null,
 				null,
 				null,
-				"tower",
-				null
-			],
-			[
-				null,
-				null,
-				null,
-				"path",
-				"path",
-				"path",
-				null,
 				null,
 				null
 			],
 			[
 				null,
-				"tower",
 				null,
 				null,
-				null,
+				"path",
+				"path",
 				"path",
 				null,
 				null,
@@ -280,6 +269,17 @@ var MAPS = [
 				null,
 				null,
 				"path",
+				null,
+				null,
+				null
+			],
+			[
+				null,
+				null,
+				null,
+				null,
+				null,
+				"path",
 				"path",
 				"path",
 				null
@@ -298,7 +298,7 @@ var MAPS = [
 			[
 				null,
 				null,
-				"tower",
+				null,
 				null,
 				null,
 				null,
@@ -344,18 +344,6 @@ var MAPS = [
 				null,
 				null,
 				null,
-				"tower",
-				null,
-				null,
-				null
-			],
-			[
-				null,
-				"path",
-				null,
-				null,
-				null,
-				null,
 				null,
 				null,
 				null,
@@ -364,8 +352,8 @@ var MAPS = [
 			[
 				null,
 				"path",
-				"path",
-				"path",
+				null,
+				null,
 				null,
 				null,
 				null,
@@ -375,24 +363,12 @@ var MAPS = [
 			],
 			[
 				null,
-				null,
-				null,
-				"path",
-				null,
-				null,
-				null,
-				"tower",
-				null,
-				null
-			],
-			[
-				null,
-				"tower",
-				null,
 				"path",
 				"path",
 				"path",
-				"path",
+				null,
+				null,
+				null,
 				null,
 				null,
 				null
@@ -401,9 +377,21 @@ var MAPS = [
 				null,
 				null,
 				null,
+				"path",
 				null,
 				null,
 				null,
+				null,
+				null,
+				null
+			],
+			[
+				null,
+				null,
+				null,
+				"path",
+				"path",
+				"path",
 				"path",
 				null,
 				null,
@@ -417,6 +405,18 @@ var MAPS = [
 				null,
 				null,
 				"path",
+				null,
+				null,
+				null
+			],
+			[
+				null,
+				null,
+				null,
+				null,
+				null,
+				null,
+				"path",
 				"path",
 				"path",
 				null
@@ -424,7 +424,7 @@ var MAPS = [
 			[
 				null,
 				null,
-				"tower",
+				null,
 				null,
 				null,
 				null,

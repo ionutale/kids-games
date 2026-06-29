@@ -47,7 +47,8 @@
     const config = levelConfig(level);
 
     baskets = cat.baskets.slice(0, config.numBaskets);
-    const shuffled = [...cat.items].sort(() => Math.random() - 0.5).slice(0, config.numItems);
+    const eligible = cat.items.filter(item => item.cat < config.numBaskets);
+    const shuffled = [...eligible].sort(() => Math.random() - 0.5).slice(0, config.numItems);
     items = shuffled.map((item, i) => ({ ...item, id: i }));
     sorted = new Set();
     won = false;

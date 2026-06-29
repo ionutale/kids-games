@@ -112,7 +112,7 @@ function _page($$renderer, $$props) {
 			const cat = categories[currentCat];
 			const config = levelConfig(level);
 			baskets = cat.baskets.slice(0, config.numBaskets);
-			items = [...cat.items].sort(() => Math.random() - .5).slice(0, config.numItems).map((item, i) => ({
+			items = [...cat.items.filter((item) => item.cat < config.numBaskets)].sort(() => Math.random() - .5).slice(0, config.numItems).map((item, i) => ({
 				...item,
 				id: i
 			}));
