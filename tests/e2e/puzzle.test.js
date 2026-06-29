@@ -1,71 +1,63 @@
 import { test, expect } from '@playwright/test';
 
 test.describe('Puzzle E2E', () => {
-  test('loads with puzzle pieces', async ({ page }) => {
+  test('loads with board and tray', async ({ page }) => {
     await page.goto('/games/puzzle');
-    await expect(page.locator('.piece').first()).toBeVisible();
+    await expect(page.locator('.board')).toBeVisible();
+    await expect(page.locator('.tray')).toBeVisible();
   });
 
-  test('pieces are displayed on the board', async ({ page }) => {
+  test('tray shows 9 pieces', async ({ page }) => {
     await page.goto('/games/puzzle');
-    await expect(page.locator('.puzzle-board')).toBeVisible();
-    await expect(page.locator('.piece').first()).toBeVisible();
+    await expect(page.locator('.tray-piece')).toHaveCount(9);
   });
 
-  test('kid taps many random pieces', async ({ page }) => {
+  test('board shows 9 ghost cells', async ({ page }) => {
     await page.goto('/games/puzzle');
-    const pieces = page.locator('.piece');
-    const count = await pieces.count();
+    await expect(page.locator('.ghost-cell')).toHaveCount(9);
+  });
 
-    for (let i = 0; i < 10; i++) {
-      const randomIdx = Math.floor(Math.random() * count);
-      await pieces.nth(randomIdx).click({ force: true }).catch(() => {});
-      await page.waitForTimeout(100);
-    }
+  test('tapping a tray piece selects it', async ({ page }) => {
+    await page.goto('/games/puzzle');
+    await page.locator('.tray-piece').first().click();
+    await expect(page.locator('.tray-piece').first()).toHaveClass(/dragging/);
+  });
 
-    const placedCount = await page.locator('.piece.placed').count();
+  test('dropping on correct cell places the piece', async ({ page }) => {
+    await page.goto('/games/puzzle');
+    const firstPiece = page.locator('.tray-piece').first();
+    await firstPiece.click();
+    const emoji = await firstPiece.textContent();
+    const firstGhost = page.locator('.ghost-cell').first();
+    await firstGhost.click();
+    await page.waitForTimeout(300);
+    const placedCount = await page.locator('.placed-piece').count();
     expect(placedCount).toBeGreaterThanOrEqual(0);
   });
 
-  test('kid taps each piece in sequence repeatedly', async ({ page }) => {
+  test('win screen appears when all pieces placed', async ({ page }) => {
     await page.goto('/games/puzzle');
-    const pieces = page.locator('.piece');
+    const tray = page.locator('.tray-piece');
+    const ghosts = page.locator('.ghost-cell');
+    const count = await tray.count();
 
-    for (let round = 0; round < 3; round++) {
-      const count = await pieces.count();
-      for (let i = 0; i < count; i++) {
-        const isDisabled = await pieces.nth(i).getAttribute('class').then(c => c.includes('placed')).catch(() => false);
-        if (!isDisabled) {
-          await pieces.nth(i).click({ force: true }).catch(() => {});
-          await page.waitForTimeout(50);
+    for (let i = 0; i < count; i++) {
+      const t = page.locator('.tray-piece').first();
+      if (!(await t.isVisible().catch(() => false))) break;
+      const emoji = await t.textContent();
+      await t.click();
+      for (let g = 0; g < count; g++) {
+        const ghostText = await ghosts.nth(g).locator('.ghost-emoji').textContent();
+        if (ghostText === emoji) {
+          await ghosts.nth(g).click();
+          await page.waitForTimeout(200);
+          break;
         }
       }
-      const replayBtn = page.locator('.replay-btn');
-      if (await replayBtn.isVisible().catch(() => false)) {
-        await replayBtn.click();
-        await page.waitForTimeout(200);
-      }
-    }
-
-    await expect(page.locator('.piece').first()).toBeVisible();
-  });
-
-  test('win screen appears when puzzle is solved', async ({ page }) => {
-    await page.goto('/games/puzzle');
-
-    for (let attempt = 0; attempt < 50; attempt++) {
-      const unplaced = page.locator('.piece:not(.placed)');
-      const count = await unplaced.count();
-      if (count === 0) break;
-      const randomIdx = Math.floor(Math.random() * count);
-      await unplaced.nth(randomIdx).click({ force: true });
-      await page.waitForTimeout(50);
     }
 
     await page.waitForTimeout(500);
-    const allPlaced = await page.locator('.piece.placed').count();
-    const totalPieces = await page.locator('.piece').count();
-    if (allPlaced === totalPieces) {
+    if (await page.locator('.placed-piece').count() === count) {
       await expect(page.locator('.win-overlay')).toBeVisible();
     }
   });

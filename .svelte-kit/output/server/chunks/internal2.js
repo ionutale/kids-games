@@ -571,7 +571,7 @@ var options = {
 		app: ({ head, body, assets, nonce, env }) => "<!doctype html>\n<html lang=\"en\">\n  <head>\n    <meta charset=\"utf-8\" />\n    <link rel=\"icon\" href=\"" + assets + "/icons/icon-192.svg\" />\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover\" />\n    <meta name=\"theme-color\" content=\"#4FC3F7\" />\n    <meta name=\"apple-mobile-web-app-capable\" content=\"yes\" />\n    <meta name=\"apple-mobile-web-app-status-bar-style\" content=\"default\" />\n    <link rel=\"apple-touch-icon\" href=\"" + assets + "/icons/icon-192.svg\" />\n    " + head + "\n  </head>\n  <body>\n    <div style=\"display: contents\">" + body + "</div>\n  </body>\n</html>\n",
 		error: error_template_default
 	},
-	version_hash: "4ki03f"
+	version_hash: "1ogtanp"
 };
 async function get_hooks() {
 	let handle;

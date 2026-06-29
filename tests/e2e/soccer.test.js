@@ -7,60 +7,103 @@ test.describe('Soccer E2E', () => {
     await expect(page.locator('.ball')).toBeVisible();
   });
 
-  test('tapping field at goal area scores', async ({ page }) => {
+  test('swipe toward goal scores', async ({ page }) => {
     await page.goto('/games/soccer');
     const field = page.locator('.field');
-    await expect(field).toBeVisible();
     const box = await field.boundingBox();
-    await field.click({ position: { x: box.width * 0.50, y: box.height * 0.12 } });
+    const sx = box.x + box.width * 0.5, sy = box.y + box.height * 0.4;
+    const ex = box.x + box.width * 0.5, ey = box.y + box.height * 0.1;
+
+    await page.mouse.move(sx, sy);
+    await page.mouse.down();
+    await page.waitForTimeout(50);
+    await page.mouse.move(ex, ey, { steps: 5 });
+    await page.waitForTimeout(50);
+    await page.mouse.up();
     await page.waitForTimeout(700);
     await expect(page.locator('.score-display')).toBeVisible();
   });
 
-  test('scores increment on goal shots', async ({ page }) => {
+  test('scores increment on goal swipe', async ({ page }) => {
     await page.goto('/games/soccer');
     const field = page.locator('.field');
     const box = await field.boundingBox();
-    const gx = box.width * 0.50, gy = box.height * 0.12;
+    const sx = box.x + box.width * 0.5, sy = box.y + box.height * 0.4;
+    const ex = box.x + box.width * 0.5, ey = box.y + box.height * 0.1;
+
     for (let i = 0; i < 3; i++) {
-      await field.click({ position: { x: gx, y: gy } });
-      await page.waitForTimeout(1200);
+      await page.mouse.move(sx, sy);
+      await page.mouse.down();
+      await page.waitForTimeout(50);
+      await page.mouse.move(ex, ey, { steps: 5 });
+      await page.waitForTimeout(50);
+      await page.mouse.up();
+      await page.waitForTimeout(1500);
     }
+
     const scoreText = await page.locator('.score-display').textContent();
     expect(parseInt(scoreText.split('/')[0].replace('Score: ', ''))).toBeGreaterThanOrEqual(1);
   });
 
-  test('tapping outside goal area does not score', async ({ page }) => {
+  test('swipe away from goal does not score', async ({ page }) => {
     await page.goto('/games/soccer');
     const field = page.locator('.field');
     const box = await field.boundingBox();
-    await field.click({ position: { x: box.width * 0.3, y: box.height * 0.5 } });
+    const sx = box.x + box.width * 0.5, sy = box.y + box.height * 0.8;
+    const ex = box.x + box.width * 0.5, ey = box.y + box.height * 0.9;
+
+    await page.mouse.move(sx, sy);
+    await page.mouse.down();
+    await page.waitForTimeout(50);
+    await page.mouse.move(ex, ey, { steps: 5 });
+    await page.waitForTimeout(50);
+    await page.mouse.up();
     await page.waitForTimeout(1000);
+
     const s = await page.locator('.score-display').textContent();
     expect(parseInt(s.split('/')[0].replace('Score: ', ''))).toBe(0);
   });
 
-  test('kid taps everywhere on the field', async ({ page }) => {
+  test('kid swipes all over the field', async ({ page }) => {
     await page.goto('/games/soccer');
-    const field = page.locator('.field');
-    const box = await field.boundingBox();
-    for (let i = 0; i < 8; i++) {
-      await field.click({ position: { x: box.width * (0.1 + Math.random() * 0.8), y: box.height * (0.1 + Math.random() * 0.8) } });
-      await page.waitForTimeout(600);
+    const box = await page.locator('.field').boundingBox();
+
+    for (let i = 0; i < 5; i++) {
+      const sx = box.x + box.width * (0.2 + Math.random() * 0.6);
+      const sy = box.y + box.height * (0.3 + Math.random() * 0.5);
+      const ex = box.x + box.width * (0.2 + Math.random() * 0.6);
+      const ey = box.y + box.height * (0.1 + Math.random() * 0.8);
+      await page.mouse.move(sx, sy);
+      await page.mouse.down();
+      await page.waitForTimeout(30);
+      await page.mouse.move(ex, ey, { steps: 5 });
+      await page.waitForTimeout(30);
+      await page.mouse.up();
+      await page.waitForTimeout(500);
     }
+
     await expect(page.locator('.score-display')).toBeVisible();
   });
 
-  test('ball moves on tap', async ({ page }) => {
+  test('ball moves on swipe', async ({ page }) => {
     await page.goto('/games/soccer');
     const field = page.locator('.field');
     const ball = page.locator('.ball');
     const box = await field.boundingBox();
-    const initialLeft = await ball.evaluate(el => el.style.left);
-    await field.click({ position: { x: box.width * 0.30, y: box.height * 0.40 } });
+    const initialTop = await ball.evaluate(el => el.style.top);
+    const sx = box.x + box.width * 0.5, sy = box.y + box.height * 0.4;
+    const ex = box.x + box.width * 0.5, ey = box.y + box.height * 0.1;
+
+    await page.mouse.move(sx, sy);
+    await page.mouse.down();
+    await page.waitForTimeout(50);
+    await page.mouse.move(ex, ey, { steps: 5 });
+    await page.waitForTimeout(50);
+    await page.mouse.up();
     await page.waitForTimeout(300);
-    const newLeft = await ball.evaluate(el => el.style.left);
-    expect(newLeft).not.toBe(initialLeft);
+
+    const newTop = await ball.evaluate(el => el.style.top);
+    expect(newTop).not.toBe(initialTop);
   });
 
   test('level buttons exist', async ({ page }) => {
@@ -70,10 +113,6 @@ test.describe('Soccer E2E', () => {
 
   test('level change resets score', async ({ page }) => {
     await page.goto('/games/soccer');
-    const field = page.locator('.field');
-    const box = await field.boundingBox();
-    await field.click({ position: { x: box.width * 0.50, y: box.height * 0.12 } });
-    await page.waitForTimeout(1000);
     await page.locator('.level-btn').nth(5).click();
     const s = await page.locator('.score-display').textContent();
     expect(s).toContain('0');

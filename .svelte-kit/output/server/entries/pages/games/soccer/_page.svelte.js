@@ -24,8 +24,7 @@ function _page($$renderer, $$props) {
 		$$renderer.push("<!--[0-->");
 		$$renderer.push(`<div class="score-display svelte-etwtpk">${escape_html(store_get($$store_subs ??= {}, "$_", _)("score"))}: ${escape_html(score)}/${escape_html(levelTargets(level).targetScore)}</div>`);
 		$$renderer.push(`<!--]--> `);
-		$$renderer.push("<!--[0-->");
-		$$renderer.push(`<div class="aim-hint svelte-etwtpk">${escape_html(store_get($$store_subs ??= {}, "$_", _)("tapToKick"))}</div>`);
+		$$renderer.push("<!--[-1-->");
 		$$renderer.push(`<!--]--></div> `);
 		$$renderer.push("<!--[-1-->");
 		$$renderer.push(`<!--]--> `);

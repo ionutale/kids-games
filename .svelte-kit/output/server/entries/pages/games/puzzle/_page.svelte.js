@@ -1,4 +1,4 @@
-import { S as escape_html, c as unsubscribe_stores, i as ensure_array_like, n as attr_style, o as store_get, t as attr_class } from "../../../../chunks/server.js";
+import { S as escape_html, c as unsubscribe_stores, i as ensure_array_like, o as store_get, t as attr_class } from "../../../../chunks/server.js";
 import "../../../../chunks/settings.js";
 import { t as _ } from "../../../../chunks/locale.js";
 import { t as Confetti } from "../../../../chunks/Confetti.js";
@@ -27,6 +27,7 @@ function _page($$renderer, $$props) {
 		let pieces = [];
 		let won = false;
 		let dragging = null;
+		let placed = /* @__PURE__ */ new Set();
 		function initGame() {
 			const result = [];
 			let id = 0;
@@ -35,31 +36,21 @@ function _page($$renderer, $$props) {
 					id,
 					correctRow: r,
 					correctCol: c,
-					row: r,
-					col: c,
 					emoji: emojiGrid[r][c],
 					placed: false
 				});
 				id++;
 			}
-			const positions = [];
-			for (let i = 0; i < result.length; i++) positions.push({
-				row: result[i].row,
-				col: result[i].col
-			});
-			for (let i = positions.length - 1; i > 0; i--) {
+			for (let i = result.length - 1; i > 0; i--) {
 				const j = Math.floor(Math.random() * (i + 1));
-				[positions[i], positions[j]] = [positions[j], positions[i]];
-			}
-			for (let i = 0; i < result.length; i++) {
-				result[i].row = positions[i].row;
-				result[i].col = positions[i].col;
+				[result[i], result[j]] = [result[j], result[i]];
 			}
 			pieces = result;
+			placed = /* @__PURE__ */ new Set();
 			won = false;
 		}
 		initGame();
-		$$renderer.push(`<div class="puzzle-game svelte-culilx"><div class="puzzle-board svelte-culilx"><div class="bg-grid svelte-culilx"><!--[-->`);
+		$$renderer.push(`<div class="puzzle-game svelte-culilx"><div class="board svelte-culilx"><!--[-->`);
 		const each_array = ensure_array_like(Array(PUZZLE_SIZE));
 		for (let r = 0, $$length = each_array.length; r < $$length; r++) {
 			each_array[r];
@@ -67,28 +58,29 @@ function _page($$renderer, $$props) {
 			const each_array_1 = ensure_array_like(Array(PUZZLE_SIZE));
 			for (let c = 0, $$length = each_array_1.length; c < $$length; c++) {
 				each_array_1[c];
-				$$renderer.push(`<div class="bg-cell svelte-culilx"${attr_style("", {
-					"grid-row": r + 1,
-					"grid-column": c + 1
-				})}><span class="bg-emoji svelte-culilx">${escape_html(emojiGrid[r][c])}</span></div>`);
+				$$renderer.push(`<button${attr_class("ghost-cell svelte-culilx", void 0, { "drag-over": false })}><span class="ghost-emoji svelte-culilx">${escape_html(emojiGrid[r][c])}</span> <!--[-->`);
+				const each_array_2 = ensure_array_like(pieces.filter((p) => p.correctRow === r && p.correctCol === c && placed.has(p.id)));
+				for (let $$index = 0, $$length = each_array_2.length; $$index < $$length; $$index++) {
+					let placedPiece = each_array_2[$$index];
+					$$renderer.push(`<span class="placed-piece svelte-culilx">${escape_html(placedPiece.emoji)}</span>`);
+				}
+				$$renderer.push(`<!--]--></button>`);
 			}
 			$$renderer.push(`<!--]-->`);
 		}
-		$$renderer.push(`<!--]--></div> <!--[-->`);
-		const each_array_2 = ensure_array_like(pieces);
-		for (let $$index_2 = 0, $$length = each_array_2.length; $$index_2 < $$length; $$index_2++) {
-			let piece = each_array_2[$$index_2];
-			if (!piece.placed) {
+		$$renderer.push(`<!--]--></div> <div class="tray svelte-culilx"><!--[-->`);
+		const each_array_3 = ensure_array_like(pieces);
+		for (let $$index_3 = 0, $$length = each_array_3.length; $$index_3 < $$length; $$index_3++) {
+			let piece = each_array_3[$$index_3];
+			if (!placed.has(piece.id)) {
 				$$renderer.push("<!--[0-->");
-				$$renderer.push(`<div${attr_class("piece svelte-culilx", void 0, { "dragging": dragging === piece.id })}${attr_style("", {
-					"grid-row": piece.row + 1,
-					"grid-column": piece.col + 1,
-					"z-index": dragging === piece.id ? 10 : 1
-				})}><span class="piece-emoji svelte-culilx">${escape_html(piece.emoji)}</span></div>`);
+				$$renderer.push(`<button${attr_class("tray-piece svelte-culilx", void 0, { "dragging": dragging === piece.id })}>${escape_html(piece.emoji)}</button>`);
 			} else $$renderer.push("<!--[-1-->");
 			$$renderer.push(`<!--]-->`);
 		}
 		$$renderer.push(`<!--]--></div> `);
+		$$renderer.push("<!--[-1-->");
+		$$renderer.push(`<!--]--> `);
 		if (won) {
 			$$renderer.push("<!--[0-->");
 			Confetti($$renderer, {});

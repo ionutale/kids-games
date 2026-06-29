@@ -146,27 +146,21 @@ function detectLocale() {
 	if (lang === "it" || lang === "ro") return lang;
 	return defaultLocale;
 }
-function createLocale() {
-	const { subscribe, set, update } = writable((typeof localStorage !== "undefined" ? localStorage.getItem(STORAGE_KEY) : null) || detectLocale());
-	return {
-		subscribe,
-		setLang: (lang) => {
-			if (translations[lang]) {
-				set(lang);
-				if (typeof localStorage !== "undefined") localStorage.setItem(STORAGE_KEY, lang);
-			}
-		},
-		t: derived({ subscribe }, ($lang) => {
-			const dict = translations[$lang] || translations.en;
-			return (key, params = {}) => {
-				let text = dict[key] || translations.en[key] || key;
-				for (const [k, v] of Object.entries(params)) text = text.replace(`{${k}}`, v);
-				return text;
-			};
-		})
-	};
+var locale = writable((typeof localStorage !== "undefined" ? localStorage.getItem(STORAGE_KEY) : null) || detectLocale());
+function setLang(lang) {
+	if (translations[lang]) {
+		locale.set(lang);
+		if (typeof localStorage !== "undefined") localStorage.setItem(STORAGE_KEY, lang);
+	}
 }
-var locale = createLocale();
-var _ = locale.t;
+locale.setLang = setLang;
+var _ = derived(locale, ($locale) => {
+	const dict = translations[$locale] || translations.en;
+	return (key, params = {}) => {
+		let text = dict[key] || translations.en[key] || key;
+		for (const [k, v] of Object.entries(params)) text = text.replace(`{${k}}`, v);
+		return text;
+	};
+});
 //#endregion
 export { locale as n, _ as t };
