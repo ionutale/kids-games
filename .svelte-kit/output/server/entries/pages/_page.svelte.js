@@ -1,6 +1,6 @@
 import "../../chunks/index-server.js";
 import { S as escape_html, i as ensure_array_like } from "../../chunks/server.js";
-import "../../chunks/settings.js";
+import "../../chunks/audioManager.js";
 import "../../chunks/SoundToggle.js";
 //#region src/routes/+page.svelte
 function _page($$renderer, $$props) {

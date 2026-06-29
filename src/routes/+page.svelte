@@ -16,16 +16,9 @@
   ];
 
   let showSettings = $state(false);
-  let settingsTimer = null;
 
-  function onSettingsPress() {
-    settingsTimer = setTimeout(() => {
-      showSettings = true;
-    }, 3000);
-  }
-
-  function cancelSettings() {
-    if (settingsTimer) clearTimeout(settingsTimer);
+  function toggleSettings() {
+    showSettings = !showSettings;
   }
 
   function goToGame(id) {
@@ -60,11 +53,7 @@
   {:else}
     <button
       class="settings-trigger"
-      ontouchstart={onSettingsPress}
-      ontouchend={cancelSettings}
-      onmousedown={onSettingsPress}
-      onmouseup={cancelSettings}
-      onmouseleave={cancelSettings}
+      onclick={toggleSettings}
       aria-label="Settings"
     >
       ⚙️

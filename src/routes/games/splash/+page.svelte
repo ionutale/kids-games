@@ -34,7 +34,7 @@
     setTimeout(() => {
       const ids = new Set(newSplashes.map(s => s.id));
       splashes = splashes.filter(s => !ids.has(s.id));
-    }, 1500);
+    }, 3500);
   }
 
   function handleMove(e) {
@@ -79,7 +79,7 @@
   .splash {
     position: absolute;
     transform: translate(-50%, -50%);
-    animation: splashOut 1.5s ease-out forwards;
+    animation: splashOut 3.5s ease-out forwards;
     animation-delay: var(--delay);
     pointer-events: none;
     filter: drop-shadow(0 0 6px var(--color));

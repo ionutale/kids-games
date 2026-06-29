@@ -31,16 +31,22 @@
   let won = $state(false);
   let wobbleId = $state(null);
   let selected = $state(null);
+  let level = $state(3);
+
+  function levelConfig(l) {
+    const numItems = Math.min(2 + l, 8);
+    const numBaskets = l <= 3 ? 2 : 4;
+    return { numItems, numBaskets };
+  }
 
   function initGame() {
     const keys = Object.keys(categories);
     currentCat = keys[Math.floor(Math.random() * keys.length)];
     const cat = categories[currentCat];
-    const numItems = $settings.ageLevel <= 2 ? 2 : $settings.ageLevel <= 3 ? 4 : $settings.ageLevel <= 4 ? 6 : 8;
-    const numBaskets = $settings.ageLevel <= 2 ? 2 : 4;
+    const config = levelConfig(level);
 
-    baskets = cat.baskets.slice(0, numBaskets);
-    const shuffled = [...cat.items].sort(() => Math.random() - 0.5).slice(0, numItems);
+    baskets = cat.baskets.slice(0, config.numBaskets);
+    const shuffled = [...cat.items].sort(() => Math.random() - 0.5).slice(0, config.numItems);
     items = shuffled.map((item, i) => ({ ...item, id: i }));
     sorted = new Set();
     won = false;
@@ -109,6 +115,14 @@
         <span class="basket-count">
           {items.filter(item => item.cat === i && sorted.has(item.id)).length}
         </span>
+      </button>
+    {/each}
+  </div>
+
+  <div class="level-bar">
+    {#each Array(10) as _, i}
+      <button class="level-btn" class:active={level === i + 1} onclick={() => { level = i + 1; initGame(); }}>
+        {i + 1}
       </button>
     {/each}
   </div>
@@ -215,5 +229,24 @@
     font-size: 18px;
     font-weight: 600;
     color: var(--color-primary);
+  }
+  .level-bar {
+    display: flex;
+    justify-content: center;
+    gap: 3px;
+    padding-bottom: calc(8px + var(--safe-bottom));
+  }
+  .level-btn {
+    width: 30px;
+    height: 28px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 600;
+    color: #999;
+    background: rgba(255,255,255,0.6);
+  }
+  .level-btn.active {
+    color: white;
+    background: var(--color-primary);
   }
 </style>

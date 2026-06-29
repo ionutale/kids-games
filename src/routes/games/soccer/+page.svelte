@@ -9,14 +9,24 @@
   let score = $state(0);
   let showConfetti = $state(false);
   let gameOver = $state(false);
+  let level = $state(3);
 
-  const goalX = 88;
-  const goalY1 = 35;
-  const goalY2 = 65;
+  const goalTop = 5;
+  const goalBottom = 23;
+  const goalLeft = 60;
+
+  function levelTargets(l) {
+    return {
+      goalWidth: Math.min(40 + l * 2, 55),
+      targetScore: Math.min(2 + l, 8),
+      missChance: Math.max(0, 0.5 - l * 0.05),
+    };
+  }
 
   function kick(event) {
     if (ballMoving || gameOver) return;
-    const rect = event.currentTarget.getBoundingClientRect();
+    const field = event.currentTarget.querySelector('.field') || event.currentTarget;
+    const rect = field.getBoundingClientRect();
     const clientX = event.touches ? event.touches[0].clientX : event.clientX;
     const clientY = event.touches ? event.touches[0].clientY : event.clientY;
     const tapX = ((clientX - rect.left) / rect.width) * 100;
@@ -25,9 +35,13 @@
     ballMoving = true;
     if ($settings.soundEnabled) playTap();
 
-    const willScore = $settings.ageLevel <= 2 || (tapY > goalY1 && tapY < goalY2 && tapX > 70);
-    const targetX = willScore ? goalX : 70 + Math.random() * 10;
-    const targetY = willScore ? 45 + Math.random() * 10 : Math.random() * 60 + 20;
+    const targets = levelTargets(level);
+    const inGoalX = tapX > goalLeft;
+    const inGoalY = tapY > goalTop && tapY < goalBottom;
+    const willScore = inGoalX && inGoalY;
+
+    const targetX = willScore ? 88 : 60 + Math.random() * 20;
+    const targetY = willScore ? 14 : 30 + Math.random() * 50;
 
     ballX = targetX;
     ballY = targetY;
@@ -39,7 +53,7 @@
         showConfetti = true;
         if ($settings.soundEnabled) playGoalSound();
         setTimeout(() => { showConfetti = false; }, 2000);
-        if (score >= 5) {
+        if (score >= targets.targetScore) {
           gameOver = true;
           return;
         }
@@ -55,6 +69,11 @@
     gameOver = false;
     ballX = 20;
     ballY = 50;
+  }
+
+  function setLevel(l) {
+    level = l;
+    resetGame();
   }
 </script>
 
@@ -75,7 +94,7 @@
       ⚽
     </div>
     {#if !gameOver}
-      <div class="score-display">Score: {score}</div>
+      <div class="score-display">Score: {score}/{levelTargets(level).targetScore}</div>
     {/if}
   </div>
 
@@ -90,6 +109,14 @@
       <button class="replay-btn" onclick={resetGame}>Play Again</button>
     </div>
   {/if}
+
+  <div class="level-bar">
+    {#each Array(10) as _, i}
+      <button class="level-btn" class:active={level === i + 1} onclick={() => setLevel(i + 1)}>
+        {i + 1}
+      </button>
+    {/each}
+  </div>
 </div>
 
 <style>
@@ -171,5 +198,28 @@
     font-weight: 600;
     color: var(--color-primary);
     margin-top: 8px;
+  }
+  .level-bar {
+    position: absolute;
+    bottom: calc(16px + var(--safe-bottom));
+    left: 0;
+    right: 0;
+    display: flex;
+    justify-content: center;
+    gap: 3px;
+    z-index: 10;
+  }
+  .level-btn {
+    width: 30px;
+    height: 28px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 600;
+    color: #999;
+    background: rgba(255,255,255,0.6);
+  }
+  .level-btn.active {
+    color: white;
+    background: var(--color-primary);
   }
 </style>

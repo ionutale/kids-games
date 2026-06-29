@@ -1,5 +1,5 @@
-import { S as escape_html, c as unsubscribe_stores, i as ensure_array_like, o as store_get, t as attr_class } from "../../../../chunks/server.js";
-import { t as settings } from "../../../../chunks/settings.js";
+import { S as escape_html, c as unsubscribe_stores, i as ensure_array_like, t as attr_class } from "../../../../chunks/server.js";
+import "../../../../chunks/audioManager.js";
 import { t as Confetti } from "../../../../chunks/Confetti.js";
 //#region src/routes/games/sorting/+page.svelte
 function _page($$renderer, $$props) {
@@ -98,14 +98,20 @@ function _page($$renderer, $$props) {
 		let won = false;
 		let wobbleId = null;
 		let selected = null;
+		let level = 3;
+		function levelConfig(l) {
+			return {
+				numItems: Math.min(2 + l, 8),
+				numBaskets: l <= 3 ? 2 : 4
+			};
+		}
 		function initGame() {
 			const keys = Object.keys(categories);
 			currentCat = keys[Math.floor(Math.random() * keys.length)];
 			const cat = categories[currentCat];
-			const numItems = store_get($$store_subs ??= {}, "$settings", settings).ageLevel <= 2 ? 2 : store_get($$store_subs ??= {}, "$settings", settings).ageLevel <= 3 ? 4 : store_get($$store_subs ??= {}, "$settings", settings).ageLevel <= 4 ? 6 : 8;
-			const numBaskets = store_get($$store_subs ??= {}, "$settings", settings).ageLevel <= 2 ? 2 : 4;
-			baskets = cat.baskets.slice(0, numBaskets);
-			items = [...cat.items].sort(() => Math.random() - .5).slice(0, numItems).map((item, i) => ({
+			const config = levelConfig(level);
+			baskets = cat.baskets.slice(0, config.numBaskets);
+			items = [...cat.items].sort(() => Math.random() - .5).slice(0, config.numItems).map((item, i) => ({
 				...item,
 				id: i
 			}));
@@ -148,6 +154,12 @@ function _page($$renderer, $$props) {
 		for (let i = 0, $$length = each_array_1.length; i < $$length; i++) {
 			let basket = each_array_1[i];
 			$$renderer.push(`<button class="basket svelte-4wh2ej"><span class="basket-label svelte-4wh2ej">${escape_html(basket)}</span> <span class="basket-count svelte-4wh2ej">${escape_html(items.filter((item) => item.cat === i && sorted.has(item.id)).length)}</span></button>`);
+		}
+		$$renderer.push(`<!--]--></div> <div class="level-bar svelte-4wh2ej"><!--[-->`);
+		const each_array_2 = ensure_array_like(Array(10));
+		for (let i = 0, $$length = each_array_2.length; i < $$length; i++) {
+			each_array_2[i];
+			$$renderer.push(`<button${attr_class("level-btn svelte-4wh2ej", void 0, { "active": level === i + 1 })}>${escape_html(i + 1)}</button>`);
 		}
 		$$renderer.push(`<!--]--></div> `);
 		if (won) {

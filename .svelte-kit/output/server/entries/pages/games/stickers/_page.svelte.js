@@ -1,5 +1,5 @@
 import { S as escape_html, c as unsubscribe_stores, i as ensure_array_like, n as attr_style, o as store_get, s as stringify, t as attr_class } from "../../../../chunks/server.js";
-import { t as settings } from "../../../../chunks/settings.js";
+import { n as settings } from "../../../../chunks/audioManager.js";
 //#region src/routes/games/stickers/+page.svelte
 function _page($$renderer, $$props) {
 	$$renderer.component(($$renderer) => {
