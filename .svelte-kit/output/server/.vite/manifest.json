@@ -34,7 +34,7 @@
     "imports": [
       "_server.js",
       "_client.js",
-      "_settings.js",
+      "_audioManager.js",
       "_locale.js"
     ],
     "css": [
@@ -43,7 +43,11 @@
   },
   "_audioManager.js": {
     "file": "chunks/audioManager.js",
-    "name": "audioManager"
+    "name": "audioManager",
+    "imports": [
+      "_server.js",
+      "_index-server2.js"
+    ]
   },
   "_client.js": {
     "file": "chunks/client.js",
@@ -107,14 +111,6 @@
     "name": "server",
     "imports": [
       "_uneval.js"
-    ]
-  },
-  "_settings.js": {
-    "file": "chunks/settings.js",
-    "name": "settings",
-    "imports": [
-      "_server.js",
-      "_index-server2.js"
     ]
   },
   "_shared.js": {
@@ -191,7 +187,7 @@
       "_index-server.js",
       "_server.js",
       "_client.js",
-      "_settings.js",
+      "_audioManager.js",
       "_locale.js",
       "_SoundToggle.js"
     ],
@@ -207,7 +203,7 @@
     "imports": [
       "_index-server.js",
       "_server.js",
-      "_settings.js",
+      "_audioManager.js",
       "_locale.js",
       "_SoundToggle.js"
     ],
@@ -222,7 +218,7 @@
     "isEntry": true,
     "imports": [
       "_server.js",
-      "_settings.js",
+      "_audioManager.js",
       "_locale.js",
       "_Confetti.js"
     ],
@@ -238,7 +234,7 @@
     "imports": [
       "_index-server.js",
       "_server.js",
-      "_settings.js"
+      "_audioManager.js"
     ],
     "css": [
       "_app/immutable/assets/_page.Dg3FxeXa.css"
@@ -252,9 +248,8 @@
     "imports": [
       "_index-server.js",
       "_server.js",
-      "_settings.js",
-      "_locale.js",
-      "_audioManager.js"
+      "_audioManager.js",
+      "_locale.js"
     ],
     "css": [
       "_app/immutable/assets/_page.GN4MhGV7.css"
@@ -267,7 +262,7 @@
     "isEntry": true,
     "imports": [
       "_server.js",
-      "_settings.js",
+      "_audioManager.js",
       "_locale.js",
       "_Confetti.js"
     ],
@@ -282,7 +277,7 @@
     "isEntry": true,
     "imports": [
       "_server.js",
-      "_settings.js",
+      "_audioManager.js",
       "_locale.js",
       "_Confetti.js"
     ],
@@ -297,7 +292,7 @@
     "isEntry": true,
     "imports": [
       "_server.js",
-      "_settings.js",
+      "_audioManager.js",
       "_locale.js",
       "_Confetti.js"
     ],
@@ -312,7 +307,7 @@
     "isEntry": true,
     "imports": [
       "_server.js",
-      "_settings.js"
+      "_audioManager.js"
     ],
     "css": [
       "_app/immutable/assets/_page.CzYo3pCp.css"
@@ -325,7 +320,7 @@
     "isEntry": true,
     "imports": [
       "_server.js",
-      "_settings.js"
+      "_audioManager.js"
     ],
     "css": [
       "_app/immutable/assets/_page.CbaqspcP.css"
@@ -345,11 +340,10 @@
     "imports": [
       "_index-server.js",
       "_server.js",
-      "_settings.js",
       "_locale.js"
     ],
     "css": [
-      "_app/immutable/assets/_page.CAQx6ObV.css"
+      "_app/immutable/assets/_page.IVZs-QyK.css"
     ]
   },
   "virtual:__sveltekit/env": {

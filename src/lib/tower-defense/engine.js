@@ -125,7 +125,7 @@ export function createEngine(mapData, onUpdate) {
         const damage = Math.round(tower.type.damage * mult);
 
         let target = null;
-        let targetDist = Infinity;
+        let targetDist = -1;
         for (const enemy of state.enemies) {
           if (!enemy.alive) continue;
           if (enemy.pathPos >= pathCells.length) continue;

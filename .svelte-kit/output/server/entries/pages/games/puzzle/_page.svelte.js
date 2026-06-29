@@ -1,5 +1,5 @@
 import { S as escape_html, c as unsubscribe_stores, i as ensure_array_like, n as attr_style, o as store_get, r as derived, s as stringify, t as attr_class } from "../../../../chunks/server.js";
-import "../../../../chunks/settings.js";
+import "../../../../chunks/audioManager.js";
 import { t as _ } from "../../../../chunks/locale.js";
 import { t as Confetti } from "../../../../chunks/Confetti.js";
 //#region src/routes/games/puzzle/+page.svelte

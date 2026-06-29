@@ -1,6 +1,5 @@
 import { n as onDestroy } from "../../../../chunks/index-server.js";
 import { S as escape_html, c as unsubscribe_stores, i as ensure_array_like, o as store_get, r as derived, t as attr_class } from "../../../../chunks/server.js";
-import "../../../../chunks/settings.js";
 import { t as _ } from "../../../../chunks/locale.js";
 //#region src/lib/tower-defense/maps.js
 var MAPS = [

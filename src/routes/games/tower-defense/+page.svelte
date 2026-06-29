@@ -1,6 +1,5 @@
 <script>
   import { onDestroy } from 'svelte';
-  import { settings } from '$lib/stores/settings';
   import { _ } from '$lib/stores/locale';
   import { TOWERS } from '$lib/tower-defense/towers.js';
   import { MAPS } from '$lib/tower-defense/maps.js';
@@ -10,9 +9,10 @@
   let selectedLevel = $state(1);
   let engine = $state(null);
   let gameState = $state(null);
-  let dragTower = $state(null);
+  let dragTowerId = $state(null);
   let selectedTower = $state(null);
   let unlockedLevel = $state(1);
+  let dragHover = $state(null);
 
   function startLevel(id) {
     selectedLevel = id;
@@ -28,17 +28,43 @@
     eng.start();
   }
 
-  function handleCellClick(row, col) {
-    if (!gameState || gameState.phase !== 'setup') return;
+  function onMapPointerMove(e) {
+    if (!dragTowerId || !gameState) return;
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = e.touches ? e.touches[0].clientX : e.clientX;
+    const y = e.touches ? e.touches[0].clientY : e.clientY;
+    const col = Math.floor(((x - rect.left) / rect.width) * gridSize);
+    const row = Math.floor(((y - rect.top) / rect.height) * gridSize);
+    if (row >= 0 && row < gridSize && col >= 0 && col < gridSize) {
+      dragHover = { row, col };
+    } else {
+      dragHover = null;
+    }
+  }
 
-    if (dragTower) {
-      const tower = TOWERS.find(t => t.id === dragTower);
-      if (tower && engine.placeTower(row, col, tower)) {
-        dragTower = null;
-      }
+  function onMapPointerUp(e) {
+    if (!dragTowerId || !engine || !dragHover) {
+      dragTowerId = null;
+      dragHover = null;
       return;
     }
+    const tower = TOWERS.find(t => t.id === dragTowerId);
+    if (tower && engine.placeTower(dragHover.row, dragHover.col, tower)) {
+      // placed
+    }
+    dragTowerId = null;
+    dragHover = null;
+  }
 
+  function startDrag(towerId) {
+    if (gameState?.phase !== 'setup') return;
+    dragTowerId = towerId;
+    selectedTower = null;
+  }
+
+  function selectTower(row, col) {
+    if (!gameState) return;
+    if (gameState.phase !== 'setup') return;
     const existing = gameState.towers.find(t => t.row === row && t.col === col);
     if (existing) {
       selectedTower = (selectedTower?.row === row && selectedTower?.col === col) ? null : existing;
@@ -113,27 +139,43 @@
     </div>
 
     {#if gameState}
-      <div class="td-map" style:grid-template-columns="repeat({gridSize}, 1fr)">
+      <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
+      <div
+        class="td-map"
+        style:grid-template-columns="repeat({gridSize}, 1fr)"
+        ontouchmove={onMapPointerMove}
+        ontouchend={onMapPointerUp}
+        onmousemove={onMapPointerMove}
+        onmouseup={onMapPointerUp}
+        onmouseleave={() => { if (dragTowerId) { dragTowerId = null; dragHover = null; } }}
+      >
         {#each Array(gridSize) as _, r}
           {#each Array(gridSize) as _, c}
             {@const tower = gameState.towers.find(t => t.row === r && t.col === c)}
             {@const enemy = enemyAt(r, c)}
             {@const isSelected = selectedTower?.row === r && selectedTower?.col === c}
-            <button
+            {@const isHover = dragHover?.row === r && dragHover?.col === c}
+            <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
+            <div
               class="td-cell"
               class:path={isPath(r, c)}
               class:tower-spot={canPlaceTower(r, c) && !tower}
               class:has-tower={!!tower}
-              class:drag-over={dragTower && canPlaceTower(r, c) && !tower && !enemy}
+              class:drag-over={dragTowerId && isHover && canPlaceTower(r, c) && !tower}
               class:selected={isSelected}
-              onclick={() => handleCellClick(r, c)}
+              class:drag-valid={dragTowerId && isHover && canPlaceTower(r, c) && !tower}
+              class:drag-invalid={dragTowerId && isHover && (!canPlaceTower(r, c) || !!tower)}
+              onmousedown={() => !dragTowerId && selectTower(r, c)}
+              ontouchstart={() => !dragTowerId && selectTower(r, c)}
             >
               {#if isSelected}
                 {@const mult = 1 + selectedTower.level * 0.5}
                 {@const range = Math.round(selectedTower.type.range * mult)}
                 <span class="range-circle" style:--range="{(range * 100) / gridSize}%"></span>
               {/if}
-              {#if enemy}
+              {#if isHover && dragTowerId}
+                <span class="ghost-tower">{TOWERS.find(t => t.id === dragTowerId)?.emoji}</span>
+              {:else if enemy}
                 <span class="enemy" style:background="rgba(255,0,0,{1 - enemy.health/enemy.maxHealth})">{enemy.emoji}</span>
               {:else if tower}
                 <span class="tower-e" class:upgraded={tower.level > 0}>{tower.type.emoji}</span>
@@ -142,10 +184,22 @@
               {:else if isPath(r, c)}
                 <span class="path-dot">·</span>
               {/if}
-            </button>
+            </div>
           {/each}
         {/each}
       </div>
+
+      {#if gameState?.projectiles?.length}
+        <div class="proj-layer" style:--grid="{gridSize}">
+          {#each gameState.projectiles as proj (proj.id)}
+            <span
+              class="projectile"
+              style:--r="{proj.fromRow}"
+              style:--c="{proj.fromCol}"
+            >💥</span>
+          {/each}
+        </div>
+      {/if}
     {/if}
 
     {#if selectedTower}
@@ -162,9 +216,9 @@
         {#each TOWERS as twr}
           <button
             class="td-tower-btn"
-            class:active={dragTower === twr.id}
+            class:active={dragTowerId === twr.id}
             class:cant-afford={gameState.coins < twr.cost}
-            onclick={() => { dragTower = dragTower === twr.id ? null : twr.id; selectedTower = null; }}
+            onclick={() => startDrag(twr.id)}
           >
             <span class="tray-emoji">{twr.emoji}</span>
             <span class="tray-cost">{twr.cost}🪙</span>
@@ -197,19 +251,6 @@
       </div>
     {/if}
       </div>
-
-      {#if gameState?.projectiles?.length}
-        <div class="proj-layer" style:--grid="{gridSize}">
-          {#each gameState.projectiles as proj (proj.id)}
-            <span
-              class="projectile"
-              style:--r="{proj.fromRow}"
-              style:--c="{proj.fromCol}"
-              style:--p="{proj.progress}"
-            >💥</span>
-          {/each}
-        </div>
-      {/if}
     {/if}
 
 <style>
@@ -228,6 +269,8 @@
   .td-cell.tower-spot { background: #e3f2fd; border-color: #90caf9; border-style: dashed; }
   .td-cell.has-tower { background: #fff3e0; border-color: #ffcc80; }
   .td-cell.drag-over { background: #c8e6c9; border-color: #66bb6a; border-width: 2px; }
+  .td-cell.drag-valid { background: #c8e6c9; border-color: #66bb6a; border-width: 2px; }
+  .td-cell.drag-invalid { background: #ffcdd2; border-color: #ef5350; border-width: 2px; }
   .td-cell.selected { box-shadow: 0 0 0 3px var(--color-primary); z-index: 2; }
   .range-circle {
     position: absolute;
@@ -260,6 +303,7 @@
     100% { opacity: 0; transform: translate(-50%, -50%) scale(1.5); }
   }
   .spot-hint { opacity: 0.3; font-size: 14px; }
+  .ghost-tower { font-size: 24px; opacity: 0.6; filter: drop-shadow(0 0 4px rgba(0,0,0,0.3)); }
   .path-dot { color: #ccc; font-size: 10px; }
   .tower-e { font-size: 22px; }
   .tower-e.upgraded { filter: drop-shadow(0 0 3px gold); }
