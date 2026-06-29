@@ -39,19 +39,21 @@
  */
 declare module '$env/static/private' {
 	export const NODE_ENV: string;
-	export const OPENCODE_SERVER_PASSWORD: string;
 	export const OPENCODE_DISABLE_EMBEDDED_WEB_UI: string;
+	export const OPENCODE_SERVER_PASSWORD: string;
 	export const OSLogRateLimit: string;
-	export const INFOPATH: string;
+	export const PLAYWRIGHT_TEST_BASE_URL: string;
 	export const HOMEBREW_CELLAR: string;
+	export const INFOPATH: string;
+	export const npm_config_user_agent: string;
 	export const LOGNAME: string;
 	export const no_proxy: string;
 	export const HOME: string;
+	export const DEBUG_COLORS: string;
 	export const USER: string;
 	export const __CFBundleIdentifier: string;
 	export const OPENCODE_EXPERIMENTAL_ICON_DISCOVERY: string;
 	export const npm_package_version: string;
-	export const npm_config_user_agent: string;
 	export const XPC_SERVICE_NAME: string;
 	export const MACH_PORT_RENDEZVOUS_PEER_VALDATION: string;
 	export const OPENCODE_CLIENT: string;
@@ -70,6 +72,7 @@ declare module '$env/static/private' {
 	export const ASDF_CONFIG_FILE: string;
 	export const PATH: string;
 	export const OPENCODE_SERVER_USERNAME: string;
+	export const BROWSER: string;
 	export const HOMEBREW_PREFIX: string;
 	export const HOMEBREW_REPOSITORY: string;
 	export const npm_execpath: string;
@@ -87,12 +90,14 @@ declare module '$env/static/private' {
 	export const ASDF_DEFAULT_TOOL_VERSIONS_FILENAME: string;
 	export const NO_PROXY: string;
 	export const SHLVL: string;
-	export const INIT_CWD: string;
-	export const LANG: string;
-	export const SHELL: string;
+	export const FORCE_COLOR: string;
 	export const OPENCODE_EXPERIMENTAL_FILEWATCHER: string;
 	export const XDG_STATE_HOME: string;
+	export const PLAYWRIGHT_TEST: string;
 	export const NODE: string;
+	export const LANG: string;
+	export const SHELL: string;
+	export const INIT_CWD: string;
 }
 
 /**
@@ -180,19 +185,21 @@ declare module '$env/static/public' {
 declare module '$env/dynamic/private' {
 	export const env: {
 		NODE_ENV: string;
-		OPENCODE_SERVER_PASSWORD: string;
 		OPENCODE_DISABLE_EMBEDDED_WEB_UI: string;
+		OPENCODE_SERVER_PASSWORD: string;
 		OSLogRateLimit: string;
-		INFOPATH: string;
+		PLAYWRIGHT_TEST_BASE_URL: string;
 		HOMEBREW_CELLAR: string;
+		INFOPATH: string;
+		npm_config_user_agent: string;
 		LOGNAME: string;
 		no_proxy: string;
 		HOME: string;
+		DEBUG_COLORS: string;
 		USER: string;
 		__CFBundleIdentifier: string;
 		OPENCODE_EXPERIMENTAL_ICON_DISCOVERY: string;
 		npm_package_version: string;
-		npm_config_user_agent: string;
 		XPC_SERVICE_NAME: string;
 		MACH_PORT_RENDEZVOUS_PEER_VALDATION: string;
 		OPENCODE_CLIENT: string;
@@ -211,6 +218,7 @@ declare module '$env/dynamic/private' {
 		ASDF_CONFIG_FILE: string;
 		PATH: string;
 		OPENCODE_SERVER_USERNAME: string;
+		BROWSER: string;
 		HOMEBREW_PREFIX: string;
 		HOMEBREW_REPOSITORY: string;
 		npm_execpath: string;
@@ -228,12 +236,14 @@ declare module '$env/dynamic/private' {
 		ASDF_DEFAULT_TOOL_VERSIONS_FILENAME: string;
 		NO_PROXY: string;
 		SHLVL: string;
-		INIT_CWD: string;
-		LANG: string;
-		SHELL: string;
+		FORCE_COLOR: string;
 		OPENCODE_EXPERIMENTAL_FILEWATCHER: string;
 		XDG_STATE_HOME: string;
+		PLAYWRIGHT_TEST: string;
 		NODE: string;
+		LANG: string;
+		SHELL: string;
+		INIT_CWD: string;
 		[key: `PUBLIC_${string}`]: undefined;
 		[key: `${string}`]: string | undefined;
 	}
