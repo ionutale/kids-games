@@ -9,6 +9,32 @@
       "_internal2.js"
     ]
   },
+  "_SoundToggle.BIWPpODx.css": {
+    "file": "_app/immutable/assets/SoundToggle.BIWPpODx.css",
+    "src": "_SoundToggle.BIWPpODx.css"
+  },
+  "_SoundToggle.js": {
+    "file": "chunks/SoundToggle.js",
+    "name": "SoundToggle",
+    "imports": [
+      "_internal.js",
+      "_exports.js",
+      "_client.js"
+    ],
+    "css": [
+      "_app/immutable/assets/SoundToggle.BIWPpODx.css"
+    ]
+  },
+  "_client.js": {
+    "file": "chunks/client.js",
+    "name": "client",
+    "imports": [
+      "_internal.js",
+      "_shared.js",
+      "_internal2.js",
+      "_exports.js"
+    ]
+  },
   "_env.js": {
     "file": "chunks/env.js",
     "name": "env"
@@ -17,24 +43,19 @@
     "file": "chunks/exports.js",
     "name": "exports",
     "imports": [
-      "_server.js"
+      "_internal.js"
     ]
   },
   "_internal.js": {
     "file": "chunks/internal.js",
     "name": "internal",
     "imports": [
-      "_internal2.js",
-      "_server.js"
+      "_internal2.js"
     ]
   },
   "_internal2.js": {
     "file": "chunks/internal2.js",
     "name": "internal"
-  },
-  "_server.js": {
-    "file": "chunks/server.js",
-    "name": "server"
   },
   "_shared.js": {
     "file": "chunks/shared.js",
@@ -65,10 +86,7 @@
     "isEntry": true,
     "imports": [
       "_internal.js",
-      "_shared.js",
-      "_internal2.js",
-      "_exports.js",
-      "_server.js"
+      "_client.js"
     ]
   },
   "node_modules/@sveltejs/kit/src/runtime/server/index.js": {
@@ -82,7 +100,6 @@
       "_internal2.js",
       "_utils.js",
       "_exports.js",
-      "_server.js",
       "_env.js"
     ]
   },
@@ -98,10 +115,12 @@
     "src": "src/routes/+layout.svelte",
     "isEntry": true,
     "imports": [
-      "_server.js"
+      "_internal.js",
+      "_client.js",
+      "_SoundToggle.js"
     ],
     "css": [
-      "_app/immutable/assets/_layout.DElg1r2K.css"
+      "_app/immutable/assets/_layout.Cl65jK23.css"
     ]
   },
   "src/routes/+page.svelte": {
@@ -110,7 +129,11 @@
     "src": "src/routes/+page.svelte",
     "isEntry": true,
     "imports": [
-      "_server.js"
+      "_internal.js",
+      "_SoundToggle.js"
+    ],
+    "css": [
+      "_app/immutable/assets/_page.I68K3Pm_.css"
     ]
   },
   "virtual:__sveltekit/env": {
