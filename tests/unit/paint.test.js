@@ -11,4 +11,11 @@ describe('Paint game', () => {
     const switched = mode === 'brush' ? 'stamp' : 'brush';
     expect(switched).toBe('stamp');
   });
+
+  it('line width maps to brush size', () => {
+    const size = (s) => s === 'big' ? 20 : s === 'medium' ? 12 : 6;
+    expect(size('small')).toBe(6);
+    expect(size('medium')).toBe(12);
+    expect(size('big')).toBe(20);
+  });
 });

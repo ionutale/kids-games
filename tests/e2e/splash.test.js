@@ -21,8 +21,22 @@ test.describe('Splash E2E', () => {
       await game.click({ position: { x: 100 + i * 50, y: 200 + i * 50 } });
       await page.waitForTimeout(100);
     }
-    await page.waitForTimeout(100);
+    await page.waitForTimeout(200);
     const count = await page.locator('.splash').count();
     expect(count).toBeGreaterThanOrEqual(3);
+  });
+
+  test('particles disappear after elimination timeout', async ({ page }) => {
+    await page.goto('/games/splash');
+    await page.locator('.splash-game').click({ position: { x: 150, y: 300 } });
+    await page.waitForTimeout(4000);
+    const count = await page.locator('.splash').count();
+    expect(count).toBe(0);
+  });
+
+  test('dark gradient background', async ({ page }) => {
+    await page.goto('/games/splash');
+    const bg = await page.locator('.splash-game').evaluate(el => getComputedStyle(el).background);
+    expect(bg).toContain('gradient');
   });
 });

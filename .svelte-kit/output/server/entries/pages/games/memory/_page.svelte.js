@@ -19,23 +19,29 @@ function _page($$renderer, $$props) {
 			"🐨",
 			"🦁"
 		];
+		const STORAGE_KEY = "memory-unlocked-level";
 		let cards = [];
 		let matched = /* @__PURE__ */ new Set();
 		let showcasing = /* @__PURE__ */ new Set();
 		let won = false;
-		let difficulty = 4;
-		function pairsFromLevel(level) {
-			if (level >= 10) return 12;
-			return level + 1;
+		let level = 1;
+		let unlockedLevel = 1;
+		function loadUnlocked() {
+			let stored = 1;
+			if (typeof localStorage !== "undefined") stored = parseInt(localStorage.getItem(STORAGE_KEY));
+			unlockedLevel = stored >= 1 && stored <= 10 ? stored : 1;
+			level = unlockedLevel;
+		}
+		function pairsFromLevel(l) {
+			if (l >= 10) return 12;
+			return l + 1;
 		}
 		function colsFromCount(count) {
 			if (count <= 8) return 2;
-			if (count <= 16) return 4;
 			return 4;
 		}
 		function initGame() {
-			pairsFromLevel(difficulty) * 2;
-			const pairs = pairsFromLevel(difficulty);
+			const pairs = pairsFromLevel(level);
 			const selected = emojis.slice(0, pairs);
 			const deck = [...selected, ...selected].map((emoji, i) => ({
 				id: i,
@@ -52,11 +58,22 @@ function _page($$renderer, $$props) {
 			won = false;
 		}
 		let cols = derived(() => colsFromCount(cards.length));
+		loadUnlocked();
 		initGame();
-		$$renderer.push(`<div class="memory-game svelte-9c3864"><div class="grid svelte-9c3864"${attr_style("", { "grid-template-columns": `repeat(${stringify(cols())}, 1fr)` })}><!--[-->`);
-		const each_array = ensure_array_like(cards);
-		for (let $$index = 0, $$length = each_array.length; $$index < $$length; $$index++) {
-			let card = each_array[$$index];
+		$$renderer.push(`<div class="memory-game svelte-9c3864"><div class="level-indicator svelte-9c3864"><span class="level-label svelte-9c3864">Level ${escape_html(level)}</span> <div class="level-dots svelte-9c3864"><!--[-->`);
+		const each_array = ensure_array_like(Array(10));
+		for (let i = 0, $$length = each_array.length; i < $$length; i++) {
+			each_array[i];
+			$$renderer.push(`<span${attr_class("level-dot svelte-9c3864", void 0, {
+				"current": level === i + 1,
+				"unlocked": i + 1 <= unlockedLevel,
+				"locked": i + 1 > unlockedLevel
+			})}></span>`);
+		}
+		$$renderer.push(`<!--]--></div></div> <div class="grid svelte-9c3864"${attr_style("", { "grid-template-columns": `repeat(${stringify(cols())}, 1fr)` })}><!--[-->`);
+		const each_array_1 = ensure_array_like(cards);
+		for (let $$index_1 = 0, $$length = each_array_1.length; $$index_1 < $$length; $$index_1++) {
+			let card = each_array_1[$$index_1];
 			$$renderer.push(`<button${attr_class("card svelte-9c3864", void 0, {
 				"flipped": card.flipped || matched.has(card.id) || showcasing.has(card.id),
 				"showcasing": showcasing.has(card.id),
@@ -68,17 +85,16 @@ function _page($$renderer, $$props) {
 			} else $$renderer.push("<!--[-1-->");
 			$$renderer.push(`<!--]--></button>`);
 		}
-		$$renderer.push(`<!--]--></div> <div class="diff-bar svelte-9c3864"><span class="diff-label svelte-9c3864">Level</span> <div class="diff-buttons svelte-9c3864"><!--[-->`);
-		const each_array_1 = ensure_array_like(Array(10));
-		for (let i = 0, $$length = each_array_1.length; i < $$length; i++) {
-			each_array_1[i];
-			$$renderer.push(`<button${attr_class("diff-btn svelte-9c3864", void 0, { "active": difficulty === i + 1 })}>${escape_html(i + 1)}</button>`);
-		}
-		$$renderer.push(`<!--]--></div></div> `);
+		$$renderer.push(`<!--]--></div> `);
 		if (won) {
 			$$renderer.push("<!--[0-->");
 			Confetti($$renderer, {});
-			$$renderer.push(`<!----> <div class="win-overlay svelte-9c3864"><p class="win-text svelte-9c3864">Great job!</p> <button class="replay-btn svelte-9c3864">Play Again</button></div>`);
+			$$renderer.push(`<!----> <div class="win-overlay svelte-9c3864"><p class="win-text svelte-9c3864">Great job!</p> <p class="win-sub svelte-9c3864">Level ${escape_html(level)} complete!</p> `);
+			if (level < 10) {
+				$$renderer.push("<!--[0-->");
+				$$renderer.push(`<button class="next-btn svelte-9c3864">Next Level</button>`);
+			} else $$renderer.push("<!--[-1-->");
+			$$renderer.push(`<!--]--> <button class="replay-btn svelte-9c3864">Replay</button></div>`);
 		} else $$renderer.push("<!--[-1-->");
 		$$renderer.push(`<!--]--></div>`);
 		if ($$store_subs) unsubscribe_stores($$store_subs);

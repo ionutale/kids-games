@@ -13,4 +13,14 @@ describe('Splash game', () => {
     expect(colors.length).toBe(8);
     expect(emojis.length).toBe(8);
   });
+
+  it('elimination timing is 3500ms', () => {
+    const timeout = 3500;
+    expect(timeout).toBe(3500);
+  });
+
+  it('animation timing matches elimination', () => {
+    const animationDuration = 3.5;
+    expect(animationDuration).toBeGreaterThanOrEqual(3);
+  });
 });

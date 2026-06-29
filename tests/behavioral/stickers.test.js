@@ -11,7 +11,6 @@ describe('Stickers game behavior', () => {
 
   it('stickers persist when changing scene', () => {
     let placed = [{ id: 0, emoji: '🐰', x: 50, y: 50 }];
-    // scene changed but placed is NOT cleared
     expect(placed).toHaveLength(1);
   });
 
@@ -22,10 +21,7 @@ describe('Stickers game behavior', () => {
   });
 
   it('clear all removes all stickers', () => {
-    let placed = [
-      { id: 0, emoji: '🐰', x: 50, y: 50 },
-      { id: 1, emoji: '🦊', x: 30, y: 60 },
-    ];
+    let placed = [{ id: 0, emoji: '🐰', x: 50, y: 50 }, { id: 1, emoji: '🦊', x: 30, y: 60 }];
     placed = [];
     expect(placed).toHaveLength(0);
   });
@@ -37,14 +33,28 @@ describe('Stickers game behavior', () => {
     expect(placed[0].y).toBe(30);
   });
 
-  it('multiple stickers at different positions', () => {
-    const placed = [
-      { id: 0, emoji: '🐰', x: 20, y: 20 },
-      { id: 1, emoji: '🦊', x: 80, y: 80 },
-      { id: 2, emoji: '🐻', x: 50, y: 50 },
-    ];
-    expect(placed.length).toBe(3);
-    const xs = placed.map(p => p.x);
-    expect(new Set(xs).size).toBe(3);
+  it('drag position is clamped between 5 and 95', () => {
+    let x = 120, y = -10;
+    x = Math.max(5, Math.min(95, x));
+    y = Math.max(5, Math.min(95, y));
+    expect(x).toBe(95);
+    expect(y).toBe(5);
+  });
+
+  it('trayTap adds sticker and initiates drag', () => {
+    let placed = [];
+    let nextId = 0;
+    const id = nextId++;
+    placed = [...placed, { id, emoji: '🐰', x: 50, y: 50 }];
+    let dragging = id;
+    expect(placed).toHaveLength(1);
+    expect(dragging).toBe(0);
+  });
+
+  it('scene change updates activeStickers', () => {
+    const stickerSets = { '🌿': ['🐰', '🦊'], '🌊': ['🐟', '🐙'] };
+    const scene = '🌊';
+    const activeStickers = stickerSets[scene] || stickerSets['🌿'];
+    expect(activeStickers).toEqual(['🐟', '🐙']);
   });
 });

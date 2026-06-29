@@ -4,6 +4,7 @@
   import Confetti from '$lib/components/Confetti.svelte';
 
   const emojis = ['🐶', '🐱', '🐰', '🐻', '🐸', '🐵', '🦊', '🐯', '🐭', '🐼', '🐨', '🦁'];
+  const STORAGE_KEY = 'memory-unlocked-level';
 
   let cards = $state([]);
   let flipped = $state([]);
@@ -11,22 +12,37 @@
   let showcasing = $state(new Set());
   let locked = $state(false);
   let won = $state(false);
-  let difficulty = $state(4);
+  let level = $state(1);
+  let unlockedLevel = $state(1);
 
-  function pairsFromLevel(level) {
-    if (level >= 10) return 12;
-    return level + 1;
+  function loadUnlocked() {
+    let stored = 1;
+    if (typeof localStorage !== 'undefined') {
+      stored = parseInt(localStorage.getItem(STORAGE_KEY));
+    }
+    unlockedLevel = stored >= 1 && stored <= 10 ? stored : 1;
+    level = unlockedLevel;
+  }
+
+  function saveUnlocked(l) {
+    unlockedLevel = Math.min(l, 10);
+    if (typeof localStorage !== 'undefined') {
+      localStorage.setItem(STORAGE_KEY, String(unlockedLevel));
+    }
+  }
+
+  function pairsFromLevel(l) {
+    if (l >= 10) return 12;
+    return l + 1;
   }
 
   function colsFromCount(count) {
     if (count <= 8) return 2;
-    if (count <= 16) return 4;
     return 4;
   }
 
   function initGame() {
-    const c = pairsFromLevel(difficulty) * 2;
-    const pairs = pairsFromLevel(difficulty);
+    const pairs = pairsFromLevel(level);
     const selected = emojis.slice(0, pairs);
     const deck = [...selected, ...selected].map((emoji, i) => ({ id: i, emoji, flipped: false }));
     for (let i = deck.length - 1; i > 0; i--) {
@@ -72,22 +88,44 @@
           );
           flipped = [];
           locked = false;
-        }, 1500 - difficulty * 100);
+        }, 1500 - level * 100);
       }
     }
   }
 
-  function setLevel(l) {
-    difficulty = l;
+  function advanceLevel() {
+    if (level < 10) {
+      saveUnlocked(level + 1);
+      level = level + 1;
+    }
+    initGame();
+  }
+
+  function replayLevel() {
     initGame();
   }
 
   let cols = $derived(colsFromCount(cards.length));
 
+  loadUnlocked();
   initGame();
 </script>
 
 <div class="memory-game">
+  <div class="level-indicator">
+    <span class="level-label">Level {level}</span>
+    <div class="level-dots">
+      {#each Array(10) as _, i}
+        <span
+          class="level-dot"
+          class:current={level === i + 1}
+          class:unlocked={i + 1 <= unlockedLevel}
+          class:locked={i + 1 > unlockedLevel}
+        ></span>
+      {/each}
+    </div>
+  </div>
+
   <div class="grid" style:grid-template-columns="repeat({cols}, 1fr)">
     {#each cards as card (card.id)}
       <button
@@ -108,26 +146,15 @@
     {/each}
   </div>
 
-  <div class="diff-bar">
-    <span class="diff-label">Level</span>
-    <div class="diff-buttons">
-      {#each Array(10) as _, i}
-        <button
-          class="diff-btn"
-          class:active={difficulty === i + 1}
-          onclick={() => setLevel(i + 1)}
-        >
-          {i + 1}
-        </button>
-      {/each}
-    </div>
-  </div>
-
   {#if won}
     <Confetti />
     <div class="win-overlay">
       <p class="win-text">Great job!</p>
-      <button class="replay-btn" onclick={initGame}>Play Again</button>
+      <p class="win-sub">Level {level} complete!</p>
+      {#if level < 10}
+        <button class="next-btn" onclick={advanceLevel}>Next Level</button>
+      {/if}
+      <button class="replay-btn" onclick={replayLevel}>Replay</button>
     </div>
   {/if}
 </div>
@@ -140,38 +167,39 @@
     flex: 1;
     padding: 16px;
   }
-  .diff-bar {
+  .level-indicator {
     display: flex;
     align-items: center;
-    gap: 8px;
-    margin-top: 12px;
-    margin-bottom: calc(8px + var(--safe-bottom));
-    flex-shrink: 0;
+    gap: 10px;
+    margin-bottom: 12px;
   }
-  .diff-label {
-    font-size: 14px;
-    font-weight: 600;
-    color: #999;
-    margin-right: 4px;
+  .level-label {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--color-primary);
   }
-  .diff-buttons {
+  .level-dots {
     display: flex;
     gap: 4px;
   }
-  .diff-btn {
-    width: 32px;
-    height: 32px;
-    border-radius: 8px;
-    font-size: 13px;
-    font-weight: 600;
-    color: #999;
-    background: rgba(255,255,255,0.7);
-    transition: all 0.15s;
+  .level-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    transition: all 0.2s;
   }
-  .diff-btn.active {
-    color: white;
+  .level-dot.locked {
+    background: #ddd;
+  }
+  .level-dot.unlocked {
     background: var(--color-primary);
-    box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+    opacity: 0.4;
+  }
+  .level-dot.current {
+    background: var(--color-primary);
+    opacity: 1;
+    transform: scale(1.3);
+    box-shadow: 0 0 4px rgba(79, 195, 247, 0.6);
   }
   .grid {
     display: grid;
@@ -241,7 +269,7 @@
     justify-content: center;
     background: rgba(0,0,0,0.3);
     z-index: 50;
-    gap: 16px;
+    gap: 12px;
   }
   .win-text {
     font-size: 36px;
@@ -249,12 +277,24 @@
     font-weight: 700;
     text-shadow: 0 2px 8px rgba(0,0,0,0.3);
   }
-  .replay-btn {
+  .win-sub {
+    font-size: 18px;
+    color: rgba(255,255,255,0.8);
+  }
+  .next-btn {
     padding: 14px 32px;
     background: white;
     border-radius: 24px;
     font-size: 18px;
     font-weight: 600;
     color: var(--color-primary);
+  }
+  .replay-btn {
+    padding: 10px 24px;
+    background: rgba(255,255,255,0.8);
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 600;
+    color: #666;
   }
 </style>
