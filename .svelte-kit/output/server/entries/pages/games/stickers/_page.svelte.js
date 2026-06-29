@@ -13,6 +13,7 @@ function _page($$renderer, $$props) {
 		let scene = "🌿";
 		let placed = [];
 		let activeStickers = [];
+		let dragging = null;
 		$$renderer.push(`<div class="stickers-game svelte-beejdd"><div class="scene-select svelte-beejdd"><!--[-->`);
 		const each_array = ensure_array_like(scenes);
 		for (let $$index = 0, $$length = each_array.length; $$index < $$length; $$index++) {
@@ -23,7 +24,7 @@ function _page($$renderer, $$props) {
 		const each_array_1 = ensure_array_like(placed);
 		for (let $$index_1 = 0, $$length = each_array_1.length; $$index_1 < $$length; $$index_1++) {
 			let p = each_array_1[$$index_1];
-			$$renderer.push(`<span class="placed-sticker svelte-beejdd"${attr_style("", {
+			$$renderer.push(`<span${attr_class("placed-sticker svelte-beejdd", void 0, { "dragging": dragging === p.id })}${attr_style("", {
 				left: `${stringify(p.x)}%`,
 				top: `${stringify(p.y)}%`,
 				"font-size": store_get($$store_subs ??= {}, "$settings", settings).ageLevel <= 2 ? "48px" : "36px"

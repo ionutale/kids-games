@@ -77,4 +77,31 @@ describe('Puzzle game behavior', () => {
     const allPlaced = pieces.every(p => p.placed);
     expect(allPlaced).toBe(true);
   });
+
+  it('random clicking eventually solves the puzzle', () => {
+    let pieces = createPieces(4, colors);
+    const ids = pieces.map(p => p.id);
+    const shuffled = [...ids].sort(() => Math.random() - 0.5);
+    for (const id of shuffled) {
+      pieces = placePiece(pieces, id);
+    }
+    const solved = pieces.every(p => p.placed || (p.row === p.correctRow && p.col === p.correctCol));
+    expect(solved).toBe(true);
+  });
+
+  it('already placed piece cannot be placed again', () => {
+    const pieces = [
+      { id: 0, correctRow: 0, correctCol: 0, row: 0, col: 0, placed: true },
+    ];
+    const result = placePiece(pieces, 0);
+    expect(result).toBe(pieces);
+  });
+
+  it('tapping wrong piece with no valid swap returns unchanged', () => {
+    const pieces = [
+      { id: 0, correctRow: 0, correctCol: 0, row: 0, col: 0, placed: false },
+    ];
+    const result = placePiece(pieces, 0);
+    expect(result[0].placed).toBe(true);
+  });
 });

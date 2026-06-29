@@ -14,6 +14,8 @@
   let placed = $state([]);
   let activeStickers = $state([]);
   let nextId = $state(0);
+  let dragging = $state(null);
+  let dragOffset = $state({ x: 0, y: 0 });
 
   function updateStickers() {
     const stickers = stickerSets[scene] || stickerSets['🌿'];
@@ -23,13 +25,12 @@
 
   function placeSticker(emoji) {
     const id = nextId++;
-    placed = [...placed, { id, emoji, x: 35 + Math.random() * 30, y: 30 + Math.random() * 35 }];
+    placed = [...placed, { id, emoji, x: 50, y: 50 }];
     if ($settings.soundEnabled) playPop();
   }
 
   function changeScene(s) {
     scene = s;
-    placed = [];
     updateStickers();
     if ($settings.soundEnabled) playTap();
   }
@@ -37,6 +38,45 @@
   function clearAll() {
     placed = [];
     if ($settings.soundEnabled) playTap();
+  }
+
+  function startDrag(e, id) {
+    const rect = e.target.closest('.scene-area').getBoundingClientRect();
+    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+    dragging = id;
+    const sticker = placed.find(p => p.id === id);
+    if (sticker) {
+      dragOffset = {
+        x: ((clientX - rect.left) / rect.width) * 100 - sticker.x,
+        y: ((clientY - rect.top) / rect.height) * 100 - sticker.y
+      };
+    }
+  }
+
+  function moveDrag(e) {
+    if (dragging === null) return;
+    e.preventDefault();
+    const rect = document.querySelector('.scene-area').getBoundingClientRect();
+    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+    let newX = ((clientX - rect.left) / rect.width) * 100 - dragOffset.x;
+    let newY = ((clientY - rect.top) / rect.height) * 100 - dragOffset.y;
+    newX = Math.max(5, Math.min(95, newX));
+    newY = Math.max(5, Math.min(95, newY));
+    placed = placed.map(p => p.id === dragging ? { ...p, x: newX, y: newY } : p);
+  }
+
+  function endDrag() {
+    if (dragging !== null && $settings.soundEnabled) playTap();
+    dragging = null;
+  }
+
+  function trayTap(emoji) {
+    const id = nextId++;
+    placed = [...placed, { id, emoji, x: 50, y: 50 }];
+    dragging = id;
+    if ($settings.soundEnabled) playPop();
   }
 
   $effect(() => {
@@ -53,9 +93,22 @@
     {/each}
   </div>
 
-  <div class="scene-area" style="background: linear-gradient(135deg, #e8f5e9 0%, #fff3e0 100%);">
+  <div class="scene-area" style="background: linear-gradient(135deg, #e8f5e9 0%, #fff3e0 100%);"
+    ontouchmove={moveDrag}
+    ontouchend={endDrag}
+    onmousemove={moveDrag}
+    onmouseup={endDrag}
+    onmouseleave={endDrag}>
     {#each placed as p (p.id)}
-      <span class="placed-sticker" style:left="{p.x}%" style:top="{p.y}%" style:font-size="{$settings.ageLevel <= 2 ? '48px' : '36px'}">
+      <span
+        class="placed-sticker"
+        class:dragging={dragging === p.id}
+        style:left="{p.x}%"
+        style:top="{p.y}%"
+        style:font-size="{$settings.ageLevel <= 2 ? '48px' : '36px'}"
+        ontouchstart={(e) => startDrag(e, p.id)}
+        onmousedown={(e) => startDrag(e, p.id)}
+      >
         {p.emoji}
       </span>
     {/each}
@@ -63,7 +116,7 @@
 
   <div class="tray">
     {#each activeStickers as sticker}
-      <button class="sticker-btn" onclick={() => placeSticker(sticker)}>
+      <button class="sticker-btn" onclick={() => trayTap(sticker)}>
         {sticker}
       </button>
     {/each}
@@ -103,11 +156,20 @@
     margin: 8px;
     border-radius: 20px;
     overflow: hidden;
+    touch-action: none;
   }
   .placed-sticker {
     position: absolute;
     transform: translate(-50%, -50%);
-    pointer-events: none;
+    transition: left 0.05s, top 0.05s;
+    cursor: grab;
+    z-index: 1;
+  }
+  .placed-sticker.dragging {
+    z-index: 10;
+    cursor: grabbing;
+    filter: drop-shadow(0 4px 8px rgba(0,0,0,0.3));
+    transform: translate(-50%, -50%) scale(1.15);
   }
   .tray {
     display: flex;
@@ -138,5 +200,6 @@
     border-radius: 50%;
     background: white;
     box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    z-index: 20;
   }
 </style>
