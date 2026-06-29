@@ -47,6 +47,6 @@ declare module "$app/types" {
 		};
 		Pathname(): "/" | "/games/memory" | "/games/paint" | "/games/pop" | "/games/puzzle" | "/games/soccer" | "/games/sorting" | "/games/splash" | "/games/stickers";
 		ResolvedPathname(): `${"" | `/${string}`}${ReturnType<AppTypes['Pathname']>}`;
-		Asset(): "/icons/icon-192.svg" | "/icons/icon-512.svg" | "/manifest.json" | "/robots.txt" | string & {};
+		Asset(): "/icons/icon-192.svg" | "/icons/icon-512.svg" | "/manifest.json" | "/robots.txt" | "/screenshots/memory.png" | "/screenshots/paint.png" | "/screenshots/pop.png" | "/screenshots/puzzle.png" | "/screenshots/soccer.png" | "/screenshots/sorting.png" | "/screenshots/splash.png" | "/screenshots/stickers.png" | string & {};
 	}
 }

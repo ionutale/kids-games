@@ -35,7 +35,7 @@ function set_public_env(environment) {
 }
 //#endregion
 //#region node_modules/.pnpm/@sveltejs+kit@2.68.0_@sveltejs+vite-plugin-svelte@7.1.2_svelte@5.56.4_vite@8.1.0_terser_92cd6391677923dcfe4fa79ac66478d5/node_modules/@sveltejs/kit/src/runtime/app/env/internal.js
-var version = "1782760057055";
+var version = "1782760429542";
 var prerendering = false;
 function set_building() {}
 function set_prerendering() {

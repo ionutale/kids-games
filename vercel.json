@@ -1,3 +1,6 @@
 {
-  "outputDirectory": "public"
+  "outputDirectory": "public",
+  "rewrites": [
+    { "source": "/((?!_app|icons|screenshots|favicon|robots|sw|workbox|manifest).*)", "destination": "/index.html" }
+  ]
 }
