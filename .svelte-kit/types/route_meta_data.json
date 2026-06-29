@@ -1,0 +1,30 @@
+{
+	"/": [
+		"src/routes/+layout.js",
+		"src/routes/+layout.js"
+	],
+	"/games/memory": [
+		"src/routes/+layout.js"
+	],
+	"/games/paint": [
+		"src/routes/+layout.js"
+	],
+	"/games/pop": [
+		"src/routes/+layout.js"
+	],
+	"/games/puzzle": [
+		"src/routes/+layout.js"
+	],
+	"/games/soccer": [
+		"src/routes/+layout.js"
+	],
+	"/games/sorting": [
+		"src/routes/+layout.js"
+	],
+	"/games/splash": [
+		"src/routes/+layout.js"
+	],
+	"/games/stickers": [
+		"src/routes/+layout.js"
+	]
+}
