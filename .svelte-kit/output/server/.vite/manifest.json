@@ -9,6 +9,21 @@
       "_internal2.js"
     ]
   },
+  "_Confetti.GVB7w7W0.css": {
+    "file": "_app/immutable/assets/Confetti.GVB7w7W0.css",
+    "src": "_Confetti.GVB7w7W0.css"
+  },
+  "_Confetti.js": {
+    "file": "chunks/Confetti.js",
+    "name": "Confetti",
+    "imports": [
+      "_index-server.js",
+      "_server.js"
+    ],
+    "css": [
+      "_app/immutable/assets/Confetti.GVB7w7W0.css"
+    ]
+  },
   "_SoundToggle.BIWPpODx.css": {
     "file": "_app/immutable/assets/SoundToggle.BIWPpODx.css",
     "src": "_SoundToggle.BIWPpODx.css"
@@ -17,9 +32,9 @@
     "file": "chunks/SoundToggle.js",
     "name": "SoundToggle",
     "imports": [
-      "_internal.js",
-      "_exports.js",
-      "_client.js"
+      "_server.js",
+      "_client.js",
+      "_settings.js"
     ],
     "css": [
       "_app/immutable/assets/SoundToggle.BIWPpODx.css"
@@ -29,10 +44,13 @@
     "file": "chunks/client.js",
     "name": "client",
     "imports": [
-      "_internal.js",
+      "_index-server.js",
       "_shared.js",
-      "_internal2.js",
-      "_exports.js"
+      "_internal.js",
+      "_exports.js",
+      "_server.js",
+      "_index-server2.js",
+      "_internal2.js"
     ]
   },
   "_env.js": {
@@ -41,21 +59,46 @@
   },
   "_exports.js": {
     "file": "chunks/exports.js",
-    "name": "exports",
+    "name": "exports"
+  },
+  "_index-server.js": {
+    "file": "chunks/index-server.js",
+    "name": "index-server",
     "imports": [
-      "_internal.js"
+      "_server.js"
+    ]
+  },
+  "_index-server2.js": {
+    "file": "chunks/index-server2.js",
+    "name": "index-server",
+    "imports": [
+      "_server.js"
     ]
   },
   "_internal.js": {
     "file": "chunks/internal.js",
-    "name": "internal",
-    "imports": [
-      "_internal2.js"
-    ]
+    "name": "internal"
   },
   "_internal2.js": {
     "file": "chunks/internal2.js",
-    "name": "internal"
+    "name": "internal",
+    "imports": [
+      "_index-server.js",
+      "_internal.js",
+      "_server.js"
+    ]
+  },
+  "_server.js": {
+    "file": "chunks/server.js",
+    "name": "server"
+  },
+  "_settings.js": {
+    "file": "chunks/settings.js",
+    "name": "settings",
+    "imports": [
+      "_server.js",
+      "_index-server2.js"
+    ]
   },
   "_shared.js": {
     "file": "chunks/shared.js",
@@ -75,7 +118,7 @@
     "isEntry": true,
     "imports": [
       "_shared.js",
-      "_internal2.js",
+      "_internal.js",
       "_utils.js"
     ]
   },
@@ -85,7 +128,8 @@
     "src": "node_modules/@sveltejs/kit/src/runtime/components/svelte-5/error.svelte",
     "isEntry": true,
     "imports": [
-      "_internal.js",
+      "_index-server.js",
+      "_server.js",
       "_client.js"
     ]
   },
@@ -95,12 +139,14 @@
     "src": "node_modules/@sveltejs/kit/src/runtime/server/index.js",
     "isEntry": true,
     "imports": [
-      "_internal.js",
       "_shared.js",
-      "_internal2.js",
+      "_internal.js",
       "_utils.js",
       "_exports.js",
-      "_env.js"
+      "_server.js",
+      "_index-server2.js",
+      "_env.js",
+      "_internal2.js"
     ]
   },
   "src/routes/+layout.js": {
@@ -115,8 +161,10 @@
     "src": "src/routes/+layout.svelte",
     "isEntry": true,
     "imports": [
-      "_internal.js",
+      "_index-server.js",
+      "_server.js",
       "_client.js",
+      "_settings.js",
       "_SoundToggle.js"
     ],
     "css": [
@@ -129,11 +177,122 @@
     "src": "src/routes/+page.svelte",
     "isEntry": true,
     "imports": [
-      "_internal.js",
+      "_index-server.js",
+      "_server.js",
+      "_settings.js",
       "_SoundToggle.js"
     ],
     "css": [
       "_app/immutable/assets/_page.I68K3Pm_.css"
+    ]
+  },
+  "src/routes/games/memory/+page.svelte": {
+    "file": "entries/pages/games/memory/_page.svelte.js",
+    "name": "entries/pages/games/memory/_page.svelte",
+    "src": "src/routes/games/memory/+page.svelte",
+    "isEntry": true,
+    "imports": [
+      "_server.js",
+      "_settings.js",
+      "_Confetti.js"
+    ],
+    "css": [
+      "_app/immutable/assets/_page.CFCTU2v6.css"
+    ]
+  },
+  "src/routes/games/paint/+page.svelte": {
+    "file": "entries/pages/games/paint/_page.svelte.js",
+    "name": "entries/pages/games/paint/_page.svelte",
+    "src": "src/routes/games/paint/+page.svelte",
+    "isEntry": true,
+    "imports": [
+      "_server.js",
+      "_settings.js"
+    ],
+    "css": [
+      "_app/immutable/assets/_page.Dg3FxeXa.css"
+    ]
+  },
+  "src/routes/games/pop/+page.svelte": {
+    "file": "entries/pages/games/pop/_page.svelte.js",
+    "name": "entries/pages/games/pop/_page.svelte",
+    "src": "src/routes/games/pop/+page.svelte",
+    "isEntry": true,
+    "imports": [
+      "_index-server.js",
+      "_server.js",
+      "_settings.js"
+    ],
+    "css": [
+      "_app/immutable/assets/_page.Bl4kb8bW.css"
+    ]
+  },
+  "src/routes/games/puzzle/+page.svelte": {
+    "file": "entries/pages/games/puzzle/_page.svelte.js",
+    "name": "entries/pages/games/puzzle/_page.svelte",
+    "src": "src/routes/games/puzzle/+page.svelte",
+    "isEntry": true,
+    "imports": [
+      "_server.js",
+      "_settings.js",
+      "_Confetti.js"
+    ],
+    "css": [
+      "_app/immutable/assets/_page.DromJCvs.css"
+    ]
+  },
+  "src/routes/games/soccer/+page.svelte": {
+    "file": "entries/pages/games/soccer/_page.svelte.js",
+    "name": "entries/pages/games/soccer/_page.svelte",
+    "src": "src/routes/games/soccer/+page.svelte",
+    "isEntry": true,
+    "imports": [
+      "_server.js",
+      "_settings.js",
+      "_Confetti.js"
+    ],
+    "css": [
+      "_app/immutable/assets/_page.wQDhGMXt.css"
+    ]
+  },
+  "src/routes/games/sorting/+page.svelte": {
+    "file": "entries/pages/games/sorting/_page.svelte.js",
+    "name": "entries/pages/games/sorting/_page.svelte",
+    "src": "src/routes/games/sorting/+page.svelte",
+    "isEntry": true,
+    "imports": [
+      "_server.js",
+      "_settings.js",
+      "_Confetti.js"
+    ],
+    "css": [
+      "_app/immutable/assets/_page.CdOW96Vc.css"
+    ]
+  },
+  "src/routes/games/splash/+page.svelte": {
+    "file": "entries/pages/games/splash/_page.svelte.js",
+    "name": "entries/pages/games/splash/_page.svelte",
+    "src": "src/routes/games/splash/+page.svelte",
+    "isEntry": true,
+    "imports": [
+      "_server.js",
+      "_settings.js"
+    ],
+    "css": [
+      "_app/immutable/assets/_page.Bi0RtQRo.css"
+    ]
+  },
+  "src/routes/games/stickers/+page.svelte": {
+    "file": "entries/pages/games/stickers/_page.svelte.js",
+    "name": "entries/pages/games/stickers/_page.svelte",
+    "src": "src/routes/games/stickers/+page.svelte",
+    "isEntry": true,
+    "imports": [
+      "_server.js",
+      "_settings.js"
+    ],
+    "css": [
+      "_app/immutable/assets/_page.7yK0PYA5.css"
     ]
   },
   "virtual:__sveltekit/env": {

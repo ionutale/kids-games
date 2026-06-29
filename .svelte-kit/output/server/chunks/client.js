@@ -1,7 +1,10 @@
-import { g as noop, h as writable, r as index_server_exports } from "./internal.js";
-import { _ as noop$1 } from "./shared.js";
-import "./internal2.js";
+import { t as index_server_exports } from "./index-server.js";
+import { _ as noop } from "./shared.js";
+import "./internal.js";
 import "./exports.js";
+import { T as writable, at as noop$1 } from "./server.js";
+import "./index-server2.js";
+import "./internal2.js";
 import "@sveltejs/kit/internal";
 import "@sveltejs/kit/internal/server";
 var PRELOAD_PRIORITIES = {
@@ -40,7 +43,7 @@ function notifiable_store(value) {
 		subscribe
 	};
 }
-var updated_listener = { v: noop$1 };
+var updated_listener = { v: noop };
 function create_updated_store() {
 	const { set, subscribe } = writable(false);
 	return {
@@ -53,7 +56,7 @@ function create_updated_store() {
 var page;
 var navigating;
 var updated;
-var is_legacy = noop.toString().includes("$$") || /function \w+\(\) \{\}/.test(noop.toString());
+var is_legacy = noop$1.toString().includes("$$") || /function \w+\(\) \{\}/.test(noop$1.toString());
 var placeholder_url = "a:";
 if (is_legacy) {
 	page = {

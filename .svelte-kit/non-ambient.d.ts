@@ -29,15 +29,23 @@ declare module "$app/types" {
 	type MatcherParam<M> = M extends (param : string) => param is (infer U extends string) ? U : string;
 
 	export interface AppTypes {
-		RouteId(): "/" | "/games";
+		RouteId(): "/" | "/games" | "/games/memory" | "/games/paint" | "/games/pop" | "/games/puzzle" | "/games/soccer" | "/games/sorting" | "/games/splash" | "/games/stickers";
 		RouteParams(): {
 			
 		};
 		LayoutParams(): {
 			"/": Record<string, never>;
-			"/games": Record<string, never>
+			"/games": Record<string, never>;
+			"/games/memory": Record<string, never>;
+			"/games/paint": Record<string, never>;
+			"/games/pop": Record<string, never>;
+			"/games/puzzle": Record<string, never>;
+			"/games/soccer": Record<string, never>;
+			"/games/sorting": Record<string, never>;
+			"/games/splash": Record<string, never>;
+			"/games/stickers": Record<string, never>
 		};
-		Pathname(): "/";
+		Pathname(): "/" | "/games/memory" | "/games/paint" | "/games/pop" | "/games/puzzle" | "/games/soccer" | "/games/sorting" | "/games/splash" | "/games/stickers";
 		ResolvedPathname(): `${"" | `/${string}`}${ReturnType<AppTypes['Pathname']>}`;
 		Asset(): "/icons/icon-192.svg" | "/icons/icon-512.svg" | "/manifest.json" | "/robots.txt" | string & {};
 	}

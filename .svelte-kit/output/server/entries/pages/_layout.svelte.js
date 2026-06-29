@@ -1,5 +1,7 @@
-import { c as getContext, i as derived, o as store_get, s as unsubscribe_stores } from "../../chunks/internal.js";
+import "../../chunks/index-server.js";
+import { c as unsubscribe_stores, o as store_get, p as getContext, r as derived } from "../../chunks/server.js";
 import "../../chunks/client.js";
+import "../../chunks/settings.js";
 import { t as SoundToggle } from "../../chunks/SoundToggle.js";
 //#region node_modules/@sveltejs/kit/src/runtime/app/stores.js
 /**

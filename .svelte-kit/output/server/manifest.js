@@ -10,11 +10,19 @@ return {
 	assets: new Set(["icons/icon-192.svg","icons/icon-512.svg","manifest.json","robots.txt"]),
 	mimeTypes: {".svg":"image/svg+xml",".json":"application/json",".txt":"text/plain"},
 	_: {
-		client: {start:"_app/immutable/entry/start.BrFH0JiW.js",app:"_app/immutable/entry/app.CMoNuh0c.js",imports:["_app/immutable/entry/start.BrFH0JiW.js","_app/immutable/chunks/DXaLWtHh.js","_app/immutable/chunks/NzA8H654.js","_app/immutable/entry/app.CMoNuh0c.js","_app/immutable/chunks/NzA8H654.js","_app/immutable/chunks/xihTtKlq.js"],stylesheets:[],fonts:[],uses_env_dynamic_public:false},
+		client: {start:"_app/immutable/entry/start.3s7XIoOW.js",app:"_app/immutable/entry/app.B606EBAp.js",imports:["_app/immutable/entry/start.3s7XIoOW.js","_app/immutable/chunks/SuUG6lWW.js","_app/immutable/chunks/DHhgu8qd.js","_app/immutable/chunks/0bxHib6g.js","_app/immutable/entry/app.B606EBAp.js","_app/immutable/chunks/DHhgu8qd.js","_app/immutable/chunks/DYl5dUZ5.js","_app/immutable/chunks/xihTtKlq.js"],stylesheets:[],fonts:[],uses_env_dynamic_public:false},
 		nodes: [
 			__memo(() => import('./nodes/0.js')),
 			__memo(() => import('./nodes/1.js')),
-			__memo(() => import('./nodes/2.js'))
+			__memo(() => import('./nodes/2.js')),
+			__memo(() => import('./nodes/3.js')),
+			__memo(() => import('./nodes/4.js')),
+			__memo(() => import('./nodes/5.js')),
+			__memo(() => import('./nodes/6.js')),
+			__memo(() => import('./nodes/7.js')),
+			__memo(() => import('./nodes/8.js')),
+			__memo(() => import('./nodes/9.js')),
+			__memo(() => import('./nodes/10.js'))
 		],
 		remotes: {
 			
@@ -25,6 +33,62 @@ return {
 				pattern: /^\/$/,
 				params: [],
 				page: { layouts: [0,], errors: [1,], leaf: 2 },
+				endpoint: null
+			},
+			{
+				id: "/games/memory",
+				pattern: /^\/games\/memory\/?$/,
+				params: [],
+				page: { layouts: [0,], errors: [1,], leaf: 3 },
+				endpoint: null
+			},
+			{
+				id: "/games/paint",
+				pattern: /^\/games\/paint\/?$/,
+				params: [],
+				page: { layouts: [0,], errors: [1,], leaf: 4 },
+				endpoint: null
+			},
+			{
+				id: "/games/pop",
+				pattern: /^\/games\/pop\/?$/,
+				params: [],
+				page: { layouts: [0,], errors: [1,], leaf: 5 },
+				endpoint: null
+			},
+			{
+				id: "/games/puzzle",
+				pattern: /^\/games\/puzzle\/?$/,
+				params: [],
+				page: { layouts: [0,], errors: [1,], leaf: 6 },
+				endpoint: null
+			},
+			{
+				id: "/games/soccer",
+				pattern: /^\/games\/soccer\/?$/,
+				params: [],
+				page: { layouts: [0,], errors: [1,], leaf: 7 },
+				endpoint: null
+			},
+			{
+				id: "/games/sorting",
+				pattern: /^\/games\/sorting\/?$/,
+				params: [],
+				page: { layouts: [0,], errors: [1,], leaf: 8 },
+				endpoint: null
+			},
+			{
+				id: "/games/splash",
+				pattern: /^\/games\/splash\/?$/,
+				params: [],
+				page: { layouts: [0,], errors: [1,], leaf: 9 },
+				endpoint: null
+			},
+			{
+				id: "/games/stickers",
+				pattern: /^\/games\/stickers\/?$/,
+				params: [],
+				page: { layouts: [0,], errors: [1,], leaf: 10 },
 				endpoint: null
 			}
 		],
