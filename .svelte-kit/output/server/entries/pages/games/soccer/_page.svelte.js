@@ -5,23 +5,26 @@ import "../../../../chunks/Confetti.js";
 function _page($$renderer, $$props) {
 	$$renderer.component(($$renderer) => {
 		var $$store_subs;
-		let ballX = 20;
-		let ballY = 50;
+		let ballX = 50;
+		let ballY = 82;
+		let ballMoving = false;
 		let score = 0;
 		let level = 3;
 		function levelTargets(l) {
 			return {
-				goalWidth: Math.min(40 + l * 2, 55),
 				targetScore: Math.min(2 + l, 8),
-				missChance: Math.max(0, .5 - l * .05)
+				goalSize: Math.max(10, 24 - l)
 			};
 		}
-		$$renderer.push(`<div class="soccer-game svelte-etwtpk" role="application"><div class="field svelte-etwtpk"><div class="goal-area svelte-etwtpk"></div> <div class="ball svelte-etwtpk"${attr_style("", {
+		$$renderer.push(`<div class="soccer-game svelte-etwtpk" role="application"><div class="field svelte-etwtpk"><div class="goal-area svelte-etwtpk"></div> <div class="goal-text svelte-etwtpk">🏆</div> <div${attr_class("ball svelte-etwtpk", void 0, { "kicking": ballMoving })}${attr_style("", {
 			left: `${stringify(ballX)}%`,
 			top: `${stringify(ballY)}%`
 		})}>⚽</div> `);
 		$$renderer.push("<!--[0-->");
 		$$renderer.push(`<div class="score-display svelte-etwtpk">Score: ${escape_html(score)}/${escape_html(levelTargets(level).targetScore)}</div>`);
+		$$renderer.push(`<!--]--> `);
+		$$renderer.push("<!--[0-->");
+		$$renderer.push(`<div class="aim-hint svelte-etwtpk">Tap where you want to kick!</div>`);
 		$$renderer.push(`<!--]--></div> `);
 		$$renderer.push("<!--[-1-->");
 		$$renderer.push(`<!--]--> `);

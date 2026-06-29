@@ -222,7 +222,7 @@
     animation: matchPulse 1s ease-in-out infinite;
     box-shadow: 0 0 20px rgba(255, 215, 0, 0.6);
   }
-  .card.matched { opacity: 0.5; transform: rotateY(180deg) scale(0.9); }
+  .card.matched { opacity: 0; transform: rotateY(180deg) scale(0.9); pointer-events: none; }
   .sparkle {
     position: absolute;
     font-size: 20px;

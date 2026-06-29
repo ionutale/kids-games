@@ -50,9 +50,6 @@ declare module '$env/static/private' {
 	export const no_proxy: string;
 	export const HOME: string;
 	export const DEBUG_COLORS: string;
-	export const USER: string;
-	export const __CFBundleIdentifier: string;
-	export const OPENCODE_EXPERIMENTAL_ICON_DISCOVERY: string;
 	export const npm_package_version: string;
 	export const XPC_SERVICE_NAME: string;
 	export const MACH_PORT_RENDEZVOUS_PEER_VALDATION: string;
@@ -64,9 +61,10 @@ declare module '$env/static/private' {
 	export const npm_config_node_gyp: string;
 	export const XPC_FLAGS: string;
 	export const npm_command: string;
-	export const pnpm_config_verify_deps_before_run: string;
-	export const __CF_USER_TEXT_ENCODING: string;
 	export const ASDF_DATA_DIR: string;
+	export const OPENCODE_EXPERIMENTAL_ICON_DISCOVERY: string;
+	export const USER: string;
+	export const __CFBundleIdentifier: string;
 	export const ASDF_CONFIG_FILE: string;
 	export const PATH: string;
 	export const OPENCODE_SERVER_USERNAME: string;
@@ -76,6 +74,8 @@ declare module '$env/static/private' {
 	export const npm_execpath: string;
 	export const EDITOR: string;
 	export const OLLAMA_BACKEND: string;
+	export const pnpm_config_verify_deps_before_run: string;
+	export const __CF_USER_TEXT_ENCODING: string;
 	export const SSH_AUTH_SOCK: string;
 	export const SVELTEKIT_FORK: string;
 	export const npm_node_execpath: string;
@@ -93,6 +93,7 @@ declare module '$env/static/private' {
 	export const FPATH: string;
 	export const SHLVL: string;
 	export const NO_PROXY: string;
+	export const HEADED: string;
 	export const OPENCODE_EXPERIMENTAL_FILEWATCHER: string;
 	export const npm_lifecycle_script: string;
 	export const ASDF_DIR: string;
@@ -198,9 +199,6 @@ declare module '$env/dynamic/private' {
 		no_proxy: string;
 		HOME: string;
 		DEBUG_COLORS: string;
-		USER: string;
-		__CFBundleIdentifier: string;
-		OPENCODE_EXPERIMENTAL_ICON_DISCOVERY: string;
 		npm_package_version: string;
 		XPC_SERVICE_NAME: string;
 		MACH_PORT_RENDEZVOUS_PEER_VALDATION: string;
@@ -212,9 +210,10 @@ declare module '$env/dynamic/private' {
 		npm_config_node_gyp: string;
 		XPC_FLAGS: string;
 		npm_command: string;
-		pnpm_config_verify_deps_before_run: string;
-		__CF_USER_TEXT_ENCODING: string;
 		ASDF_DATA_DIR: string;
+		OPENCODE_EXPERIMENTAL_ICON_DISCOVERY: string;
+		USER: string;
+		__CFBundleIdentifier: string;
 		ASDF_CONFIG_FILE: string;
 		PATH: string;
 		OPENCODE_SERVER_USERNAME: string;
@@ -224,6 +223,8 @@ declare module '$env/dynamic/private' {
 		npm_execpath: string;
 		EDITOR: string;
 		OLLAMA_BACKEND: string;
+		pnpm_config_verify_deps_before_run: string;
+		__CF_USER_TEXT_ENCODING: string;
 		SSH_AUTH_SOCK: string;
 		SVELTEKIT_FORK: string;
 		npm_node_execpath: string;
@@ -241,6 +242,7 @@ declare module '$env/dynamic/private' {
 		FPATH: string;
 		SHLVL: string;
 		NO_PROXY: string;
+		HEADED: string;
 		OPENCODE_EXPERIMENTAL_FILEWATCHER: string;
 		npm_lifecycle_script: string;
 		ASDF_DIR: string;

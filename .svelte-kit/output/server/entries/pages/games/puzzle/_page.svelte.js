@@ -1,87 +1,91 @@
-import { S as escape_html, c as unsubscribe_stores, i as ensure_array_like, n as attr_style, o as store_get, r as derived, s as stringify, t as attr_class } from "../../../../chunks/server.js";
-import { n as settings } from "../../../../chunks/audioManager.js";
+import { S as escape_html, c as unsubscribe_stores, i as ensure_array_like, n as attr_style, t as attr_class } from "../../../../chunks/server.js";
+import "../../../../chunks/audioManager.js";
 import { t as Confetti } from "../../../../chunks/Confetti.js";
 //#region src/routes/games/puzzle/+page.svelte
 function _page($$renderer, $$props) {
 	$$renderer.component(($$renderer) => {
 		var $$store_subs;
-		const images = [
-			{
-				id: 1,
-				colors: [
-					"#FF6B6B",
-					"#4FC3F7",
-					"#FFD54F"
-				],
-				name: "Sun"
-			},
-			{
-				id: 2,
-				colors: [
-					"#81C784",
-					"#BA68C8",
-					"#FF8A65"
-				],
-				name: "Flower"
-			},
-			{
-				id: 3,
-				colors: [
-					"#4FC3F7",
-					"#E57373",
-					"#FFD54F"
-				],
-				name: "Star"
-			}
+		const PUZZLE_SIZE = 3;
+		const emojiGrid = [
+			[
+				"🐶",
+				"🐱",
+				"🐰"
+			],
+			[
+				"🐻",
+				"🐸",
+				"🐵"
+			],
+			[
+				"🦊",
+				"🐯",
+				"🐭"
+			]
 		];
 		let pieces = [];
 		let won = false;
+		let dragging = null;
 		function initGame() {
-			const img = images[Math.floor(Math.random() * images.length)];
-			const count = store_get($$store_subs ??= {}, "$settings", settings).ageLevel <= 2 ? 2 : store_get($$store_subs ??= {}, "$settings", settings).ageLevel <= 3 ? 4 : store_get($$store_subs ??= {}, "$settings", settings).ageLevel <= 4 ? 6 : 8;
-			const cols = count <= 2 ? 2 : count <= 4 ? 2 : 3;
-			const rows = Math.ceil(count / cols);
 			const result = [];
 			let id = 0;
-			for (let r = 0; r < rows; r++) for (let c = 0; c < cols && id < count; c++) {
+			for (let r = 0; r < PUZZLE_SIZE; r++) for (let c = 0; c < PUZZLE_SIZE; c++) {
 				result.push({
 					id,
 					correctRow: r,
 					correctCol: c,
 					row: r,
 					col: c,
-					color: img.colors[(r * cols + c) % img.colors.length],
+					emoji: emojiGrid[r][c],
 					placed: false
 				});
 				id++;
 			}
 			const positions = [];
-			for (let i = 0; i < count; i++) positions.push({
-				row: result[i].correctRow,
-				col: result[i].correctCol
+			for (let i = 0; i < result.length; i++) positions.push({
+				row: result[i].row,
+				col: result[i].col
 			});
 			for (let i = positions.length - 1; i > 0; i--) {
 				const j = Math.floor(Math.random() * (i + 1));
 				[positions[i], positions[j]] = [positions[j], positions[i]];
 			}
-			for (let i = 0; i < count; i++) {
+			for (let i = 0; i < result.length; i++) {
 				result[i].row = positions[i].row;
 				result[i].col = positions[i].col;
 			}
 			pieces = result;
 			won = false;
 		}
-		let gridCols = derived(() => store_get($$store_subs ??= {}, "$settings", settings).ageLevel <= 2 ? 2 : store_get($$store_subs ??= {}, "$settings", settings).ageLevel <= 4 ? 2 : 3);
 		initGame();
-		$$renderer.push(`<div class="puzzle-game svelte-culilx"><div class="puzzle-grid svelte-culilx"${attr_style("", { "grid-template-columns": `repeat(${stringify(gridCols())}, 1fr)` })}><!--[-->`);
-		const each_array = ensure_array_like(pieces);
-		for (let $$index = 0, $$length = each_array.length; $$index < $$length; $$index++) {
-			let piece = each_array[$$index];
-			$$renderer.push(`<button${attr_class("piece svelte-culilx", void 0, { "placed": piece.placed })}${attr_style("", {
-				background: piece.color,
-				"grid-row": piece.row + 1,
-				"grid-column": piece.col + 1
-			})}>${escape_html(piece.placed ? "" : "?")}</button>`);
+		$$renderer.push(`<div class="puzzle-game svelte-culilx"><div class="puzzle-board svelte-culilx"><div class="bg-grid svelte-culilx"><!--[-->`);
+		const each_array = ensure_array_like(Array(PUZZLE_SIZE));
+		for (let r = 0, $$length = each_array.length; r < $$length; r++) {
+			each_array[r];
+			$$renderer.push(`<!--[-->`);
+			const each_array_1 = ensure_array_like(Array(PUZZLE_SIZE));
+			for (let c = 0, $$length = each_array_1.length; c < $$length; c++) {
+				each_array_1[c];
+				$$renderer.push(`<div class="bg-cell svelte-culilx"${attr_style("", {
+					"grid-row": r + 1,
+					"grid-column": c + 1
+				})}><span class="bg-emoji svelte-culilx">${escape_html(emojiGrid[r][c])}</span></div>`);
+			}
+			$$renderer.push(`<!--]-->`);
+		}
+		$$renderer.push(`<!--]--></div> <!--[-->`);
+		const each_array_2 = ensure_array_like(pieces);
+		for (let $$index_2 = 0, $$length = each_array_2.length; $$index_2 < $$length; $$index_2++) {
+			let piece = each_array_2[$$index_2];
+			if (!piece.placed) {
+				$$renderer.push("<!--[0-->");
+				$$renderer.push(`<div${attr_class("piece svelte-culilx", void 0, { "dragging": dragging === piece.id })}${attr_style("", {
+					"grid-row": piece.row + 1,
+					"grid-column": piece.col + 1,
+					"z-index": dragging === piece.id ? 10 : 1
+				})}><span class="piece-emoji svelte-culilx">${escape_html(piece.emoji)}</span></div>`);
+			} else $$renderer.push("<!--[-1-->");
+			$$renderer.push(`<!--]-->`);
 		}
 		$$renderer.push(`<!--]--></div> `);
 		if (won) {

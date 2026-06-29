@@ -6,10 +6,10 @@ test.describe('Puzzle E2E', () => {
     await expect(page.locator('.piece').first()).toBeVisible();
   });
 
-  test('pieces are displayed in a grid', async ({ page }) => {
+  test('pieces are displayed on the board', async ({ page }) => {
     await page.goto('/games/puzzle');
-    const grid = page.locator('.puzzle-grid');
-    await expect(grid).toBeVisible();
+    await expect(page.locator('.puzzle-board')).toBeVisible();
+    await expect(page.locator('.piece').first()).toBeVisible();
   });
 
   test('kid taps many random pieces', async ({ page }) => {

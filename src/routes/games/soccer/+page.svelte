@@ -3,48 +3,50 @@
   import { playTap, playGoal as playGoalSound } from '$lib/sounds/audioManager';
   import Confetti from '$lib/components/Confetti.svelte';
 
-  let ballX = $state(20);
-  let ballY = $state(50);
+  let ballX = $state(50);
+  let ballY = $state(82);
   let ballMoving = $state(false);
   let score = $state(0);
   let showConfetti = $state(false);
   let gameOver = $state(false);
   let level = $state(3);
+  let ballTargetX = $state(50);
+  let ballTargetY = $state(82);
 
   const goalTop = 5;
   const goalBottom = 23;
-  const goalLeft = 60;
+  const goalLeft = 38;
+  const goalRight = 62;
 
   function levelTargets(l) {
     return {
-      goalWidth: Math.min(40 + l * 2, 55),
       targetScore: Math.min(2 + l, 8),
-      missChance: Math.max(0, 0.5 - l * 0.05),
+      goalSize: Math.max(10, 24 - l),
     };
   }
 
   function kick(event) {
     if (ballMoving || gameOver) return;
-    const field = event.currentTarget.querySelector('.field') || event.currentTarget;
-    const rect = field.getBoundingClientRect();
+    const rect = event.currentTarget.querySelector('.field').getBoundingClientRect();
     const clientX = event.touches ? event.touches[0].clientX : event.clientX;
     const clientY = event.touches ? event.touches[0].clientY : event.clientY;
     const tapX = ((clientX - rect.left) / rect.width) * 100;
     const tapY = ((clientY - rect.top) / rect.height) * 100;
 
     ballMoving = true;
+    ballTargetX = tapX;
+    ballTargetY = tapY;
     if ($settings.soundEnabled) playTap();
 
     const targets = levelTargets(level);
-    const inGoalX = tapX > goalLeft;
+    const goalHalf = targets.goalSize / 2;
+    const goalCenter = 50;
+    const inGoalX = tapX > goalCenter - goalHalf && tapX < goalCenter + goalHalf;
     const inGoalY = tapY > goalTop && tapY < goalBottom;
     const willScore = inGoalX && inGoalY;
 
-    const targetX = willScore ? 88 : 60 + Math.random() * 20;
-    const targetY = willScore ? 14 : 30 + Math.random() * 50;
-
-    ballX = targetX;
-    ballY = targetY;
+    ballX = tapX;
+    ballY = tapY;
 
     setTimeout(() => {
       ballMoving = false;
@@ -57,9 +59,9 @@
           gameOver = true;
           return;
         }
-        setTimeout(() => { ballX = 20; ballY = 50; }, 1000);
+        setTimeout(() => { ballX = 50; ballY = 82; ballTargetX = 50; ballTargetY = 82; }, 1000);
       } else {
-        setTimeout(() => { ballX = 20; ballY = 50; }, 800);
+        setTimeout(() => { ballX = 50; ballY = 82; ballTargetX = 50; ballTargetY = 82; }, 800);
       }
     }, 500);
   }
@@ -67,8 +69,10 @@
   function resetGame() {
     score = 0;
     gameOver = false;
-    ballX = 20;
-    ballY = 50;
+    ballX = 50;
+    ballY = 82;
+    ballTargetX = 50;
+    ballTargetY = 82;
   }
 
   function setLevel(l) {
@@ -86,15 +90,20 @@
 >
   <div class="field">
     <div class="goal-area"></div>
+    <div class="goal-text">🏆</div>
     <div
       class="ball"
       style:left="{ballX}%"
       style:top="{ballY}%"
+      class:kicking={ballMoving}
     >
       ⚽
     </div>
     {#if !gameOver}
       <div class="score-display">Score: {score}/{levelTargets(level).targetScore}</div>
+    {/if}
+    {#if !ballMoving && !gameOver}
+      <div class="aim-hint">Tap where you want to kick!</div>
     {/if}
   </div>
 
@@ -123,9 +132,10 @@
   .soccer-game {
     flex: 1;
     display: flex;
+    flex-direction: column;
     align-items: center;
     justify-content: center;
-    padding: 16px;
+    padding: 8px;
     position: relative;
   }
   .field {
@@ -140,14 +150,21 @@
   }
   .goal-area {
     position: absolute;
-    top: 5%;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 50%;
-    height: 18%;
+    top: 2%;
+    left: 30%;
+    width: 40%;
+    height: 22%;
     border: 3px solid white;
     border-radius: 0 0 12px 12px;
-    background: rgba(255,255,255,0.1);
+    background: rgba(255,255,255,0.08);
+  }
+  .goal-text {
+    position: absolute;
+    top: 7%;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 20px;
+    opacity: 0.4;
   }
   .ball {
     position: absolute;
@@ -156,6 +173,7 @@
     transition: all 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
     filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2));
   }
+  .ball.kicking { transition: all 0.3s cubic-bezier(0.25, 0.1, 0.25, 1); }
   .score-display {
     position: absolute;
     bottom: 12px;
@@ -168,6 +186,15 @@
     padding: 4px 12px;
     border-radius: 12px;
   }
+  .aim-hint {
+    position: absolute;
+    bottom: 12px;
+    left: 12px;
+    color: rgba(255,255,255,0.5);
+    font-size: 12px;
+    font-weight: 600;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+  }
   .win-overlay {
     position: fixed;
     inset: 0;
@@ -179,17 +206,8 @@
     z-index: 50;
     gap: 8px;
   }
-  .win-text {
-    font-size: 36px;
-    color: white;
-    font-weight: 700;
-    text-shadow: 0 2px 8px rgba(0,0,0,0.3);
-  }
-  .win-score {
-    font-size: 20px;
-    color: white;
-    opacity: 0.8;
-  }
+  .win-text { font-size: 36px; color: white; font-weight: 700; text-shadow: 0 2px 8px rgba(0,0,0,0.3); }
+  .win-score { font-size: 20px; color: white; opacity: 0.8; }
   .replay-btn {
     padding: 14px 32px;
     background: white;
@@ -200,14 +218,11 @@
     margin-top: 8px;
   }
   .level-bar {
-    position: absolute;
-    bottom: calc(16px + var(--safe-bottom));
-    left: 0;
-    right: 0;
     display: flex;
     justify-content: center;
     gap: 3px;
-    z-index: 10;
+    margin-top: 8px;
+    padding-bottom: calc(8px + var(--safe-bottom));
   }
   .level-btn {
     width: 30px;
@@ -218,8 +233,5 @@
     color: #999;
     background: rgba(255,255,255,0.6);
   }
-  .level-btn.active {
-    color: white;
-    background: var(--color-primary);
-  }
+  .level-btn.active { color: white; background: var(--color-primary); }
 </style>

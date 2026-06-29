@@ -3,47 +3,38 @@
   import { playTap, playMatch, playWin } from '$lib/sounds/audioManager';
   import Confetti from '$lib/components/Confetti.svelte';
 
-  const images = [
-    { id: 1, colors: ['#FF6B6B', '#4FC3F7', '#FFD54F'], name: 'Sun' },
-    { id: 2, colors: ['#81C784', '#BA68C8', '#FF8A65'], name: 'Flower' },
-    { id: 3, colors: ['#4FC3F7', '#E57373', '#FFD54F'], name: 'Star' },
+  const PUZZLE_SIZE = 3;
+
+  const emojiGrid = [
+    ['🐶', '🐱', '🐰'],
+    ['🐻', '🐸', '🐵'],
+    ['🦊', '🐯', '🐭'],
   ];
 
   let pieces = $state([]);
   let won = $state(false);
+  let dragging = $state(null);
+  let dragOffset = $state({ x: 0, y: 0 });
 
   function initGame() {
-    const img = images[Math.floor(Math.random() * images.length)];
-    const count = $settings.ageLevel <= 2 ? 2 : $settings.ageLevel <= 3 ? 4 : $settings.ageLevel <= 4 ? 6 : 8;
-    const cols = count <= 2 ? 2 : count <= 4 ? 2 : 3;
-    const rows = Math.ceil(count / cols);
-
     const result = [];
     let id = 0;
-    for (let r = 0; r < rows; r++) {
-      for (let c = 0; c < cols && id < count; c++) {
-        result.push({
-          id,
-          correctRow: r,
-          correctCol: c,
-          row: r,
-          col: c,
-          color: img.colors[(r * cols + c) % img.colors.length],
-          placed: false
-        });
+    for (let r = 0; r < PUZZLE_SIZE; r++) {
+      for (let c = 0; c < PUZZLE_SIZE; c++) {
+        result.push({ id, correctRow: r, correctCol: c, row: r, col: c, emoji: emojiGrid[r][c], placed: false });
         id++;
       }
     }
 
     const positions = [];
-    for (let i = 0; i < count; i++) {
-      positions.push({ row: result[i].correctRow, col: result[i].correctCol });
+    for (let i = 0; i < result.length; i++) {
+      positions.push({ row: result[i].row, col: result[i].col });
     }
     for (let i = positions.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
       [positions[i], positions[j]] = [positions[j], positions[i]];
     }
-    for (let i = 0; i < count; i++) {
+    for (let i = 0; i < result.length; i++) {
       result[i].row = positions[i].row;
       result[i].col = positions[i].col;
     }
@@ -52,47 +43,107 @@
     won = false;
   }
 
-  function placePiece(piece) {
-    if (piece.placed) return;
-    if (piece.row === piece.correctRow && piece.col === piece.correctCol) {
-      pieces = pieces.map(p => p.id === piece.id ? { ...p, placed: true } : p);
-      if ($settings.soundEnabled) playMatch();
-      if (pieces.every(p => p.placed)) {
-        setTimeout(() => { won = true; if ($settings.soundEnabled) playWin(); }, 300);
-      }
-    } else {
-      const neighbor = pieces.find(p =>
-        p.row === piece.correctRow && p.col === piece.correctCol && !p.placed && p.id !== piece.id
-      );
-      if (neighbor) {
-        pieces = pieces.map(p => {
-          if (p.id === piece.id) return { ...p, row: neighbor.row, col: neighbor.col };
-          if (p.id === neighbor.id) return { ...neighbor, row: piece.row, col: piece.col };
-          return p;
-        });
-        if ($settings.soundEnabled) playTap();
-      }
-    }
+  function startDrag(e, id) {
+    if (won) return;
+    const rect = document.querySelector('.puzzle-board').getBoundingClientRect();
+    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+    const piece = pieces.find(p => p.id === id);
+    if (!piece || piece.placed) return;
+
+    const cellW = rect.width / PUZZLE_SIZE;
+    const cellH = rect.height / PUZZLE_SIZE;
+    dragOffset = {
+      x: clientX - (piece.col * cellW + cellW / 2),
+      y: clientY - (piece.row * cellH + cellH / 2) + rect.top
+    };
+    dragging = id;
+    if ($settings.soundEnabled) playTap();
   }
 
-  let gridCols = $derived($settings.ageLevel <= 2 ? 2 : $settings.ageLevel <= 4 ? 2 : 3);
+  function moveDrag(e) {
+    if (dragging === null) return;
+    e.preventDefault();
+  }
+
+  function endDrag(e) {
+    if (dragging === null) return;
+    const rect = document.querySelector('.puzzle-board').getBoundingClientRect();
+    const clientX = e.changedTouches ? e.changedTouches[0].clientX : e.clientX;
+    const clientY = e.changedTouches ? e.changedTouches[0].clientY : e.clientY;
+    const cellW = rect.width / PUZZLE_SIZE;
+    const cellH = rect.height / PUZZLE_SIZE;
+
+    const dropCol = Math.floor((clientX - rect.left) / cellW);
+    const dropRow = Math.floor((clientY - rect.top) / cellH);
+    const piece = pieces.find(p => p.id === dragging);
+
+    if (piece && dropRow >= 0 && dropRow < PUZZLE_SIZE && dropCol >= 0 && dropCol < PUZZLE_SIZE) {
+      if (dropRow === piece.correctRow && dropCol === piece.correctCol && piece.row === dropRow && piece.col === dropCol) {
+        pieces = pieces.map(p => p.id === dragging ? { ...p, placed: true } : p);
+        if ($settings.soundEnabled) playMatch();
+        if (pieces.every(p => p.placed)) {
+          setTimeout(() => { won = true; if ($settings.soundEnabled) playWin(); }, 300);
+        }
+      } else if (!pieces.find(p => p.row === dropRow && p.col === dropCol && !p.placed)) {
+        const target = pieces.find(p => p.row === dropRow && p.col === dropCol && p.placed);
+        if (!target) {
+          pieces = pieces.map(p => {
+            if (p.id === dragging) return { ...p, row: dropRow, col: dropCol };
+            if (p.row === dropRow && p.col === dropCol && !p.placed) return { ...p, row: piece.row, col: piece.col };
+            return p;
+          });
+          const moved = pieces.find(p => p.id === dragging);
+          if (moved.row === moved.correctRow && moved.col === moved.correctCol) {
+            pieces = pieces.map(p => p.id === dragging ? { ...p, placed: true } : p);
+            if ($settings.soundEnabled) playMatch();
+            if (pieces.every(p => p.placed)) {
+              setTimeout(() => { won = true; if ($settings.soundEnabled) playWin(); }, 300);
+            }
+          } else if ($settings.soundEnabled) playTap();
+        }
+      }
+    }
+
+    dragging = null;
+  }
 
   initGame();
 </script>
 
 <div class="puzzle-game">
-  <div class="puzzle-grid" style:grid-template-columns="repeat({gridCols}, 1fr)">
+  <div
+    class="puzzle-board"
+    ontouchmove={moveDrag}
+    ontouchend={endDrag}
+    onmousemove={moveDrag}
+    onmouseup={endDrag}
+    onmouseleave={() => dragging = null}
+  >
+    <div class="bg-grid">
+      {#each Array(PUZZLE_SIZE) as _, r}
+        {#each Array(PUZZLE_SIZE) as _, c}
+          <div class="bg-cell" style:grid-row="{r + 1}" style:grid-column="{c + 1}">
+            <span class="bg-emoji">{emojiGrid[r][c]}</span>
+          </div>
+        {/each}
+      {/each}
+    </div>
+
     {#each pieces as piece (piece.id)}
-      <button
-        class="piece"
-        class:placed={piece.placed}
-        style:background={piece.color}
-        style:grid-row="{piece.row + 1}"
-        style:grid-column="{piece.col + 1}"
-        onclick={() => placePiece(piece)}
-      >
-        {piece.placed ? '' : '?'}
-      </button>
+      {#if !piece.placed}
+        <div
+          class="piece"
+          class:dragging={dragging === piece.id}
+          style:grid-row="{piece.row + 1}"
+          style:grid-column="{piece.col + 1}"
+          style:z-index="{dragging === piece.id ? 10 : 1}"
+          ontouchstart={(e) => startDrag(e, piece.id)}
+          onmousedown={(e) => startDrag(e, piece.id)}
+        >
+          <span class="piece-emoji">{piece.emoji}</span>
+        </div>
+      {/if}
     {/each}
   </div>
 
@@ -110,29 +161,58 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: center;
     flex: 1;
-    padding: 24px;
+    padding: 16px;
   }
-  .puzzle-grid {
-    display: grid;
-    gap: 6px;
+  .puzzle-board {
+    position: relative;
     width: 100%;
-    max-width: 300px;
+    max-width: 320px;
     aspect-ratio: 1;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    grid-template-rows: repeat(3, 1fr);
+    gap: 4px;
+    touch-action: none;
+    user-select: none;
   }
-  .piece {
-    border-radius: 12px;
-    font-size: 28px;
+  .bg-grid {
+    display: contents;
+  }
+  .bg-cell {
     display: flex;
     align-items: center;
     justify-content: center;
-    color: white;
-    text-shadow: 0 1px 3px rgba(0,0,0,0.2);
-    transition: opacity 0.2s, transform 0.15s;
+    background: rgba(0,0,0,0.04);
+    border-radius: 12px;
+    border: 2px dashed #ccc;
   }
-  .piece:active { transform: scale(0.92); }
-  .piece.placed { opacity: 0.7; cursor: default; }
+  .bg-emoji {
+    font-size: 48px;
+    opacity: 0.3;
+    filter: grayscale(1);
+  }
+  .piece {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    cursor: grab;
+    transition: box-shadow 0.15s;
+  }
+  .piece:active { cursor: grabbing; }
+  .piece.dragging {
+    box-shadow: 0 8px 24px rgba(0,0,0,0.25);
+    transform: scale(1.08);
+    z-index: 10;
+  }
+  .piece-emoji {
+    font-size: 44px;
+    pointer-events: none;
+  }
   .win-overlay {
     position: fixed;
     inset: 0;

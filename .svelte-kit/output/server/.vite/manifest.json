@@ -211,7 +211,7 @@
       "_Confetti.js"
     ],
     "css": [
-      "_app/immutable/assets/_page.CQtYnN3z.css"
+      "_app/immutable/assets/_page.DRcORT7I.css"
     ]
   },
   "src/routes/games/paint/+page.svelte": {
@@ -253,7 +253,7 @@
       "_Confetti.js"
     ],
     "css": [
-      "_app/immutable/assets/_page.DromJCvs.css"
+      "_app/immutable/assets/_page.BvFWasns.css"
     ]
   },
   "src/routes/games/soccer/+page.svelte": {
@@ -267,7 +267,7 @@
       "_Confetti.js"
     ],
     "css": [
-      "_app/immutable/assets/_page.BRfH2Asa.css"
+      "_app/immutable/assets/_page.N3Eg1gXA.css"
     ]
   },
   "src/routes/games/sorting/+page.svelte": {

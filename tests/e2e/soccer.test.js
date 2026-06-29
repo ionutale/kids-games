@@ -12,7 +12,7 @@ test.describe('Soccer E2E', () => {
     const field = page.locator('.field');
     await expect(field).toBeVisible();
     const box = await field.boundingBox();
-    await field.click({ position: { x: box.width * 0.88, y: box.height * 0.14 } });
+    await field.click({ position: { x: box.width * 0.50, y: box.height * 0.12 } });
     await page.waitForTimeout(700);
     await expect(page.locator('.score-display')).toBeVisible();
   });
@@ -21,7 +21,7 @@ test.describe('Soccer E2E', () => {
     await page.goto('/games/soccer');
     const field = page.locator('.field');
     const box = await field.boundingBox();
-    const gx = box.width * 0.88, gy = box.height * 0.14;
+    const gx = box.width * 0.50, gy = box.height * 0.12;
     for (let i = 0; i < 3; i++) {
       await field.click({ position: { x: gx, y: gy } });
       await page.waitForTimeout(1200);
@@ -57,7 +57,7 @@ test.describe('Soccer E2E', () => {
     const ball = page.locator('.ball');
     const box = await field.boundingBox();
     const initialLeft = await ball.evaluate(el => el.style.left);
-    await field.click({ position: { x: box.width * 0.88, y: box.height * 0.14 } });
+    await field.click({ position: { x: box.width * 0.30, y: box.height * 0.40 } });
     await page.waitForTimeout(300);
     const newLeft = await ball.evaluate(el => el.style.left);
     expect(newLeft).not.toBe(initialLeft);
@@ -72,7 +72,7 @@ test.describe('Soccer E2E', () => {
     await page.goto('/games/soccer');
     const field = page.locator('.field');
     const box = await field.boundingBox();
-    await field.click({ position: { x: box.width * 0.88, y: box.height * 0.14 } });
+    await field.click({ position: { x: box.width * 0.50, y: box.height * 0.12 } });
     await page.waitForTimeout(1000);
     await page.locator('.level-btn').nth(5).click();
     const s = await page.locator('.score-display').textContent();
