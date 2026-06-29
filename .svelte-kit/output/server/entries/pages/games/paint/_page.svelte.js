@@ -1,3 +1,4 @@
+import "../../../../chunks/index-server.js";
 import { S as escape_html, c as unsubscribe_stores, i as ensure_array_like, n as attr_style, t as attr_class, x as attr } from "../../../../chunks/server.js";
 import "../../../../chunks/settings.js";
 //#region src/routes/games/paint/+page.svelte

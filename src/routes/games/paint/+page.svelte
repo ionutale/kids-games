@@ -1,9 +1,10 @@
 <script>
+  import { onMount } from 'svelte';
   import { settings } from '$lib/stores/settings';
   import { playTap, playSplash } from '$lib/sounds/audioManager';
 
   let canvasEl;
-  let ctx;
+  let ctx = $state(null);
   let isDrawing = $state(false);
   let currentColor = $state('#FF6B6B');
   let currentSize = $state('big');
@@ -13,14 +14,13 @@
   const colors = ['#FF6B6B', '#4FC3F7', '#81C784', '#FFD54F', '#BA68C8', '#FF8A65'];
   const stamps = ['⭐', '❤️', '🐱', '🐶', '🦋', '🌻'];
 
-  function setupCanvas(el) {
-    if (!el) return;
-    canvasEl = el;
-    ctx = el.getContext('2d');
-    resizeCanvas();
+  function init() {
+    if (!canvasEl) return;
+    ctx = canvasEl.getContext('2d');
+    resize();
   }
 
-  function resizeCanvas() {
+  function resize() {
     if (!canvasEl || !ctx) return;
     const rect = canvasEl.parentElement.getBoundingClientRect();
     const dpr = window.devicePixelRatio || 1;
@@ -31,7 +31,14 @@
     ctx.scale(dpr, dpr);
   }
 
+  onMount(() => {
+    init();
+    addEventListener('resize', resize);
+    return () => removeEventListener('resize', resize);
+  });
+
   function getPos(e) {
+    if (!canvasEl) return { x: 0, y: 0 };
     const rect = canvasEl.getBoundingClientRect();
     const clientX = e.touches ? e.touches[0].clientX : e.clientX;
     const clientY = e.touches ? e.touches[0].clientY : e.clientY;
@@ -40,6 +47,7 @@
 
   function startDraw(e) {
     e.preventDefault();
+    if (!ctx) return;
     isDrawing = true;
     const pos = getPos(e);
     if (mode === 'stamp') {
@@ -62,7 +70,7 @@
 
   function keepDrawing(e) {
     e.preventDefault();
-    if (!isDrawing || mode === 'stamp') return;
+    if (!isDrawing || mode === 'stamp' || !ctx) return;
     const pos = getPos(e);
     ctx.lineTo(pos.x, pos.y);
     ctx.stroke();
@@ -74,7 +82,7 @@
   }
 
   function clearCanvas() {
-    if (!ctx) return;
+    if (!ctx || !canvasEl) return;
     const dpr = window.devicePixelRatio || 1;
     ctx.clearRect(0, 0, canvasEl.width / dpr, canvasEl.height / dpr);
   }

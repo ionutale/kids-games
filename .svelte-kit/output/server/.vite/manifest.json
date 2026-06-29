@@ -220,6 +220,7 @@
     "src": "src/routes/games/paint/+page.svelte",
     "isEntry": true,
     "imports": [
+      "_index-server.js",
       "_server.js",
       "_settings.js"
     ],
