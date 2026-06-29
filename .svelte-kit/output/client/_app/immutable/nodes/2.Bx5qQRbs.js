@@ -1,0 +1,1 @@
+import{M as e,f as t,u as n}from"../chunks/B9JtjcNA.js";import"../chunks/xihTtKlq.js";e();var r=t(`<h1>Kids Games</h1>`);function i(e){n(e,r())}export{i as component};
