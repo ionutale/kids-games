@@ -3,6 +3,10 @@
 		"src/routes/+layout.js",
 		"src/routes/+layout.js"
 	],
+	"/games/animal-quiz": [
+		"src/routes/games/animal-quiz/+page.js",
+		"src/routes/+layout.js"
+	],
 	"/games/memory": [
 		"src/routes/+layout.js"
 	],

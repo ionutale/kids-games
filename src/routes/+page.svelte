@@ -15,6 +15,7 @@
     { id: 'sorting', icon: '📦', key: 'sorting' },
     { id: 'splash', icon: '🌈', key: 'splash' },
     { id: 'tower-defense', icon: '🛡️', key: 'towerDefense' },
+    { id: 'animal-quiz', icon: '🐾', key: 'animalQuiz' },
   ];
 
   let showSettings = $state(false);

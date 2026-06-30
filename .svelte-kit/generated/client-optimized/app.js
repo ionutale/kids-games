@@ -20,22 +20,24 @@ export const nodes = [
 	() => import('./nodes/8'),
 	() => import('./nodes/9'),
 	() => import('./nodes/10'),
-	() => import('./nodes/11')
+	() => import('./nodes/11'),
+	() => import('./nodes/12')
 ];
 
 export const server_loads = [];
 
 export const dictionary = {
 		"/": [2],
-		"/games/memory": [3],
-		"/games/paint": [4],
-		"/games/pop": [5],
-		"/games/puzzle": [6],
-		"/games/soccer": [7],
-		"/games/sorting": [8],
-		"/games/splash": [9],
-		"/games/stickers": [10],
-		"/games/tower-defense": [11]
+		"/games/animal-quiz": [3],
+		"/games/memory": [4],
+		"/games/paint": [5],
+		"/games/pop": [6],
+		"/games/puzzle": [7],
+		"/games/soccer": [8],
+		"/games/sorting": [9],
+		"/games/splash": [10],
+		"/games/stickers": [11],
+		"/games/tower-defense": [12]
 	};
 
 export const hooks = {

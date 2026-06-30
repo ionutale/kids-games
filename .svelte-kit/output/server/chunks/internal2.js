@@ -1,6 +1,6 @@
 import "./index-server.js";
 import "./internal.js";
-import { $ as HYDRATION_ERROR, A as set_active_effect, B as flushSync, C as is_passive_event, D as active_effect, F as get_first_child, G as async_mode_flag, H as component_context, I as get_next_sibling, J as set_hydrate_node, K as hydrate_node, L as init_operations, M as component_root, N as clear_text_content, O as active_reaction, P as create_text, R as mutable_source, U as pop, V as boundary, W as push, X as hydration_mismatch, Y as set_hydrating, a as render, at as define_property, et as hydration_failed, h as setContext, it as array_from, j as set_active_reaction, k as get, nt as LEGACY_PROPS, q as hydrating, r as derived, z as set } from "./server.js";
+import { A as get, B as set, C as is_passive_event, F as create_text, G as push, H as boundary, I as get_first_child, J as hydrating, K as async_mode_flag, L as get_next_sibling, M as set_active_reaction, N as component_root, O as active_effect, P as clear_text_content, R as init_operations, U as component_context, V as flushSync, W as pop, X as set_hydrating, Y as set_hydrate_node, Z as hydration_mismatch, a as render, at as array_from, et as HYDRATION_ERROR, h as setContext, j as set_active_effect, k as active_reaction, ot as define_property, q as hydrate_node, r as derived, rt as LEGACY_PROPS, tt as hydration_failed, z as mutable_source } from "./server.js";
 //#region \0virtual:__sveltekit/server
 var read_implementation = null;
 function set_read_implementation(fn) {
@@ -571,7 +571,7 @@ var options = {
 		app: ({ head, body, assets, nonce, env }) => "<!doctype html>\n<html lang=\"en\">\n  <head>\n    <meta charset=\"utf-8\" />\n    <link rel=\"icon\" href=\"" + assets + "/icons/icon-192.svg\" />\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover\" />\n    <meta name=\"theme-color\" content=\"#4FC3F7\" />\n    <meta name=\"apple-mobile-web-app-capable\" content=\"yes\" />\n    <meta name=\"apple-mobile-web-app-status-bar-style\" content=\"default\" />\n    <link rel=\"apple-touch-icon\" href=\"" + assets + "/icons/icon-192.svg\" />\n    " + head + "\n  </head>\n  <body>\n    <div style=\"display: contents\">" + body + "</div>\n  </body>\n</html>\n",
 		error: error_template_default
 	},
-	version_hash: "jhezbl"
+	version_hash: "1ojuwfp"
 };
 async function get_hooks() {
 	let handle;

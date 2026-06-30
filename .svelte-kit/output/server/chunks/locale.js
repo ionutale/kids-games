@@ -1,4 +1,4 @@
-import { E as writable, w as derived } from "./server.js";
+import { D as writable, w as derived } from "./server.js";
 import "./index-server2.js";
 //#region src/lib/stores/locale.js
 var STORAGE_KEY = "kids-games-locale";
@@ -46,7 +46,10 @@ var translations = {
 		sell: "Sell",
 		youWin: "You Win!",
 		gameOver: "Game Over!",
-		tryAgain: "Try Again"
+		tryAgain: "Try Again",
+		animalQuiz: "Animal Quiz",
+		allDone: "All done!",
+		correct: "Correct!"
 	},
 	it: {
 		title: "Giochi Bambini",
@@ -91,7 +94,10 @@ var translations = {
 		sell: "Vendi",
 		youWin: "Hai Vinto!",
 		gameOver: "Game Over!",
-		tryAgain: "Riprova"
+		tryAgain: "Riprova",
+		animalQuiz: "Quiz Animali",
+		allDone: "Tutto fatto!",
+		correct: "Giusto!"
 	},
 	ro: {
 		title: "Jocuri Copii",
@@ -136,7 +142,10 @@ var translations = {
 		sell: "Vinde",
 		youWin: "Ai Câștigat!",
 		gameOver: "Game Over!",
-		tryAgain: "Încearcă din nou"
+		tryAgain: "Încearcă din nou",
+		animalQuiz: "Test Animale",
+		allDone: "Gata!",
+		correct: "Corect!"
 	}
 };
 var defaultLocale = "en";

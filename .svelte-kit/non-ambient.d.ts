@@ -29,13 +29,14 @@ declare module "$app/types" {
 	type MatcherParam<M> = M extends (param : string) => param is (infer U extends string) ? U : string;
 
 	export interface AppTypes {
-		RouteId(): "/" | "/games" | "/games/memory" | "/games/paint" | "/games/pop" | "/games/puzzle" | "/games/soccer" | "/games/sorting" | "/games/splash" | "/games/stickers" | "/games/tower-defense";
+		RouteId(): "/" | "/games" | "/games/animal-quiz" | "/games/memory" | "/games/paint" | "/games/pop" | "/games/puzzle" | "/games/soccer" | "/games/sorting" | "/games/splash" | "/games/stickers" | "/games/tower-defense";
 		RouteParams(): {
 			
 		};
 		LayoutParams(): {
 			"/": Record<string, never>;
 			"/games": Record<string, never>;
+			"/games/animal-quiz": Record<string, never>;
 			"/games/memory": Record<string, never>;
 			"/games/paint": Record<string, never>;
 			"/games/pop": Record<string, never>;
@@ -46,7 +47,7 @@ declare module "$app/types" {
 			"/games/stickers": Record<string, never>;
 			"/games/tower-defense": Record<string, never>
 		};
-		Pathname(): "/" | "/games/memory" | "/games/paint" | "/games/pop" | "/games/puzzle" | "/games/soccer" | "/games/sorting" | "/games/splash" | "/games/stickers" | "/games/tower-defense";
+		Pathname(): "/" | "/games/animal-quiz" | "/games/memory" | "/games/paint" | "/games/pop" | "/games/puzzle" | "/games/soccer" | "/games/sorting" | "/games/splash" | "/games/stickers" | "/games/tower-defense";
 		ResolvedPathname(): `${"" | `/${string}`}${ReturnType<AppTypes['Pathname']>}`;
 		Asset(): "/icons/icon-192.svg" | "/icons/icon-512.svg" | "/manifest.json" | "/robots.txt" | "/screenshots/memory.png" | "/screenshots/paint.png" | "/screenshots/pop.png" | "/screenshots/puzzle.png" | "/screenshots/soccer.png" | "/screenshots/sorting.png" | "/screenshots/splash.png" | "/screenshots/stickers.png" | string & {};
 	}

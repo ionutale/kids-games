@@ -19,6 +19,7 @@ const translations = {
     towerDefense: 'Tower Defense', startWave: 'Start Wave', nextWave: 'Next Wave',
     waveInProgress: 'Wave in progress...', upgrade: 'Upgrade', sell: 'Sell',
     youWin: 'You Win!', gameOver: 'Game Over!', tryAgain: 'Try Again',
+    animalQuiz: 'Animal Quiz', allDone: 'All done!', correct: 'Correct!',
   },
   it: {
     title: 'Giochi Bambini', paint: 'Disegna', stickers: 'Adesivi', memory: 'Memoria',
@@ -36,6 +37,7 @@ const translations = {
     towerDefense: 'Torre Difesa', startWave: 'Inizia Onda', nextWave: 'Prossima Onda',
     waveInProgress: 'Onda in corso...', upgrade: 'Migliora', sell: 'Vendi',
     youWin: 'Hai Vinto!', gameOver: 'Game Over!', tryAgain: 'Riprova',
+    animalQuiz: 'Quiz Animali', allDone: 'Tutto fatto!', correct: 'Giusto!',
   },
   ro: {
     title: 'Jocuri Copii', paint: 'Desenează', stickers: 'Abțibilduri', memory: 'Memorie',
@@ -53,6 +55,7 @@ const translations = {
     towerDefense: 'Apărare Turn', startWave: 'Începe Valul', nextWave: 'Următorul Val',
     waveInProgress: 'Val în desfășurare...', upgrade: 'Îmbunătățește', sell: 'Vinde',
     youWin: 'Ai Câștigat!', gameOver: 'Game Over!', tryAgain: 'Încearcă din nou',
+    animalQuiz: 'Test Animale', allDone: 'Gata!', correct: 'Corect!',
   }
 };
 

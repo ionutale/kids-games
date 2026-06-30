@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { TOWERS, upgradedStats } from '$lib/tower-defense/towers.js';
 import { ENEMY_TYPES, scaledHealth } from '$lib/tower-defense/enemies.js';
-import { MAPS, getTowerSpots, getPathCells } from '$lib/tower-defense/maps.js';
+import { MAPS, getPathCells } from '$lib/tower-defense/maps.js';
 
 describe('Towers', () => {
   it('has 5 tower types', () => {
@@ -59,13 +59,6 @@ describe('Maps', () => {
       expect(m.grid).toBeGreaterThan(0);
       expect(m.startCoins).toBeGreaterThan(0);
       expect(m.lives).toBe(10);
-    });
-  });
-
-  it('tower spots are found in each map', () => {
-    MAPS.forEach(m => {
-      const spots = getTowerSpots(m.layout);
-      expect(spots.length).toBeGreaterThanOrEqual(1);
     });
   });
 

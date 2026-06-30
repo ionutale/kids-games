@@ -1,7 +1,7 @@
 import "../../chunks/index-server.js";
 import { c as unsubscribe_stores, o as store_get, p as getContext, r as derived, x as attr } from "../../chunks/server.js";
 import "../../chunks/client.js";
-import "../../chunks/audioManager.js";
+import "../../chunks/settings.js";
 import { t as _ } from "../../chunks/locale.js";
 import { t as SoundToggle } from "../../chunks/SoundToggle.js";
 //#region node_modules/.pnpm/@sveltejs+kit@2.68.0_@sveltejs+vite-plugin-svelte@7.1.2_svelte@5.56.4_vite@8.1.0_terser_92cd6391677923dcfe4fa79ac66478d5/node_modules/@sveltejs/kit/src/runtime/app/stores.js
