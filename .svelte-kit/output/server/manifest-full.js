@@ -10,7 +10,7 @@ return {
 	assets: new Set(["icons/icon-192.svg","icons/icon-512.svg","manifest.json","puzzles/01-garden.jpg","puzzles/02-ocean.jpg","puzzles/03-space.jpg","puzzles/04-farm.jpg","puzzles/05-jungle.jpg","puzzles/06-food.jpg","puzzles/07-pets.jpg","puzzles/08-transport.jpg","robots.txt","screenshots/memory.png","screenshots/paint.png","screenshots/pop.png","screenshots/puzzle.png","screenshots/soccer.png","screenshots/sorting.png","screenshots/splash.png","screenshots/stickers.png","sounds/nudge.mp3","sounds/pickup.mp3","sounds/snap.mp3","sounds/tap.mp3","sounds/victory.mp3"]),
 	mimeTypes: {".svg":"image/svg+xml",".json":"application/json",".jpg":"image/jpeg",".txt":"text/plain",".png":"image/png",".mp3":"audio/mpeg"},
 	_: {
-		client: {start:"_app/immutable/entry/start.msW5Dv9V.js",app:"_app/immutable/entry/app.BTHBaSej.js",imports:["_app/immutable/entry/start.msW5Dv9V.js","_app/immutable/chunks/CROFBX4v.js","_app/immutable/chunks/DzfqpjLu.js","_app/immutable/chunks/BrsEmOPd.js","_app/immutable/entry/app.BTHBaSej.js","_app/immutable/chunks/DzfqpjLu.js","_app/immutable/chunks/DYl5dUZ5.js","_app/immutable/chunks/xihTtKlq.js"],stylesheets:[],fonts:[],uses_env_dynamic_public:false},
+		client: {start:"_app/immutable/entry/start.Brkrn1ce.js",app:"_app/immutable/entry/app.Lvkea39i.js",imports:["_app/immutable/entry/start.Brkrn1ce.js","_app/immutable/chunks/CqMX6wda.js","_app/immutable/chunks/DzfqpjLu.js","_app/immutable/chunks/BrsEmOPd.js","_app/immutable/entry/app.Lvkea39i.js","_app/immutable/chunks/DzfqpjLu.js","_app/immutable/chunks/DYl5dUZ5.js","_app/immutable/chunks/xihTtKlq.js"],stylesheets:[],fonts:[],uses_env_dynamic_public:false},
 		nodes: [
 			__memo(() => import('./nodes/0.js')),
 			__memo(() => import('./nodes/1.js')),

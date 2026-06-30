@@ -1,4 +1,5 @@
 // Jigsaw piece generation with interlocking tab/blank edges
+// Edge path algorithm adapted from jigsaw-puzzle npm package
 
 function randomEdge(exclude) {
   if (exclude === 'flat') return Math.random() < 0.5 ? 'tab' : 'blank';
@@ -39,7 +40,7 @@ export function generatePieces(image, difficulty) {
   }
 
   // Create piece objects
-  shuffled.forEach((pos, index) => {
+  shuffled.forEach((pos) => {
     pieces.push({
       id: `${pos.row}-${pos.col}`,
       correctRow: pos.row,
@@ -57,67 +58,100 @@ function invert(edge) {
 }
 
 // Generate SVG path for a puzzle piece
-export function piecePath(edges, size, inset = 0.22) {
-  const s = size;
-  const i = size * inset;
-  const half = i / 2;
-
-  const top = edgePath(edges.top, 'top', s, i, half);
-  const right = edgePath(edges.right, 'right', s, i, half);
-  const bottom = edgePath(edges.bottom, 'bottom', s, i, half);
-  const left = edgePath(edges.left, 'left', s, i, half);
-
+// Uses 6 cubic bezier segments to create the traditional tab/blank jigsaw shape
+// Based on the jigsaw-puzzle npm package algorithm
+export function piecePath(edges, s) {
+  const top = edgePath(edges.top, s, 1);
+  const right = edgePath(edges.right, s, 2);
+  const bottom = edgePath(edges.bottom, s, 3);
+  const left = edgePath(edges.left, s, 4);
   return `M 0,0 ${top} L ${s},0 ${right} L ${s},${s} ${bottom} L 0,${s} ${left} Z`;
 }
 
-function edgePath(type, side, s, i, half) {
+function edgePath(type, s, side) {
   if (type === 'flat') {
-    if (side === 'top') return `L ${s},0`;
-    if (side === 'right') return `L ${s},${s}`;
-    if (side === 'bottom') return `L 0,${s}`;
-    if (side === 'left') return `L 0,0`;
+    switch (side) {
+      case 1: return `L ${s},0`;
+      case 2: return `L ${s},${s}`;
+      case 3: return `L 0,${s}`;
+      case 4: return `L 0,0`;
+    }
   }
 
-  const dir = type === 'tab' ? 1 : -1;
+  const isTab = type === 'tab';
+  const k = 0.5522847498; // circle approx constant
 
-  // Control points for a smooth tab/blank curve
-  const cp1 = i * 0.3;
-  const cp2 = i * 0.7;
+  // For tab: positive depth = outward, negative = inward
+  // We use bezier curves to draw a smooth knob centered on the edge
+  const mid = s / 2;
+  const neckW = s * 0.088;
+  const bR = s * 0.121;
+  const nD = s * 0.066;
+  const tD = nD + bR;
 
   switch (side) {
-    case 'top': {
-      const mid = s / 2;
-      return `L ${mid - half},0 C ${mid - half},${cp1 * dir} ${mid - i},{${cp1 * dir}} ${mid - i},{${i * dir}}
-              C ${mid - i},{${cp2 * dir}} ${mid - i * 0.7},{${i * dir}} ${mid - i * 0.3},{${i * dir}}
-              C ${mid},{${i * dir * 1.15}} ${mid + i * 0.3},{${i * dir}} ${mid + i * 0.3},{${i * dir}}
-              C ${mid + i * 0.7},{${i * dir}} ${mid + i},{${cp2 * dir}} ${mid + i},{${i * dir}}
-              C ${mid + i},{${cp1 * dir}} ${mid + half},{${cp1 * dir}} ${mid + half},0
-              L ${s},0`;
+    case 1: {
+      // Top edge: left to right
+      const sign = isTab ? -1 : 1;
+      const y1 = sign * nD;
+      const y2 = sign * tD;
+      return `L ${mid - neckW},0
+        L ${mid - neckW},${y1}
+        C ${mid - neckW},${y1 + sign * bR * (1 - k)}
+          ${mid - bR * k},${y2}
+          ${mid},${y2}
+        C ${mid + bR * k},${y2}
+          ${mid + neckW},${y1 + sign * bR * (1 - k)}
+          ${mid + neckW},${y1}
+        L ${mid + neckW},0
+        L ${s},0`;
     }
-    case 'right': {
-      const mid = s / 2;
-      return `L ${s},${mid - half} C ${s - cp1 * dir},${mid - half} ${s - i * dir},${mid - i} ${s - i * dir},${mid - i}
-              C ${s - i * dir},${mid - i * 0.7} ${s - i * dir},${mid - i * 0.3} ${s - i * dir},${mid}
-              C ${s - i * dir * 1.15},${mid + i * 0.3} ${s - i * dir},${mid + i * 0.3} ${s - i * dir},${mid + i * 0.3}
-              C ${s - i * dir},${mid + i * 0.7} ${s - i * dir},${mid + i} ${s - cp1 * dir},${mid + half}
-              L ${s},${mid + half} L ${s},${s}`;
+    case 2: {
+      // Right edge: top to bottom
+      const sign = isTab ? 1 : -1;
+      const x1 = s + sign * nD;
+      const x2 = s + sign * tD;
+      return `L ${s},${mid - neckW}
+        L ${x1},${mid - neckW}
+        C ${x1 + sign * bR * (1 - k)},${mid - neckW}
+          ${x2},${mid - bR * k}
+          ${x2},${mid}
+        C ${x2},${mid + bR * k}
+          ${x1 + sign * bR * (1 - k)},${mid + neckW}
+          ${x1},${mid + neckW}
+        L ${s},${mid + neckW}
+        L ${s},${s}`;
     }
-    case 'bottom': {
-      const mid = s / 2;
-      return `L ${mid + half},${s} C ${mid + half},${s - cp1 * dir} ${mid + i},{${s - cp1 * dir}} ${mid + i},{${s - i * dir}}
-              C ${mid + i},{${s - i * dir * 0.7}} ${mid + i * 0.7},{${s - i * dir}} ${mid + i * 0.3},{${s - i * dir}}
-              C ${mid},{${s - i * dir * 1.15}} ${mid - i * 0.3},{${s - i * dir}} ${mid - i * 0.3},{${s - i * dir}}
-              C ${mid - i * 0.7},{${s - i * dir}} ${mid - i},{${s - cp2 * dir}} ${mid - i},{${s - i * dir}}
-              C ${mid - i},{${s - cp1 * dir}} ${mid - half},{${s - cp1 * dir}} ${mid - half},${s}
-              L 0,${s}`;
+    case 3: {
+      // Bottom edge: right to left
+      const sign = isTab ? 1 : -1;
+      const y1 = s + sign * nD;
+      const y2 = s + sign * tD;
+      return `L ${mid + neckW},${s}
+        L ${mid + neckW},${y1}
+        C ${mid + neckW},${y1 + sign * bR * (1 - k)}
+          ${mid + bR * k},${y2}
+          ${mid},${y2}
+        C ${mid - bR * k},${y2}
+          ${mid - neckW},${y1 + sign * bR * (1 - k)}
+          ${mid - neckW},${y1}
+        L ${mid - neckW},${s}
+        L 0,${s}`;
     }
-    case 'left': {
-      const mid = s / 2;
-      return `L 0,${mid + half} C ${cp1 * dir},${mid + half} ${i * dir},${mid + i} ${i * dir},${mid + i}
-              C ${i * dir},${mid + i * 0.7} ${i * dir},${mid + i * 0.3} ${i * dir},${mid}
-              C ${i * dir * 1.15},${mid - i * 0.3} ${i * dir},${mid - i * 0.3} ${i * dir},${mid - i * 0.3}
-              C ${i * dir},${mid - i * 0.7} ${i * dir},${mid - i} ${cp1 * dir},${mid - half}
-              L 0,${mid - half}`;
+    case 4: {
+      // Left edge: bottom to top
+      const sign = isTab ? -1 : 1;
+      const x1 = sign * nD;
+      const x2 = sign * tD;
+      return `L 0,${mid + neckW}
+        L ${x1},${mid + neckW}
+        C ${x1 + sign * bR * (1 - k)},${mid + neckW}
+          ${x2},${mid + bR * k}
+          ${x2},${mid}
+        C ${x2},${mid - bR * k}
+          ${x1 + sign * bR * (1 - k)},${mid - neckW}
+          ${x1},${mid - neckW}
+        L 0,${mid - neckW}`;
     }
     default: return '';
   }
