@@ -1,7 +1,7 @@
 <script>
   import { onMount, onDestroy } from 'svelte';
   import { _ } from '$lib/stores/locale';
-  import { playTap, playMatch, playWin } from '$lib/sounds/audioManager';
+  import { loadPuzzleSounds, playPickup, playSnap, playVictory, playNudge } from '$lib/sounds/puzzleSounds.js';
   import Confetti from '$lib/components/Confetti.svelte';
   import { PUZZLE_IMAGES, getCategories, DIFFICULTIES } from '$lib/glossary-puzzle/images.js';
   import { generatePieces, piecePath } from '$lib/glossary-puzzle/pieces.js';
@@ -21,8 +21,6 @@
   let showDone = $state(false);
   let trayPieces = $state([]);
   let trayIndex = $state(0);
-  let trayCapacity = $state(4);
-  let cellEmoji = $state({});
   let idleTimer = $state(null);
   let nudgeTarget = $state(null);
   let showNudge = $state(false);
@@ -30,6 +28,7 @@
   let exitPressCount = $state(0);
   let exitTimer = $state(null);
   let boardSize = $state(300);
+  let soundsLoaded = $state(false);
 
   let difficulty = $derived(DIFFICULTIES[diffKey]);
 
@@ -48,7 +47,6 @@
     pieces = result.pieces;
     rows = result.rows;
     cols = result.cols;
-    cellEmoji = result.cellEmoji;
     placed = new Set();
     trayIndex = 0;
     refillTray();
@@ -76,7 +74,7 @@
     dragOffset = { x: ox, y: oy };
     dragPos = { x: clientX, y: clientY };
     resetIdleTimer();
-    if (playTap) playTap();
+    if (soundsLoaded) playPickup();
   }
 
   function onPieceDragMove(e) {
@@ -103,11 +101,6 @@
     const cellW = boardRect.width / cols;
     const cellH = boardRect.height / rows;
 
-    const targetCell = {
-      row: Math.floor(relY / cellH),
-      col: Math.floor(relX / cellW),
-    };
-
     const correctCol = piece.correctCol;
     const correctRow = piece.correctRow;
     const targetX = correctCol * cellW + cellW / 2;
@@ -118,10 +111,10 @@
 
     if (dist <= difficulty.snapRadius && !placed.has(piece.id)) {
       placed = new Set([...placed, piece.id]);
-      if (playMatch) playMatch();
+      if (soundsLoaded) playSnap();
       if (placed.size === pieces.length) {
         celebrating = true;
-        if (playWin) playWin();
+        if (soundsLoaded) playVictory();
         setTimeout(() => { showDone = true; celebrating = false; }, 2000);
       }
       refillTray();
@@ -142,6 +135,7 @@
       const random = unplaced[Math.floor(Math.random() * unplaced.length)];
       nudgeTarget = random.id;
       showNudge = true;
+      if (soundsLoaded) playNudge();
       setTimeout(() => { showNudge = false; }, 3000);
     }, 8000);
   }
@@ -155,7 +149,7 @@
   function saveProgress() {
     const data = {
       imageId: selectedImage?.id,
-      difficulty: Object.keys(DIFFICULTIES).find(k => DIFFICULTIES[k] === difficulty),
+      difficulty: diffKey,
       placedIds: [...placed],
     };
     if (typeof localStorage !== 'undefined') {
@@ -167,26 +161,20 @@
     if (typeof localStorage === 'undefined') return;
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return;
-    try {
-      savedState = JSON.parse(raw);
-    } catch {}
+    try { savedState = JSON.parse(raw); } catch {}
   }
 
   function resumeSaved() {
     if (!savedState) return;
     const img = PUZZLE_IMAGES.find(i => i.id === savedState.imageId);
-    const diff = DIFFICULTIES[savedState.difficulty];
-    if (!img || !diff) { savedState = null; return; }
+    if (!img || !DIFFICULTIES[savedState.difficulty]) { savedState = null; return; }
     selectedImage = img;
     diffKey = savedState.difficulty;
-    const result = generatePieces(img, diff);
+    const result = generatePieces(img, DIFFICULTIES[savedState.difficulty]);
     pieces = result.pieces;
     rows = result.rows;
     cols = result.cols;
-    cellEmoji = result.cellEmoji;
-    placed = new Set(savedState.placedIds.filter(id =>
-      pieces.some(p => p.id === id)
-    ));
+    placed = new Set(savedState.placedIds.filter(id => pieces.some(p => p.id === id)));
     trayIndex = 0;
     refillTray();
     view = 'play';
@@ -214,31 +202,15 @@
     }
   }
 
-  function boardCell(row, col) {
-    const piece = pieces.find(p => p.correctRow === row && p.correctCol === col);
-    const isPlaced = piece && placed.has(piece.id);
-    const ghostEmoji = cellEmoji[`${row}-${col}`] || '?';
-    return { piece, isPlaced, ghostEmoji };
-  }
+  function imageWidth() { return cols * 100; }
+  function imageHeight() { return rows * 100; }
+  function imageX(col) { return -col * 100; }
+  function imageY(row) { return -row * 100; }
+  let clipId = $derived(0);
 
-  function getDragStyle(piece) {
-    if (!dragging || dragging !== piece.id) return {};
-    return {
-      position: 'fixed',
-      left: `${dragPos.x - dragOffset.x}px`,
-      top: `${dragPos.y - dragOffset.y}px`,
-      zIndex: 1000,
-      transform: 'scale(1.12)',
-      pointerEvents: 'none',
-    };
-  }
-
-  function getTrayPieceStyle(piece) {
-    if (dragging === piece.id) return { visibility: 'hidden' };
-    return {};
-  }
-
-  onMount(() => {
+  onMount(async () => {
+    await loadPuzzleSounds();
+    soundsLoaded = true;
     loadProgress();
   });
 
@@ -253,18 +225,12 @@
     <h2 class="gp-gallery-title">🧩 {$_('puzzle')}</h2>
 
     {#if savedState}
-      <button class="gp-resume-btn" onclick={resumeSaved}>
-        ▶ {$_('replay')}
-      </button>
+      <button class="gp-resume-btn" onclick={resumeSaved}>▶ {$_('replay')}</button>
     {/if}
 
     <div class="gp-categories">
       {#each categories as cat}
-        <button
-          class="gp-cat-btn"
-          class:active={selectedCategory === cat.key}
-          onclick={() => selectedCategory = selectedCategory === cat.key ? null : cat.key}
-        >
+        <button class="gp-cat-btn" class:active={selectedCategory === cat.key} onclick={() => selectedCategory = selectedCategory === cat.key ? null : cat.key}>
           <span class="gp-cat-icon">{cat.icon}</span>
           <span class="gp-cat-name">{cat.name}</span>
         </button>
@@ -273,28 +239,14 @@
 
     <div class="gp-diff-select">
       {#each Object.entries(DIFFICULTIES) as [key, d]}
-        <button
-          class="gp-diff-btn"
-          class:active={diffKey === key}
-          onclick={() => diffKey = key}
-        >
-          {d.label}
-        </button>
+        <button class="gp-diff-btn" class:active={diffKey === key} onclick={() => diffKey = key}>{d.label}</button>
       {/each}
     </div>
 
     <div class="gp-image-grid">
       {#each filteredImages as img}
         <button class="gp-image-card" onclick={() => startPuzzle(img, diffKey)}>
-          <div class="gp-thumb">
-            {#each img.grid as row}
-              <div class="gp-thumb-row">
-                {#each row.slice(0, 4) as emoji}
-                  <span class="gp-thumb-emoji">{emoji}</span>
-                {/each}
-              </div>
-            {/each}
-          </div>
+          <div class="gp-thumb" style:background-image="url({img.file})"></div>
           <span class="gp-thumb-name">{img.name}</span>
         </button>
       {/each}
@@ -304,36 +256,32 @@
 {:else if view === 'play'}
   <div class="gp-play">
     <div class="gp-top-bar">
-      <button class="gp-exit-btn" onclick={handleExitPress}>
-        ← {$_('back')}
-      </button>
+      <button class="gp-exit-btn" onclick={handleExitPress}>← {$_('back')}</button>
       <span class="gp-progress">{placed.size}/{pieces.length}</span>
     </div>
 
     <div class="gp-board-wrap">
-      <div
-        class="gp-board"
-        style:width="{boardSize}px"
-        style:height="{boardSize}px"
-        ontouchmove={onPieceDragMove}
-        ontouchend={onPieceDragEnd}
-        onmousemove={onPieceDragMove}
-        onmouseup={onPieceDragEnd}
-      >
+      <div class="gp-board" style:width="{boardSize}px" style:height="{boardSize}px"
+        ontouchmove={onPieceDragMove} ontouchend={onPieceDragEnd}
+        onmousemove={onPieceDragMove} onmouseup={onPieceDragEnd}>
+
+        <div class="gp-board-bg" style:background-image="url({selectedImage.file})"></div>
+
         {#each Array(rows) as _, r}
           {#each Array(cols) as _, c}
-            {@const { piece, isPlaced, ghostEmoji } = boardCell(r, c)}
-            <div
-              class="gp-board-cell"
-              style:width="{boardSize / cols}px"
-              style:height="{boardSize / rows}px"
-              class:nudge-target={showNudge && piece?.id === nudgeTarget}
-            >
-              <span class="gp-ghost">{ghostEmoji}</span>
+            {@const piece = pieces.find(p => p.correctRow === r && p.correctCol === c)}
+            {@const isPlaced = piece && placed.has(piece.id)}
+            <div class="gp-board-cell" style:width="{boardSize / cols}px" style:height="{boardSize / rows}px"
+              class:nudge-target={showNudge && piece?.id === nudgeTarget}>
               {#if isPlaced}
-                <div class="gp-placed-piece" style:clip-path="url(#puzzle-{piece.id})">
-                  <span class="gp-piece-emoji">{ghostEmoji}</span>
+                <div class="gp-placed-wrap" style:clip-path="url(#pp-{r}-{c})">
+                  <img src={selectedImage.file} class="gp-piece-img" style:width="{imageWidth() * 100 / boardSize * (boardSize / cols)}px" style:height="{imageHeight() * 100 / boardSize * (boardSize / rows)}px" style:margin-left="{imageX(c) * 100 / boardSize * (boardSize / cols)}px" style:margin-top="{imageY(r) * 100 / boardSize * (boardSize / rows)}px">
                 </div>
+                <svg width="0" height="0" style="position:absolute">
+                  <defs>
+                    <clipPath id="pp-{r}-{c}"><path d={piecePath(piece.edges, 100)} /></clipPath>
+                  </defs>
+                </svg>
               {/if}
             </div>
           {/each}
@@ -343,58 +291,40 @@
 
     <div class="gp-tray" ontouchstart={(e) => { if (!dragging) e.preventDefault(); }}>
       {#each trayPieces as piece (piece.id)}
-        <div
-          class="gp-tray-piece"
-          style={getTrayPieceStyle(piece)}
+        <div class="gp-tray-piece" style={dragging === piece.id ? 'visibility:hidden' : ''}
           class:nudge-target={showNudge && piece.id === nudgeTarget}
-          ontouchstart={(e) => onPieceDragStart(e, piece.id)}
-          onmousedown={(e) => onPieceDragStart(e, piece.id)}
-        >
+          ontouchstart={(e) => onPieceDragStart(e, piece.id)} onmousedown={(e) => onPieceDragStart(e, piece.id)}>
           <svg viewBox="0 0 100 100" class="gp-piece-shape">
             <defs>
-              <clipPath id="puzzle-{piece.id}">
-                <path d={piecePath(piece.edges, 100)} />
-              </clipPath>
+              <clipPath id="tp-{piece.id}"><path d={piecePath(piece.edges, 100)} /></clipPath>
             </defs>
-            <rect width="100" height="100" fill="#f0f0f0" clip-path="url(#puzzle-{piece.id})" />
-            <text x="50" y="55" text-anchor="middle" dominant-baseline="middle" font-size="32" clip-path="url(#puzzle-{piece.id})">{piece.emoji}</text>
-            <path d={piecePath(piece.edges, 100)} fill="none" stroke="#ccc" stroke-width="1" />
+            <image href={selectedImage.file} width={imageWidth()} height={imageHeight()} x={imageX(piece.correctCol)} y={imageY(piece.correctRow)} clip-path="url(#tp-{piece.id})" />
+            <path d={piecePath(piece.edges, 100)} fill="none" stroke="rgba(0,0,0,0.15)" stroke-width="1" />
           </svg>
         </div>
       {/each}
     </div>
 
     {#if dragging}
-      {@const dragPiece = pieces.find(p => p.id === dragging)}
-      {#if dragPiece}
-        <div class="gp-drag-ghost" style="position:fixed;left:{dragPos.x - dragOffset.x}px;top:{dragPos.y - dragOffset.y}px;z-index:1000;pointer-events:none;">
+      {@const dp = pieces.find(p => p.id === dragging)}
+      {#if dp}
+        <div class="gp-drag-ghost" style="position:fixed;left:{dragPos.x - dragOffset.x}px;top:{dragPos.y - dragOffset.y}px;z-index:1000;pointer-events:none;transform:scale(1.12);filter:drop-shadow(0 4px 12px rgba(0,0,0,0.3));">
           <svg viewBox="0 0 100 100" width="70" height="70">
-            <rect width="100" height="100" fill="#fff" clip-path="url(#puzzle-drag)" />
-            <text x="50" y="55" text-anchor="middle" dominant-baseline="middle" font-size="32" clip-path="url(#puzzle-drag)">{dragPiece.emoji}</text>
-            <path d={piecePath(dragPiece.edges, 100)} fill="none" stroke="#999" stroke-width="1" clip-path="url(#puzzle-drag)" />
-            <defs>
-              <clipPath id="puzzle-drag">
-                <path d={piecePath(dragPiece.edges, 100)} />
-              </clipPath>
-            </defs>
+            <defs><clipPath id="dg-{dp.id}"><path d={piecePath(dp.edges, 100)} /></clipPath></defs>
+            <image href={selectedImage.file} width={imageWidth()} height={imageHeight()} x={imageX(dp.correctCol)} y={imageY(dp.correctRow)} clip-path="url(#dg-{dp.id})" />
+            <path d={piecePath(dp.edges, 100)} fill="none" stroke="rgba(0,0,0,0.3)" stroke-width="1" />
           </svg>
         </div>
       {/if}
     {/if}
 
-    {#if celebrating}
-      <Confetti />
-    {/if}
+    {#if celebrating}<Confetti />{/if}
 
     {#if showDone}
       <div class="gp-celebration">
         <p class="gp-celebration-text">🎉 {$_('puzzleDone')}</p>
-        <button class="gp-celebration-btn" onclick={() => { view = 'gallery'; }}>
-          ◀ {$_('back')}
-        </button>
-        <button class="gp-celebration-btn" onclick={() => startPuzzle(selectedImage, diffKey)}>
-          🔄 {$_('playAgain')}
-        </button>
+        <button class="gp-celebration-btn" onclick={() => { view = 'gallery'; }}>◀ {$_('back')}</button>
+        <button class="gp-celebration-btn" onclick={() => startPuzzle(selectedImage, diffKey)}>🔄 {$_('playAgain')}</button>
       </div>
     {/if}
   </div>
@@ -413,10 +343,8 @@
   .gp-diff-btn { padding: 6px 18px; border-radius: 12px; font-size: 13px; font-weight: 600; background: rgba(255,255,255,0.7); color: #999; }
   .gp-diff-btn.active { background: var(--color-primary); color: white; }
   .gp-image-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; width: 100%; max-width: 360px; }
-  .gp-image-card { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 10px; background: white; border-radius: 14px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
-  .gp-thumb { display: flex; flex-direction: column; gap: 1px; }
-  .gp-thumb-row { display: flex; gap: 1px; }
-  .gp-thumb-emoji { font-size: 20px; line-height: 1; }
+  .gp-image-card { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 10px; background: white; border-radius: 14px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); overflow: hidden; }
+  .gp-thumb { width: 100%; aspect-ratio: 1; background-size: cover; background-position: center; border-radius: 8px; }
   .gp-thumb-name { font-size: 13px; font-weight: 600; color: #666; }
 
   .gp-play { display: flex; flex-direction: column; align-items: center; flex: 1; }
@@ -424,20 +352,19 @@
   .gp-exit-btn { font-size: 14px; font-weight: 600; color: #999; padding: 4px 8px; }
   .gp-progress { font-size: 16px; font-weight: 700; color: var(--color-primary); }
   .gp-board-wrap { flex: 1; display: flex; align-items: center; justify-content: center; width: 100%; padding: 8px; }
-  .gp-board { position: relative; display: flex; flex-wrap: wrap; background: rgba(0,0,0,0.03); border-radius: 8px; overflow: hidden; max-width: 100%; max-height: 100%; }
-  .gp-board-cell { position: relative; display: flex; align-items: center; justify-content: center; border: 1px solid rgba(0,0,0,0.06); box-sizing: border-box; }
+  .gp-board { position: relative; display: flex; flex-wrap: wrap; border-radius: 8px; overflow: hidden; max-width: 100%; max-height: 100%; }
+  .gp-board-bg { position: absolute; inset: 0; background-size: cover; opacity: 0.12; filter: grayscale(1); }
+  .gp-board-cell { position: relative; display: flex; align-items: center; justify-content: center; border: 1px solid rgba(0,0,0,0.04); box-sizing: border-box; }
   .gp-board-cell.nudge-target { animation: gpNudge 0.5s ease-in-out 3; }
   @keyframes gpNudge { 0%,100% { box-shadow: 0 0 0 rgba(255,215,0,0); } 50% { box-shadow: 0 0 12px rgba(255,215,0,0.6); } }
-  .gp-ghost { font-size: 28px; opacity: 0.15; filter: grayscale(1); }
-  .gp-placed-piece { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: white; }
-  .gp-piece-emoji { font-size: 28px; }
+  .gp-placed-wrap { position: absolute; inset: 0; overflow: hidden; display: flex; align-items: center; justify-content: center; background: white; }
+  .gp-piece-img { max-width: none; position: absolute; }
   .gp-tray { display: flex; gap: 8px; padding: 8px; padding-bottom: calc(8px + var(--safe-bottom)); flex-shrink: 0; min-height: 80px; justify-content: center; flex-wrap: wrap; }
-  .gp-tray-piece { width: 64px; height: 64px; cursor: grab; touch-action: none; transition: transform 0.1s; }
+  .gp-tray-piece { width: 64px; height: 64px; cursor: grab; touch-action: none; }
   .gp-tray-piece:active { transform: scale(1.05); }
   .gp-tray-piece.nudge-target { animation: gpShake 0.4s ease-in-out 3; }
   @keyframes gpShake { 0%,100% { transform: translateX(0); } 25% { transform: translateX(-4px); } 75% { transform: translateX(4px); } }
   .gp-piece-shape { width: 100%; height: 100%; }
-  .gp-drag-ghost { filter: drop-shadow(0 4px 12px rgba(0,0,0,0.3)); transform: scale(1.12); }
   .gp-celebration { position: fixed; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; background: rgba(0,0,0,0.3); z-index: 50; gap: 16px; }
   .gp-celebration-text { font-size: 32px; color: white; font-weight: 700; text-shadow: 0 2px 8px rgba(0,0,0,0.3); }
   .gp-celebration-btn { padding: 12px 28px; background: white; border-radius: 24px; font-size: 16px; font-weight: 600; color: var(--color-primary); }

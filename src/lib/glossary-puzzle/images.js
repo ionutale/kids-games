@@ -1,5 +1,5 @@
-// Jigsaw puzzle image definitions
-// Each image is a 2D array of emoji that form the "picture"
+// Puzzle image definitions using downloaded CC0 images
+// Images from Pixabay / Unsplash (CC0 / Public Domain)
 
 export const PUZZLE_IMAGES = [
   {
@@ -7,96 +7,64 @@ export const PUZZLE_IMAGES = [
     name: 'Garden',
     category: 'nature',
     icon: '🌸',
-    grid: [
-      ['🌸','🌻','🌺','🦋'],
-      ['🌿','🌷','🌹','🐝'],
-      ['🍀','🌼','🌞','🐞'],
-      ['🌳','🌵','🍄','🐜'],
-    ],
+    file: '/puzzles/01-garden.jpg',
+    thumbEmoji: '🌸',
   },
   {
     id: 'ocean',
     name: 'Ocean',
     category: 'nature',
     icon: '🐠',
-    grid: [
-      ['🐠','🐙','🦀','🐡'],
-      ['🌊','🐳','🐬','🪸'],
-      ['🐟','🐋','🦈','🐚'],
-      ['🐠','🐡','🐙','🌊'],
-    ],
+    file: '/puzzles/02-ocean.jpg',
+    thumbEmoji: '🌊',
   },
   {
     id: 'space',
     name: 'Space',
     category: 'adventure',
     icon: '🚀',
-    grid: [
-      ['🚀','🛸','🌍','🌙'],
-      ['⭐','🌌','☄️','🪐'],
-      ['👨‍🚀','🛰️','🌠','🔭'],
-      ['🌟','💫','🌕','✨'],
-    ],
+    file: '/puzzles/03-space.jpg',
+    thumbEmoji: '🚀',
   },
   {
     id: 'farm',
     name: 'Farm',
     category: 'nature',
     icon: '🐄',
-    grid: [
-      ['🐄','🐑','🐖','🐓'],
-      ['🌾','🚜','🌽','🥕'],
-      ['🐕','🐈','🐇','🐎'],
-      ['🌻','🍎','🌿','🏡'],
-    ],
+    file: '/puzzles/04-farm.jpg',
+    thumbEmoji: '🌾',
   },
   {
     id: 'jungle',
     name: 'Jungle',
     category: 'adventure',
     icon: '🦁',
-    grid: [
-      ['🦁','🐘','🦒','🐆'],
-      ['🐒','🦜','🐍','🦩'],
-      ['🌴','🌿','🍌','🥥'],
-      ['🐊','🦎','🐸','🌺'],
-    ],
+    file: '/puzzles/05-jungle.jpg',
+    thumbEmoji: '🌴',
   },
   {
     id: 'food',
     name: 'Food',
     category: 'food',
     icon: '🍕',
-    grid: [
-      ['🍕','🍔','🌭','🧁'],
-      ['🍟','🥗','🍣','🍩'],
-      ['🍝','🥩','🧀','🍰'],
-      ['🌮','🥟','🍦','🍪'],
-    ],
+    file: '/puzzles/06-food.jpg',
+    thumbEmoji: '🍎',
   },
   {
     id: 'pets',
     name: 'Pets',
     category: 'animals',
     icon: '🐱',
-    grid: [
-      ['🐱','🐶','🐰','🐹'],
-      ['🐭','🐼','🐨','🦊'],
-      ['🐸','🐵','🐻','🐯'],
-      ['🦝','🐮','🐷','🐧'],
-    ],
+    file: '/puzzles/07-pets.jpg',
+    thumbEmoji: '🐶',
   },
   {
-    id: 'robots',
-    name: 'Robots',
+    id: 'transport',
+    name: 'Transport',
     category: 'adventure',
-    icon: '🤖',
-    grid: [
-      ['🤖','👾','🦾','🦿'],
-      ['⚡','🔧','⚙️','💾'],
-      ['📡','🛠️','🔩','💻'],
-      ['🔋','🔄','🤖','⚡'],
-    ],
+    icon: '🚂',
+    file: '/puzzles/08-transport.jpg',
+    thumbEmoji: '🚂',
   },
 ];
 

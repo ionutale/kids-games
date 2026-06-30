@@ -1,7 +1,8 @@
 import { n as onDestroy } from "../../../../chunks/index-server.js";
-import { S as escape_html, c as unsubscribe_stores, i as ensure_array_like, o as store_get, r as derived, t as attr_class } from "../../../../chunks/server.js";
+import { S as escape_html, c as unsubscribe_stores, i as ensure_array_like, n as attr_style, o as store_get, r as derived, s as stringify, t as attr_class } from "../../../../chunks/server.js";
 import { t as _ } from "../../../../chunks/locale.js";
 import "../../../../chunks/Confetti.js";
+//#endregion
 //#region src/lib/glossary-puzzle/images.js
 var PUZZLE_IMAGES = [
 	{
@@ -9,256 +10,64 @@ var PUZZLE_IMAGES = [
 		name: "Garden",
 		category: "nature",
 		icon: "🌸",
-		grid: [
-			[
-				"🌸",
-				"🌻",
-				"🌺",
-				"🦋"
-			],
-			[
-				"🌿",
-				"🌷",
-				"🌹",
-				"🐝"
-			],
-			[
-				"🍀",
-				"🌼",
-				"🌞",
-				"🐞"
-			],
-			[
-				"🌳",
-				"🌵",
-				"🍄",
-				"🐜"
-			]
-		]
+		file: "/puzzles/01-garden.jpg",
+		thumbEmoji: "🌸"
 	},
 	{
 		id: "ocean",
 		name: "Ocean",
 		category: "nature",
 		icon: "🐠",
-		grid: [
-			[
-				"🐠",
-				"🐙",
-				"🦀",
-				"🐡"
-			],
-			[
-				"🌊",
-				"🐳",
-				"🐬",
-				"🪸"
-			],
-			[
-				"🐟",
-				"🐋",
-				"🦈",
-				"🐚"
-			],
-			[
-				"🐠",
-				"🐡",
-				"🐙",
-				"🌊"
-			]
-		]
+		file: "/puzzles/02-ocean.jpg",
+		thumbEmoji: "🌊"
 	},
 	{
 		id: "space",
 		name: "Space",
 		category: "adventure",
 		icon: "🚀",
-		grid: [
-			[
-				"🚀",
-				"🛸",
-				"🌍",
-				"🌙"
-			],
-			[
-				"⭐",
-				"🌌",
-				"☄️",
-				"🪐"
-			],
-			[
-				"👨‍🚀",
-				"🛰️",
-				"🌠",
-				"🔭"
-			],
-			[
-				"🌟",
-				"💫",
-				"🌕",
-				"✨"
-			]
-		]
+		file: "/puzzles/03-space.jpg",
+		thumbEmoji: "🚀"
 	},
 	{
 		id: "farm",
 		name: "Farm",
 		category: "nature",
 		icon: "🐄",
-		grid: [
-			[
-				"🐄",
-				"🐑",
-				"🐖",
-				"🐓"
-			],
-			[
-				"🌾",
-				"🚜",
-				"🌽",
-				"🥕"
-			],
-			[
-				"🐕",
-				"🐈",
-				"🐇",
-				"🐎"
-			],
-			[
-				"🌻",
-				"🍎",
-				"🌿",
-				"🏡"
-			]
-		]
+		file: "/puzzles/04-farm.jpg",
+		thumbEmoji: "🌾"
 	},
 	{
 		id: "jungle",
 		name: "Jungle",
 		category: "adventure",
 		icon: "🦁",
-		grid: [
-			[
-				"🦁",
-				"🐘",
-				"🦒",
-				"🐆"
-			],
-			[
-				"🐒",
-				"🦜",
-				"🐍",
-				"🦩"
-			],
-			[
-				"🌴",
-				"🌿",
-				"🍌",
-				"🥥"
-			],
-			[
-				"🐊",
-				"🦎",
-				"🐸",
-				"🌺"
-			]
-		]
+		file: "/puzzles/05-jungle.jpg",
+		thumbEmoji: "🌴"
 	},
 	{
 		id: "food",
 		name: "Food",
 		category: "food",
 		icon: "🍕",
-		grid: [
-			[
-				"🍕",
-				"🍔",
-				"🌭",
-				"🧁"
-			],
-			[
-				"🍟",
-				"🥗",
-				"🍣",
-				"🍩"
-			],
-			[
-				"🍝",
-				"🥩",
-				"🧀",
-				"🍰"
-			],
-			[
-				"🌮",
-				"🥟",
-				"🍦",
-				"🍪"
-			]
-		]
+		file: "/puzzles/06-food.jpg",
+		thumbEmoji: "🍎"
 	},
 	{
 		id: "pets",
 		name: "Pets",
 		category: "animals",
 		icon: "🐱",
-		grid: [
-			[
-				"🐱",
-				"🐶",
-				"🐰",
-				"🐹"
-			],
-			[
-				"🐭",
-				"🐼",
-				"🐨",
-				"🦊"
-			],
-			[
-				"🐸",
-				"🐵",
-				"🐻",
-				"🐯"
-			],
-			[
-				"🦝",
-				"🐮",
-				"🐷",
-				"🐧"
-			]
-		]
+		file: "/puzzles/07-pets.jpg",
+		thumbEmoji: "🐶"
 	},
 	{
-		id: "robots",
-		name: "Robots",
+		id: "transport",
+		name: "Transport",
 		category: "adventure",
-		icon: "🤖",
-		grid: [
-			[
-				"🤖",
-				"👾",
-				"🦾",
-				"🦿"
-			],
-			[
-				"⚡",
-				"🔧",
-				"⚙️",
-				"💾"
-			],
-			[
-				"📡",
-				"🛠️",
-				"🔩",
-				"💻"
-			],
-			[
-				"🔋",
-				"🔄",
-				"🤖",
-				"⚡"
-			]
-		]
+		icon: "🚂",
+		file: "/puzzles/08-transport.jpg",
+		thumbEmoji: "🚂"
 	}
 ];
 function getCategories() {
@@ -306,6 +115,7 @@ function _page($$renderer, $$props) {
 		derived(() => DIFFICULTIES[diffKey]);
 		const categories = getCategories();
 		let filteredImages = derived(() => PUZZLE_IMAGES);
+		derived(() => 0);
 		onDestroy(() => {});
 		{
 			$$renderer.push("<!--[0-->");
@@ -325,21 +135,9 @@ function _page($$renderer, $$props) {
 			}
 			$$renderer.push(`<!--]--></div> <div class="gp-image-grid svelte-h6or84"><!--[-->`);
 			const each_array_2 = ensure_array_like(filteredImages());
-			for (let $$index_4 = 0, $$length = each_array_2.length; $$index_4 < $$length; $$index_4++) {
-				let img = each_array_2[$$index_4];
-				$$renderer.push(`<button class="gp-image-card svelte-h6or84"><div class="gp-thumb svelte-h6or84"><!--[-->`);
-				const each_array_3 = ensure_array_like(img.grid);
-				for (let $$index_3 = 0, $$length = each_array_3.length; $$index_3 < $$length; $$index_3++) {
-					let row = each_array_3[$$index_3];
-					$$renderer.push(`<div class="gp-thumb-row svelte-h6or84"><!--[-->`);
-					const each_array_4 = ensure_array_like(row.slice(0, 4));
-					for (let $$index_2 = 0, $$length = each_array_4.length; $$index_2 < $$length; $$index_2++) {
-						let emoji = each_array_4[$$index_2];
-						$$renderer.push(`<span class="gp-thumb-emoji svelte-h6or84">${escape_html(emoji)}</span>`);
-					}
-					$$renderer.push(`<!--]--></div>`);
-				}
-				$$renderer.push(`<!--]--></div> <span class="gp-thumb-name svelte-h6or84">${escape_html(img.name)}</span></button>`);
+			for (let $$index_2 = 0, $$length = each_array_2.length; $$index_2 < $$length; $$index_2++) {
+				let img = each_array_2[$$index_2];
+				$$renderer.push(`<button class="gp-image-card svelte-h6or84"><div class="gp-thumb svelte-h6or84"${attr_style("", { "background-image": `url(${stringify(img.file)})` })}></div> <span class="gp-thumb-name svelte-h6or84">${escape_html(img.name)}</span></button>`);
 			}
 			$$renderer.push(`<!--]--></div></div>`);
 		}

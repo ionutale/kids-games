@@ -50,6 +50,6 @@ declare module "$app/types" {
 		};
 		Pathname(): "/" | "/games/animal-quiz" | "/games/glossary-puzzle" | "/games/memory" | "/games/paint" | "/games/pop" | "/games/puzzle" | "/games/soccer" | "/games/sorting" | "/games/splash" | "/games/stickers" | "/games/tower-defense";
 		ResolvedPathname(): `${"" | `/${string}`}${ReturnType<AppTypes['Pathname']>}`;
-		Asset(): "/icons/icon-192.svg" | "/icons/icon-512.svg" | "/manifest.json" | "/robots.txt" | "/screenshots/memory.png" | "/screenshots/paint.png" | "/screenshots/pop.png" | "/screenshots/puzzle.png" | "/screenshots/soccer.png" | "/screenshots/sorting.png" | "/screenshots/splash.png" | "/screenshots/stickers.png" | string & {};
+		Asset(): "/icons/icon-192.svg" | "/icons/icon-512.svg" | "/manifest.json" | "/puzzles/01-garden.jpg" | "/puzzles/02-ocean.jpg" | "/puzzles/03-space.jpg" | "/puzzles/04-farm.jpg" | "/puzzles/05-jungle.jpg" | "/puzzles/06-food.jpg" | "/puzzles/07-pets.jpg" | "/puzzles/08-transport.jpg" | "/robots.txt" | "/screenshots/memory.png" | "/screenshots/paint.png" | "/screenshots/pop.png" | "/screenshots/puzzle.png" | "/screenshots/soccer.png" | "/screenshots/sorting.png" | "/screenshots/splash.png" | "/screenshots/stickers.png" | "/sounds/nudge.mp3" | "/sounds/pickup.mp3" | "/sounds/snap.mp3" | "/sounds/tap.mp3" | "/sounds/victory.mp3" | string & {};
 	}
 }

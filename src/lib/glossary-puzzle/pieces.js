@@ -8,8 +8,6 @@ function randomEdge(exclude) {
 
 export function generatePieces(image, difficulty) {
   const { cols, rows } = difficulty;
-  const grid = image.grid;
-  const cellEmoji = {};
   const pieces = [];
 
   // Build edge assignments ensuring adjacent pieces match
@@ -29,9 +27,7 @@ export function generatePieces(image, difficulty) {
   const positions = [];
   for (let r = 0; r < rows; r++) {
     for (let c = 0; c < cols; c++) {
-      const emoji = grid[r]?.[c] || '❓';
-      cellEmoji[`${r}-${c}`] = emoji;
-      positions.push({ row: r, col: c, emoji, edges: edges[r][c] });
+      positions.push({ row: r, col: c, edges: edges[r][c] });
     }
   }
 
@@ -48,13 +44,12 @@ export function generatePieces(image, difficulty) {
       id: `${pos.row}-${pos.col}`,
       correctRow: pos.row,
       correctCol: pos.col,
-      emoji: pos.emoji,
       edges: pos.edges,
       placed: false,
     });
   });
 
-  return { pieces, rows, cols, cellEmoji };
+  return { pieces, rows, cols };
 }
 
 function invert(edge) {

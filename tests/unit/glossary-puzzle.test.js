@@ -4,11 +4,11 @@ import { generatePieces, piecePath } from '$lib/glossary-puzzle/pieces.js';
 
 describe('Puzzle images', () => {
   it('has 8 images', () => expect(PUZZLE_IMAGES.length).toBe(8));
-  it('each image has id, name, category, icon, grid', () => {
+  it('each image has id, name, category, icon, file', () => {
     PUZZLE_IMAGES.forEach(img => {
       expect(img.id).toBeTruthy();
-      expect(img.grid.length).toBe(4);
-      expect(img.grid[0].length).toBe(4);
+      expect(img.file).toBeTruthy();
+      expect(img.category).toBeTruthy();
     });
   });
   it('has 4 categories', () => expect(getCategories().length).toBe(4));
