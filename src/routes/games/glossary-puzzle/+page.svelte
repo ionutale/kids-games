@@ -275,7 +275,11 @@
               class:nudge-target={showNudge && piece?.id === nudgeTarget}>
               {#if isPlaced}
                 <div class="gp-placed-wrap" style:clip-path="url(#pp-{r}-{c})">
-                  <img src={selectedImage.file} class="gp-piece-img" style:width="{imageWidth() * 100 / boardSize * (boardSize / cols)}px" style:height="{imageHeight() * 100 / boardSize * (boardSize / rows)}px" style:margin-left="{imageX(c) * 100 / boardSize * (boardSize / cols)}px" style:margin-top="{imageY(r) * 100 / boardSize * (boardSize / rows)}px">
+                  <img src={selectedImage.file} class="gp-piece-img"
+                    style:width="{boardSize}px"
+                    style:height="{boardSize}px"
+                    style:margin-left="{-(c * boardSize / cols)}px"
+                    style:margin-top="{-(r * boardSize / rows)}px">
                 </div>
                 <svg width="0" height="0" style="position:absolute">
                   <defs>
