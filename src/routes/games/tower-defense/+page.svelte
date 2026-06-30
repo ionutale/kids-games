@@ -108,6 +108,12 @@
     }) || null;
   }
 
+  function enemyCell(enemy) {
+    if (!enemy || !enemy.alive || !gameState?.pathCells) return null;
+    const idx = Math.min(Math.floor(enemy.pathPos), gameState.pathCells.length - 1);
+    return gameState.pathCells[idx] || null;
+  }
+
   let gridSize = $derived(MAPS[selectedLevel - 1]?.grid || 6);
 
   onDestroy(() => { engine?.stop(); });
@@ -176,7 +182,10 @@
               {#if isHover && dragTowerId}
                 <span class="ghost-tower">{TOWERS.find(t => t.id === dragTowerId)?.emoji}</span>
               {:else if enemy}
-                <span class="enemy" style:background="rgba(255,0,0,{1 - enemy.health/enemy.maxHealth})">{enemy.emoji}</span>
+                <div class="enemy-wrap">
+                  <span class="enemy">{enemy.emoji}</span>
+                  <span class="hp-bar" style:width="{Math.max(0, (enemy.health / enemy.maxHealth) * 100)}%"></span>
+                </div>
               {:else if tower}
                 <span class="tower-e" class:upgraded={tower.level > 0}>{tower.type.emoji}</span>
               {:else if canPlaceTower(r, c)}
@@ -192,11 +201,9 @@
       {#if gameState?.projectiles?.length}
         <div class="proj-layer" style:--grid="{gridSize}">
           {#each gameState.projectiles as proj (proj.id)}
-            <span
-              class="projectile"
-              style:--r="{proj.fromRow}"
-              style:--c="{proj.fromCol}"
-            >💥</span>
+            {@const tgt = gameState.enemies.find(e => e.id === proj.targetId && e.alive)}
+            {@const cell = enemyCell(tgt)}
+            <span class="projectile" class:hit={proj.progress >= 1} style:--r="{cell ? cell.row : proj.fromRow}" style:--c="{cell ? cell.col : proj.fromCol}">💥</span>
           {/each}
         </div>
       {/if}
@@ -263,7 +270,7 @@
   .level-name { font-size: 13px; color: #666; }
   .lock-icon { font-size: 16px; }
   .td-hud { display: flex; gap: 20px; margin-bottom: 6px; font-size: 16px; font-weight: 700; background: rgba(255,255,255,0.8); padding: 6px 20px; border-radius: 20px; }
-  .td-map { display: grid; gap: 2px; width: 100%; max-width: 340px; aspect-ratio: 1; }
+  .td-map { display: grid; gap: 2px; width: 100%; max-width: 340px; aspect-ratio: 1; position: relative; }
   .td-cell { aspect-ratio: 1; display: flex; align-items: center; justify-content: center; border-radius: 4px; font-size: 18px; background: #e8f5e9; border: 1px solid #c8e6c9; position: relative; }
   .td-cell.path { background: #fff9c4; border-color: #fff176; }
   .td-cell.tower-spot { background: #e3f2fd; border-color: #90caf9; border-style: dashed; }
@@ -288,26 +295,30 @@
     width: 100%;
     height: 100%;
     pointer-events: none;
-    z-index: 4;
+    z-index: 10;
   }
   .projectile {
     position: absolute;
-    font-size: 12px;
+    font-size: 14px;
     left: calc((var(--c) + 0.5) / var(--grid, 6) * 100%);
     top: calc((var(--r) + 0.5) / var(--grid, 6) * 100%);
     transform: translate(-50%, -50%);
-    animation: projFly 0.25s ease-out forwards;
+    animation: projFly 0.3s ease-out forwards;
+    z-index: 11;
   }
   @keyframes projFly {
-    0% { opacity: 1; transform: translate(-50%, -50%) scale(0.5); }
-    100% { opacity: 0; transform: translate(-50%, -50%) scale(1.5); }
+    0% { opacity: 1; transform: translate(-50%, -50%) scale(0.3); }
+    50% { opacity: 1; transform: translate(-50%, -50%) scale(1.2); }
+    100% { opacity: 0; transform: translate(-50%, -50%) scale(0.3); }
   }
   .spot-hint { opacity: 0.3; font-size: 14px; }
   .ghost-tower { font-size: 24px; opacity: 0.6; filter: drop-shadow(0 0 4px rgba(0,0,0,0.3)); }
   .path-dot { color: #ccc; font-size: 10px; }
   .tower-e { font-size: 22px; }
   .tower-e.upgraded { filter: drop-shadow(0 0 3px gold); }
-  .enemy { font-size: 18px; border-radius: 50%; display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; }
+  .enemy-wrap { display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%; height: 100%; }
+  .enemy { font-size: 18px; line-height: 1; }
+  .hp-bar { display: block; height: 3px; background: #4caf50; border-radius: 2px; margin-top: 1px; transition: width 0.2s; max-width: 100%; }
   .td-tower-info { display: flex; align-items: center; gap: 8px; padding: 8px 14px; background: white; border-radius: 14px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); margin-top: 6px; font-size: 14px; font-weight: 600; }
   .td-action { padding: 6px 14px; background: #f5f5f5; border-radius: 10px; font-size: 13px; font-weight: 600; color: #333; }
   .td-tray { display: flex; gap: 6px; padding: 8px; margin-top: 6px; padding-bottom: calc(8px + var(--safe-bottom)); background: rgba(255,255,255,0.9); border-radius: 14px; width: 100%; max-width: 340px; justify-content: center; flex-wrap: wrap; }
