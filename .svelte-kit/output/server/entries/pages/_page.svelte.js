@@ -57,6 +57,11 @@ function _page($$renderer, $$props) {
 				id: "animal-quiz",
 				icon: "🐾",
 				key: "animalQuiz"
+			},
+			{
+				id: "emoji-warcraft",
+				icon: "⚔️",
+				key: "emojiWarcraft"
 			}
 		];
 		derived(() => store_get($$store_subs ??= {}, "$locale", locale));

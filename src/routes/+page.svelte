@@ -16,6 +16,7 @@
     { id: 'splash', icon: '🌈', key: 'splash' },
     { id: 'tower-defense', icon: '🛡️', key: 'towerDefense' },
     { id: 'animal-quiz', icon: '🐾', key: 'animalQuiz' },
+    { id: 'emoji-warcraft', icon: '⚔️', key: 'emojiWarcraft' },
   ];
 
   let showSettings = $state(false);

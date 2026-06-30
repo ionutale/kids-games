@@ -7,6 +7,10 @@
 		"src/routes/games/animal-quiz/+page.js",
 		"src/routes/+layout.js"
 	],
+	"/games/emoji-warcraft": [
+		"src/routes/games/emoji-warcraft/+page.js",
+		"src/routes/+layout.js"
+	],
 	"/games/memory": [
 		"src/routes/+layout.js"
 	],

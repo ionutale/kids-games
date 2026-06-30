@@ -49,7 +49,8 @@ var translations = {
 		tryAgain: "Try Again",
 		animalQuiz: "Animal Quiz",
 		allDone: "All done!",
-		correct: "Correct!"
+		correct: "Correct!",
+		emojiWarcraft: "Emoji Warcraft"
 	},
 	it: {
 		title: "Giochi Bambini",
@@ -97,7 +98,8 @@ var translations = {
 		tryAgain: "Riprova",
 		animalQuiz: "Quiz Animali",
 		allDone: "Tutto fatto!",
-		correct: "Giusto!"
+		correct: "Giusto!",
+		emojiWarcraft: "Emoji Warcraft"
 	},
 	ro: {
 		title: "Jocuri Copii",
@@ -145,7 +147,8 @@ var translations = {
 		tryAgain: "Încearcă din nou",
 		animalQuiz: "Test Animale",
 		allDone: "Gata!",
-		correct: "Corect!"
+		correct: "Corect!",
+		emojiWarcraft: "Emoji Warcraft"
 	}
 };
 var defaultLocale = "en";

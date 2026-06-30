@@ -236,6 +236,26 @@
       "_app/immutable/assets/_page.DBDWN2aj.css"
     ]
   },
+  "src/routes/games/emoji-warcraft/+page.js": {
+    "file": "entries/pages/games/emoji-warcraft/_page.js",
+    "name": "entries/pages/games/emoji-warcraft/_page",
+    "src": "src/routes/games/emoji-warcraft/+page.js",
+    "isEntry": true
+  },
+  "src/routes/games/emoji-warcraft/+page.svelte": {
+    "file": "entries/pages/games/emoji-warcraft/_page.svelte.js",
+    "name": "entries/pages/games/emoji-warcraft/_page.svelte",
+    "src": "src/routes/games/emoji-warcraft/+page.svelte",
+    "isEntry": true,
+    "imports": [
+      "_index-server.js",
+      "_server.js",
+      "_locale.js"
+    ],
+    "css": [
+      "_app/immutable/assets/_page.MoYImajW.css"
+    ]
+  },
   "src/routes/games/memory/+page.svelte": {
     "file": "entries/pages/games/memory/_page.svelte.js",
     "name": "entries/pages/games/memory/_page.svelte",
