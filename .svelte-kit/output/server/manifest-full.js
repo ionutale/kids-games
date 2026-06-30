@@ -10,7 +10,7 @@ return {
 	assets: new Set(["icons/icon-192.svg","icons/icon-512.svg","manifest.json","robots.txt","screenshots/memory.png","screenshots/paint.png","screenshots/pop.png","screenshots/puzzle.png","screenshots/soccer.png","screenshots/sorting.png","screenshots/splash.png","screenshots/stickers.png"]),
 	mimeTypes: {".svg":"image/svg+xml",".json":"application/json",".txt":"text/plain",".png":"image/png"},
 	_: {
-		client: {start:"_app/immutable/entry/start.B4eIOXzD.js",app:"_app/immutable/entry/app.DJlkNWSV.js",imports:["_app/immutable/entry/start.B4eIOXzD.js","_app/immutable/chunks/D7npBNG6.js","_app/immutable/chunks/Bfa4J6Yh.js","_app/immutable/chunks/DoeRWgS9.js","_app/immutable/entry/app.DJlkNWSV.js","_app/immutable/chunks/Bfa4J6Yh.js","_app/immutable/chunks/DYl5dUZ5.js","_app/immutable/chunks/xihTtKlq.js"],stylesheets:[],fonts:[],uses_env_dynamic_public:false},
+		client: {start:"_app/immutable/entry/start.BAihjwbE.js",app:"_app/immutable/entry/app.CSAE-ZXy.js",imports:["_app/immutable/entry/start.BAihjwbE.js","_app/immutable/chunks/DlKgBmSN.js","_app/immutable/chunks/DzfqpjLu.js","_app/immutable/chunks/BrsEmOPd.js","_app/immutable/entry/app.CSAE-ZXy.js","_app/immutable/chunks/DzfqpjLu.js","_app/immutable/chunks/DYl5dUZ5.js","_app/immutable/chunks/xihTtKlq.js"],stylesheets:[],fonts:[],uses_env_dynamic_public:false},
 		nodes: [
 			__memo(() => import('./nodes/0.js')),
 			__memo(() => import('./nodes/1.js')),
@@ -24,7 +24,8 @@ return {
 			__memo(() => import('./nodes/9.js')),
 			__memo(() => import('./nodes/10.js')),
 			__memo(() => import('./nodes/11.js')),
-			__memo(() => import('./nodes/12.js'))
+			__memo(() => import('./nodes/12.js')),
+			__memo(() => import('./nodes/13.js'))
 		],
 		remotes: {
 			
@@ -45,66 +46,73 @@ return {
 				endpoint: null
 			},
 			{
+				id: "/games/glossary-puzzle",
+				pattern: /^\/games\/glossary-puzzle\/?$/,
+				params: [],
+				page: { layouts: [0,], errors: [1,], leaf: 4 },
+				endpoint: null
+			},
+			{
 				id: "/games/memory",
 				pattern: /^\/games\/memory\/?$/,
 				params: [],
-				page: { layouts: [0,], errors: [1,], leaf: 4 },
+				page: { layouts: [0,], errors: [1,], leaf: 5 },
 				endpoint: null
 			},
 			{
 				id: "/games/paint",
 				pattern: /^\/games\/paint\/?$/,
 				params: [],
-				page: { layouts: [0,], errors: [1,], leaf: 5 },
+				page: { layouts: [0,], errors: [1,], leaf: 6 },
 				endpoint: null
 			},
 			{
 				id: "/games/pop",
 				pattern: /^\/games\/pop\/?$/,
 				params: [],
-				page: { layouts: [0,], errors: [1,], leaf: 6 },
+				page: { layouts: [0,], errors: [1,], leaf: 7 },
 				endpoint: null
 			},
 			{
 				id: "/games/puzzle",
 				pattern: /^\/games\/puzzle\/?$/,
 				params: [],
-				page: { layouts: [0,], errors: [1,], leaf: 7 },
+				page: { layouts: [0,], errors: [1,], leaf: 8 },
 				endpoint: null
 			},
 			{
 				id: "/games/soccer",
 				pattern: /^\/games\/soccer\/?$/,
 				params: [],
-				page: { layouts: [0,], errors: [1,], leaf: 8 },
+				page: { layouts: [0,], errors: [1,], leaf: 9 },
 				endpoint: null
 			},
 			{
 				id: "/games/sorting",
 				pattern: /^\/games\/sorting\/?$/,
 				params: [],
-				page: { layouts: [0,], errors: [1,], leaf: 9 },
+				page: { layouts: [0,], errors: [1,], leaf: 10 },
 				endpoint: null
 			},
 			{
 				id: "/games/splash",
 				pattern: /^\/games\/splash\/?$/,
 				params: [],
-				page: { layouts: [0,], errors: [1,], leaf: 10 },
+				page: { layouts: [0,], errors: [1,], leaf: 11 },
 				endpoint: null
 			},
 			{
 				id: "/games/stickers",
 				pattern: /^\/games\/stickers\/?$/,
 				params: [],
-				page: { layouts: [0,], errors: [1,], leaf: 11 },
+				page: { layouts: [0,], errors: [1,], leaf: 12 },
 				endpoint: null
 			},
 			{
 				id: "/games/tower-defense",
 				pattern: /^\/games\/tower-defense\/?$/,
 				params: [],
-				page: { layouts: [0,], errors: [1,], leaf: 12 },
+				page: { layouts: [0,], errors: [1,], leaf: 13 },
 				endpoint: null
 			}
 		],

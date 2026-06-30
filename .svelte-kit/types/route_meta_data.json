@@ -7,6 +7,10 @@
 		"src/routes/games/animal-quiz/+page.js",
 		"src/routes/+layout.js"
 	],
+	"/games/glossary-puzzle": [
+		"src/routes/games/glossary-puzzle/+page.js",
+		"src/routes/+layout.js"
+	],
 	"/games/memory": [
 		"src/routes/+layout.js"
 	],

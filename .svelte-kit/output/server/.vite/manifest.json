@@ -236,6 +236,27 @@
       "_app/immutable/assets/_page.DBDWN2aj.css"
     ]
   },
+  "src/routes/games/glossary-puzzle/+page.js": {
+    "file": "entries/pages/games/glossary-puzzle/_page.js",
+    "name": "entries/pages/games/glossary-puzzle/_page",
+    "src": "src/routes/games/glossary-puzzle/+page.js",
+    "isEntry": true
+  },
+  "src/routes/games/glossary-puzzle/+page.svelte": {
+    "file": "entries/pages/games/glossary-puzzle/_page.svelte.js",
+    "name": "entries/pages/games/glossary-puzzle/_page.svelte",
+    "src": "src/routes/games/glossary-puzzle/+page.svelte",
+    "isEntry": true,
+    "imports": [
+      "_index-server.js",
+      "_server.js",
+      "_locale.js",
+      "_Confetti.js"
+    ],
+    "css": [
+      "_app/immutable/assets/_page.BTVzzu5R.css"
+    ]
+  },
   "src/routes/games/memory/+page.svelte": {
     "file": "entries/pages/games/memory/_page.svelte.js",
     "name": "entries/pages/games/memory/_page.svelte",

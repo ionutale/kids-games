@@ -16,6 +16,7 @@
     { id: 'splash', icon: '🌈', key: 'splash' },
     { id: 'tower-defense', icon: '🛡️', key: 'towerDefense' },
     { id: 'animal-quiz', icon: '🐾', key: 'animalQuiz' },
+    { id: 'glossary-puzzle', icon: '🧩', key: 'puzzle' },
   ];
 
   let showSettings = $state(false);
