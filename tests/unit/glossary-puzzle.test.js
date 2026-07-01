@@ -58,7 +58,7 @@ describe('Jigsaw pieces', () => {
   it('piecePath returns a valid SVG path', () => {
     const r = generatePieces(PUZZLE_IMAGES[0], DIFFICULTIES.easy);
     const path = piecePath(r.pieces[0].edges, 100);
-    expect(path.startsWith('M 0,0')).toBe(true);
+    expect(path.startsWith('M 0.0,0.0')).toBe(true);
     expect(path.endsWith('Z')).toBe(true);
   });
 

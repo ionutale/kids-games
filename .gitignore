@@ -1,4 +1,10 @@
 .superpowers/
+.svelte-kit/
+build/
+node_modules/
+public/_app/
 package-lock.json
 test-results/
 playwright-report/
+.env*
+*.local

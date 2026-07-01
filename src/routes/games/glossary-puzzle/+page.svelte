@@ -4,7 +4,11 @@
   import { loadPuzzleSounds, playPickup, playSnap, playVictory, playNudge } from '$lib/sounds/puzzleSounds.js';
   import Confetti from '$lib/components/Confetti.svelte';
   import { PUZZLE_IMAGES, getCategories, DIFFICULTIES } from '$lib/glossary-puzzle/images.js';
-  import { generatePieces, piecePath } from '$lib/glossary-puzzle/pieces.js';
+  import { generatePieces } from '$lib/glossary-puzzle/pieces.js';
+
+  const VIRTUAL_W = 800;
+  const VIRTUAL_H = 600;
+  const SNAP_RADIUS = 50;
 
   let view = $state('gallery');
   let selectedCategory = $state(null);
@@ -19,26 +23,33 @@
   let dragOffset = $state({ x: 0, y: 0 });
   let celebrating = $state(false);
   let showDone = $state(false);
-  let trayPieces = $state([]);
-  let trayIndex = $state(0);
+  let missHintId = $state(null);
   let idleTimer = $state(null);
   let nudgeTarget = $state(null);
   let showNudge = $state(false);
   let savedState = $state(null);
   let exitPressCount = $state(0);
   let exitTimer = $state(null);
-  let boardSize = $state(300);
   let soundsLoaded = $state(false);
+  let activePointer = $state(null);
+  let boardEl = $state(null);
 
   let difficulty = $derived(DIFFICULTIES[diffKey]);
 
-  const TRAY_SIZE = 4;
   const STORAGE_KEY = 'glossary-puzzle-save';
-
   const categories = getCategories();
   let filteredImages = $derived(
     selectedCategory ? PUZZLE_IMAGES.filter(i => i.category === selectedCategory) : PUZZLE_IMAGES
   );
+
+  function getVirtualCoords(clientX, clientY) {
+    if (!boardEl) return { x: 0, y: 0 };
+    const r = boardEl.getBoundingClientRect();
+    return {
+      x: (clientX - r.left) * (VIRTUAL_W / r.width),
+      y: (clientY - r.top) * (VIRTUAL_H / r.height),
+    };
+  }
 
   function startPuzzle(image, dk) {
     selectedImage = image;
@@ -48,68 +59,53 @@
     rows = result.rows;
     cols = result.cols;
     placed = new Set();
-    trayIndex = 0;
-    refillTray();
     view = 'play';
     startIdleTimer();
     savedState = null;
     celebrating = false;
     showDone = false;
+    missHintId = null;
+    activePointer = null;
   }
 
-  function refillTray() {
-    const unplaced = pieces.filter(p => !placed.has(p.id));
-    const start = trayIndex * TRAY_SIZE;
-    trayPieces = unplaced.slice(start, start + TRAY_SIZE);
-  }
+  function handlePointerDown(e, pieceId) {
+    if (placed.has(pieceId) || activePointer !== null) return;
+    const p = pieces.find(p => p.id === pieceId);
+    if (!p) return;
 
-  function onPieceDragStart(e, pieceId) {
-    if (placed.has(pieceId)) return;
-    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-    const rect = document.querySelector('.gp-tray-piece')?.getBoundingClientRect();
-    const ox = rect ? clientX - rect.left : 0;
-    const oy = rect ? clientY - rect.top : 0;
+    e.preventDefault();
+    e.stopPropagation();
+    try { e.target.setPointerCapture(e.pointerId); } catch {}
+
+    activePointer = e.pointerId;
     dragging = pieceId;
-    dragOffset = { x: ox, y: oy };
-    dragPos = { x: clientX, y: clientY };
+
+    const v = getVirtualCoords(e.clientX, e.clientY);
+    dragOffset = { x: v.x - p.targetX, y: v.y - p.targetY };
+    dragPos = { x: p.targetX, y: p.targetY };
     resetIdleTimer();
     if (soundsLoaded) playPickup();
   }
 
-  function onPieceDragMove(e) {
-    if (!dragging) return;
-    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-    dragPos = { x: clientX, y: clientY };
+  function handlePointerMove(e) {
+    if (dragging === null || e.pointerId !== activePointer) return;
+    const v = getVirtualCoords(e.clientX, e.clientY);
+    dragPos = { x: v.x - dragOffset.x, y: v.y - dragOffset.y };
   }
 
-  function onPieceDragEnd(e) {
-    if (!dragging) return;
+  function handlePointerUp(e) {
+    if (dragging === null || e.pointerId !== activePointer) return;
+
     const piece = pieces.find(p => p.id === dragging);
-    if (!piece) { dragging = null; return; }
+    if (!piece) { dragging = null; activePointer = null; return; }
 
-    const board = document.querySelector('.gp-board');
-    if (!board) { dragging = null; return; }
+    const cx = dragPos.x + piece.w / 2;
+    const cy = dragPos.y + piece.h / 2;
+    const tx = piece.targetX + piece.w / 2;
+    const ty = piece.targetY + piece.h / 2;
+    const dist = Math.hypot(cx - tx, cy - ty);
 
-    const boardRect = board.getBoundingClientRect();
-    const clientX = e.changedTouches ? e.changedTouches[0].clientX : e.clientX;
-    const clientY = e.changedTouches ? e.changedTouches[0].clientY : e.clientY;
-
-    const relX = clientX - boardRect.left;
-    const relY = clientY - boardRect.top;
-    const cellW = boardRect.width / cols;
-    const cellH = boardRect.height / rows;
-
-    const correctCol = piece.correctCol;
-    const correctRow = piece.correctRow;
-    const targetX = correctCol * cellW + cellW / 2;
-    const targetY = correctRow * cellH + cellH / 2;
-    const dist = Math.sqrt(
-      Math.pow(relX - targetX, 2) + Math.pow(relY - targetY, 2)
-    );
-
-    if (dist <= difficulty.snapRadius && !placed.has(piece.id)) {
+    if (dist <= SNAP_RADIUS && !placed.has(piece.id)) {
       placed = new Set([...placed, piece.id]);
       if (soundsLoaded) playSnap();
       if (placed.size === pieces.length) {
@@ -117,13 +113,39 @@
         if (soundsLoaded) playVictory();
         setTimeout(() => { showDone = true; celebrating = false; }, 2000);
       }
-      refillTray();
+    } else {
+      missHintId = piece.id;
+      setTimeout(() => { missHintId = null; }, 1500);
     }
 
     dragging = null;
+    activePointer = null;
     nudgeTarget = null;
     showNudge = false;
     startIdleTimer();
+  }
+
+  function patternId(id) { return `pat-${id}`; }
+
+  function renderPieceSVG(piece, opts = {}) {
+    const { isDragging = false } = opts;
+    const shId = `sh-${piece.id}`;
+    return `<svg viewBox="0 0 ${piece.boxW} ${piece.boxH}" style="width:100%;height:100%;overflow:visible">
+      <defs>
+        <pattern id="${patternId(piece.id)}" patternUnits="userSpaceOnUse"
+          width="${VIRTUAL_W}" height="${VIRTUAL_H}"
+          x="${piece.padding - piece.targetX}" y="${piece.padding - piece.targetY}">
+          <image href="${selectedImage.file}" width="${VIRTUAL_W}" height="${VIRTUAL_H}" preserveAspectRatio="xMidYMid slice" />
+        </pattern>
+        <filter id="${shId}" x="-20%" y="-20%" width="140%" height="140%">
+          <feDropShadow dx="2" dy="5" stdDeviation="4" floodOpacity="0.4" />
+        </filter>
+      </defs>
+      <path d="${piece.path}" fill="url(#${patternId(piece.id)})"
+        stroke="${isDragging ? 'rgba(0,0,0,0.5)' : 'rgba(0,0,0,0.15)'}" stroke-width="${isDragging ? 3 : 1.5}"
+        filter="${isDragging ? `url(#${shId})` : 'none'}"
+        style="pointer-events:none;touch-action:none" />
+    </svg>`;
   }
 
   function startIdleTimer() {
@@ -147,11 +169,7 @@
   }
 
   function saveProgress() {
-    const data = {
-      imageId: selectedImage?.id,
-      difficulty: diffKey,
-      placedIds: [...placed],
-    };
+    const data = { imageId: selectedImage?.id, difficulty: diffKey, placedIds: [...placed] };
     if (typeof localStorage !== 'undefined') {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
     }
@@ -175,8 +193,6 @@
     rows = result.rows;
     cols = result.cols;
     placed = new Set(savedState.placedIds.filter(id => pieces.some(p => p.id === id)));
-    trayIndex = 0;
-    refillTray();
     view = 'play';
     savedState = null;
     startIdleTimer();
@@ -201,12 +217,6 @@
       exitTimer = setTimeout(() => { exitPressCount = 0; }, 3000);
     }
   }
-
-  function imageWidth() { return cols * 100; }
-  function imageHeight() { return rows * 100; }
-  function imageX(col) { return -col * 100; }
-  function imageY(row) { return -row * 100; }
-  let clipId = $derived(0);
 
   onMount(async () => {
     await loadPuzzleSounds();
@@ -254,75 +264,62 @@
   </div>
 
 {:else if view === 'play'}
-  <div class="gp-play">
+  <div class="gp-play"
+    onpointermove={handlePointerMove}
+    onpointerup={handlePointerUp}
+    onpointercancel={handlePointerUp}>
+
     <div class="gp-top-bar">
       <button class="gp-exit-btn" onclick={handleExitPress}>← {$_('back')}</button>
       <span class="gp-progress">{placed.size}/{pieces.length}</span>
     </div>
 
     <div class="gp-board-wrap">
-      <div class="gp-board" style:width="{boardSize}px" style:height="{boardSize}px"
-        ontouchmove={onPieceDragMove} ontouchend={onPieceDragEnd}
-        onmousemove={onPieceDragMove} onmouseup={onPieceDragEnd}>
+      <div class="gp-board" bind:this={boardEl}>
 
         <div class="gp-board-bg" style:background-image="url({selectedImage.file})"></div>
 
-        {#each Array(rows) as _, r}
-          {#each Array(cols) as _, c}
-            {@const piece = pieces.find(p => p.correctRow === r && p.correctCol === c)}
-            {@const isPlaced = piece && placed.has(piece.id)}
-            <div class="gp-board-cell" style:width="{boardSize / cols}px" style:height="{boardSize / rows}px"
-              class:nudge-target={showNudge && piece?.id === nudgeTarget}>
-              {#if isPlaced}
-                <div class="gp-placed-wrap" style:clip-path="url(#pp-{r}-{c})">
-                  <img src={selectedImage.file} class="gp-piece-img"
-                    style:width="{boardSize}px"
-                    style:height="{boardSize}px"
-                    style:margin-left="{-(c * boardSize / cols)}px"
-                    style:margin-top="{-(r * boardSize / rows)}px">
-                </div>
-                <svg width="0" height="0" style="position:absolute">
-                  <defs>
-                    <clipPath id="pp-{r}-{c}"><path d={piecePath(piece.edges, 100)} /></clipPath>
-                  </defs>
-                </svg>
-              {/if}
+        {#each pieces as piece (piece.id)}
+          {@const isPlaced = placed.has(piece.id)}
+          {@const isDragged = dragging === piece.id}
+
+          {#if isPlaced && !isDragged}
+            <div class="gp-board-piece" style="left:{(piece.targetX - piece.padding) / VIRTUAL_W * 100}%;top:{(piece.targetY - piece.padding) / VIRTUAL_H * 100}%;width:{piece.boxW / VIRTUAL_W * 100}%;height:{piece.boxH / VIRTUAL_H * 100}%">
+              {@html renderPieceSVG(piece)}
             </div>
-          {/each}
+          {/if}
         {/each}
+
+        {#if missHintId}
+          {@const mp = pieces.find(p => p.id === missHintId)}
+          {#if mp}
+            <div class="gp-miss-hint" style="left:{mp.targetX / VIRTUAL_W * 100}%;top:{mp.targetY / VIRTUAL_H * 100}%;width:{mp.w / VIRTUAL_W * 100}%;height:{mp.h / VIRTUAL_H * 100}%"></div>
+          {/if}
+        {/if}
+
+        {#if dragging}
+          {@const dp = pieces.find(p => p.id === dragging)}
+          {#if dp}
+            <div class="gp-drag-ghost" style="left:{(dragPos.x - dp.padding) / VIRTUAL_W * 100}%;top:{(dragPos.y - dp.padding) / VIRTUAL_H * 100}%;width:{dp.boxW / VIRTUAL_W * 100}%;height:{dp.boxH / VIRTUAL_H * 100}%">
+              {@html renderPieceSVG(dp, { isDragging: true })}
+            </div>
+          {/if}
+        {/if}
+
+        {#if celebrating}<Confetti />{/if}
       </div>
     </div>
 
-    <div class="gp-tray" ontouchstart={(e) => { if (!dragging) e.preventDefault(); }}>
-      {#each trayPieces as piece (piece.id)}
-        <div class="gp-tray-piece" style={dragging === piece.id ? 'visibility:hidden' : ''}
-          class:nudge-target={showNudge && piece.id === nudgeTarget}
-          ontouchstart={(e) => onPieceDragStart(e, piece.id)} onmousedown={(e) => onPieceDragStart(e, piece.id)}>
-          <svg viewBox="0 0 100 100" class="gp-piece-shape">
-            <defs>
-              <clipPath id="tp-{piece.id}"><path d={piecePath(piece.edges, 100)} /></clipPath>
-            </defs>
-            <image href={selectedImage.file} width={imageWidth()} height={imageHeight()} x={imageX(piece.correctCol)} y={imageY(piece.correctRow)} clip-path="url(#tp-{piece.id})" />
-            <path d={piecePath(piece.edges, 100)} fill="none" stroke="rgba(0,0,0,0.15)" stroke-width="1" />
-          </svg>
+    <div class="gp-tray">
+      {#each pieces.filter(p => !placed.has(p.id) && dragging !== p.id) as piece (piece.id)}
+        {@const isNudged = showNudge && nudgeTarget === piece.id}
+        <div class="gp-tray-piece" class:gp-nudge-shake={isNudged}
+          style="width:{piece.boxW / piece.boxH * 70}px;height:70px;flex-shrink:0"
+          onpointerdown={(e) => handlePointerDown(e, piece.id)}>
+          {@html renderPieceSVG(piece)}
         </div>
       {/each}
     </div>
-
-    {#if dragging}
-      {@const dp = pieces.find(p => p.id === dragging)}
-      {#if dp}
-        <div class="gp-drag-ghost" style="position:fixed;left:{dragPos.x - dragOffset.x}px;top:{dragPos.y - dragOffset.y}px;z-index:1000;pointer-events:none;transform:scale(1.12);filter:drop-shadow(0 4px 12px rgba(0,0,0,0.3));">
-          <svg viewBox="0 0 100 100" width="70" height="70">
-            <defs><clipPath id="dg-{dp.id}"><path d={piecePath(dp.edges, 100)} /></clipPath></defs>
-            <image href={selectedImage.file} width={imageWidth()} height={imageHeight()} x={imageX(dp.correctCol)} y={imageY(dp.correctRow)} clip-path="url(#dg-{dp.id})" />
-            <path d={piecePath(dp.edges, 100)} fill="none" stroke="rgba(0,0,0,0.3)" stroke-width="1" />
-          </svg>
-        </div>
-      {/if}
-    {/if}
-
-    {#if celebrating}<Confetti />{/if}
 
     {#if showDone}
       <div class="gp-celebration">
@@ -351,24 +348,22 @@
   .gp-thumb { width: 100%; aspect-ratio: 1; background-size: cover; background-position: center; border-radius: 8px; }
   .gp-thumb-name { font-size: 13px; font-weight: 600; color: #666; }
 
-  .gp-play { display: flex; flex-direction: column; align-items: center; flex: 1; }
+  .gp-play { display: flex; flex-direction: column; flex: 1; touch-action: none; user-select: none; -webkit-user-select: none; }
   .gp-top-bar { display: flex; justify-content: space-between; align-items: center; width: 100%; padding: 6px 12px; flex-shrink: 0; }
   .gp-exit-btn { font-size: 14px; font-weight: 600; color: #999; padding: 4px 8px; }
   .gp-progress { font-size: 16px; font-weight: 700; color: var(--color-primary); }
   .gp-board-wrap { flex: 1; display: flex; align-items: center; justify-content: center; width: 100%; padding: 8px; }
-  .gp-board { position: relative; display: flex; flex-wrap: wrap; border-radius: 8px; overflow: hidden; max-width: 100%; max-height: 100%; }
-  .gp-board-bg { position: absolute; inset: 0; background-size: cover; opacity: 0.12; filter: grayscale(1); }
-  .gp-board-cell { position: relative; display: flex; align-items: center; justify-content: center; border: 1px solid rgba(0,0,0,0.04); box-sizing: border-box; }
-  .gp-board-cell.nudge-target { animation: gpNudge 0.5s ease-in-out 3; }
-  @keyframes gpNudge { 0%,100% { box-shadow: 0 0 0 rgba(255,215,0,0); } 50% { box-shadow: 0 0 12px rgba(255,215,0,0.6); } }
-  .gp-placed-wrap { position: absolute; inset: 0; overflow: hidden; display: flex; align-items: center; justify-content: center; background: white; }
-  .gp-piece-img { max-width: none; position: absolute; }
-  .gp-tray { display: flex; gap: 8px; padding: 8px; padding-bottom: calc(8px + var(--safe-bottom)); flex-shrink: 0; min-height: 80px; justify-content: center; flex-wrap: wrap; }
-  .gp-tray-piece { width: 64px; height: 64px; cursor: grab; touch-action: none; }
-  .gp-tray-piece:active { transform: scale(1.05); }
-  .gp-tray-piece.nudge-target { animation: gpShake 0.4s ease-in-out 3; }
+  .gp-board { position: relative; width: min(100%, calc(100vh - 180px)); aspect-ratio: 4/3; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 12px rgba(0,0,0,0.15); background: #f0f0f0; }
+  .gp-board-bg { position: absolute; inset: 0; background-size: cover; background-position: center; opacity: 0.12; filter: grayscale(1); }
+  .gp-board-piece { position: absolute; }
+  .gp-miss-hint { position: absolute; border-radius: 4px; background: rgba(255,215,0,0.15); border: 2px dashed rgba(255,215,0,0.5); animation: gpMissPulse 0.6s ease-in-out 3; pointer-events: none; }
+  @keyframes gpMissPulse { 0%,100% { opacity: 1; } 50% { opacity: 0.3; } }
+  .gp-drag-ghost { position: absolute; z-index: 100; filter: drop-shadow(0 4px 12px rgba(0,0,0,0.3)); transform: scale(1.08); transform-origin: center center; pointer-events: none; }
+  .gp-tray { display: flex; gap: 6px; padding: 8px; padding-bottom: calc(8px + var(--safe-bottom)); flex-shrink: 0; min-height: 86px; overflow-x: auto; align-items: center; background: rgba(0,0,0,0.03); border-top: 1px solid rgba(0,0,0,0.06); }
+  .gp-tray-piece { cursor: grab; touch-action: none; flex-shrink: 0; }
+  .gp-tray-piece:active { cursor: grabbing; }
+  .gp-nudge-shake { animation: gpShake 0.4s ease-in-out 3; }
   @keyframes gpShake { 0%,100% { transform: translateX(0); } 25% { transform: translateX(-4px); } 75% { transform: translateX(4px); } }
-  .gp-piece-shape { width: 100%; height: 100%; }
   .gp-celebration { position: fixed; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; background: rgba(0,0,0,0.3); z-index: 50; gap: 16px; }
   .gp-celebration-text { font-size: 32px; color: white; font-weight: 700; text-shadow: 0 2px 8px rgba(0,0,0,0.3); }
   .gp-celebration-btn { padding: 12px 28px; background: white; border-radius: 24px; font-size: 16px; font-weight: 600; color: var(--color-primary); }
