@@ -28,25 +28,24 @@ describe('Difficulty levels', () => {
 
 describe('Jigsaw pieces', () => {
   it('generates correct number of pieces', () => {
-    const img = PUZZLE_IMAGES[0];
-    const r = generatePieces(img, DIFFICULTIES.easy);
+    const r = generatePieces(DIFFICULTIES.easy);
     expect(r.pieces.length).toBe(4);
     expect(r.rows).toBe(2);
     expect(r.cols).toBe(2);
   });
 
   it('medium generates 9 pieces', () => {
-    const r = generatePieces(PUZZLE_IMAGES[0], DIFFICULTIES.medium);
+    const r = generatePieces(DIFFICULTIES.medium);
     expect(r.pieces.length).toBe(9);
   });
 
   it('hard generates 16 pieces', () => {
-    const r = generatePieces(PUZZLE_IMAGES[0], DIFFICULTIES.hard);
+    const r = generatePieces(DIFFICULTIES.hard);
     expect(r.pieces.length).toBe(16);
   });
 
   it('pieces have edge data', () => {
-    const r = generatePieces(PUZZLE_IMAGES[0], DIFFICULTIES.medium);
+    const r = generatePieces(DIFFICULTIES.medium);
     r.pieces.forEach(p => {
       expect(p.edges.top).toBeTruthy();
       expect(p.edges.right).toBeTruthy();
@@ -56,14 +55,14 @@ describe('Jigsaw pieces', () => {
   });
 
   it('piecePath returns a valid SVG path', () => {
-    const r = generatePieces(PUZZLE_IMAGES[0], DIFFICULTIES.easy);
+    const r = generatePieces(DIFFICULTIES.easy);
     const path = piecePath(r.pieces[0].edges, 100);
     expect(path.startsWith('M 0.0,0.0')).toBe(true);
     expect(path.endsWith('Z')).toBe(true);
   });
 
   it('outer edges are flat', () => {
-    const r = generatePieces(PUZZLE_IMAGES[0], DIFFICULTIES.easy);
+    const r = generatePieces(DIFFICULTIES.easy);
     r.pieces.forEach(p => {
       if (p.correctRow === 0) expect(p.edges.top).toBe('flat');
       if (p.correctRow === r.rows - 1) expect(p.edges.bottom).toBe('flat');
@@ -73,7 +72,7 @@ describe('Jigsaw pieces', () => {
   });
 
   it('adjacent pieces have matching edges', () => {
-    const r = generatePieces(PUZZLE_IMAGES[0], DIFFICULTIES.medium);
+    const r = generatePieces(DIFFICULTIES.medium);
     for (let row = 0; row < r.rows; row++) {
       for (let col = 0; col < r.cols; col++) {
         const p = r.pieces.find(pp => pp.correctRow === row && pp.correctCol === col);

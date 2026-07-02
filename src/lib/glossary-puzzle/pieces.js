@@ -10,18 +10,18 @@ const outline = new Rounded({
   borderLength: 1 / 3,
 });
 
-function createInsert(type) {
-  if (type === 'tab') return Object.create(Tab);
-  if (type === 'blank') return Object.create(Slot);
-  return Object.create(None);
+function toInsert(type) {
+  if (type === 'tab') return Tab;
+  if (type === 'blank') return Slot;
+  return None;
 }
 
 function edgesToHbPiece(edges) {
   return new Piece({
-    up: createInsert(edges.top),
-    right: createInsert(edges.right),
-    down: createInsert(edges.bottom),
-    left: createInsert(edges.left),
+    up: toInsert(edges.top),
+    right: toInsert(edges.right),
+    down: toInsert(edges.bottom),
+    left: toInsert(edges.left),
   });
 }
 
@@ -45,15 +45,14 @@ export function piecePath(edges, size = 100) {
 
 function randomEdge(exclude) {
   if (exclude === 'flat') return Math.random() < 0.5 ? 'tab' : 'blank';
-  const val = Math.random() < 0.5 ? 'tab' : 'blank';
-  return val === exclude ? (val === 'tab' ? 'blank' : 'tab') : val;
+  return exclude === 'tab' ? 'blank' : 'tab';
 }
 
 function invert(e) {
   return e === 'tab' ? 'blank' : 'tab';
 }
 
-export function generatePieces(image, difficulty) {
+export function generatePieces(difficulty) {
   const { cols, rows } = difficulty;
   const pieces = [];
 
@@ -83,7 +82,7 @@ export function generatePieces(image, difficulty) {
   }
 
   const s = 100;
-  const padding = 32;
+  const padding = Math.ceil(s * 0.27) + 5;
 
   shuffled.forEach((pos) => {
     const path = piecePath(pos.edgeTypes, s);

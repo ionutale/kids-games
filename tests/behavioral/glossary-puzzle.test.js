@@ -1,11 +1,10 @@
 import { describe, it, expect } from 'vitest';
-import { PUZZLE_IMAGES, DIFFICULTIES } from '$lib/glossary-puzzle/images.js';
+import { DIFFICULTIES } from '$lib/glossary-puzzle/images.js';
 import { generatePieces } from '$lib/glossary-puzzle/pieces.js';
 
 describe('Glossary Puzzle behavior', () => {
   it('pieces are shuffled', () => {
-    const img = PUZZLE_IMAGES[0];
-    const r = generatePieces(img, DIFFICULTIES.medium);
+    const r = generatePieces(DIFFICULTIES.medium);
     const firstRow = r.pieces[0].correctRow;
     const firstCol = r.pieces[0].correctCol;
     const allSame = r.pieces.every(p => p.correctRow === firstRow && p.correctCol === firstCol);

@@ -54,7 +54,7 @@
   function startPuzzle(image, dk) {
     selectedImage = image;
     diffKey = dk;
-    const result = generatePieces(image, difficulty);
+    const result = generatePieces(difficulty);
     pieces = result.pieces;
     rows = result.rows;
     cols = result.cols;
@@ -188,7 +188,7 @@
     if (!img || !DIFFICULTIES[savedState.difficulty]) { savedState = null; return; }
     selectedImage = img;
     diffKey = savedState.difficulty;
-    const result = generatePieces(img, DIFFICULTIES[savedState.difficulty]);
+    const result = generatePieces(DIFFICULTIES[savedState.difficulty]);
     pieces = result.pieces;
     rows = result.rows;
     cols = result.cols;
