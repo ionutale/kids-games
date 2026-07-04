@@ -4,10 +4,8 @@
   import { loadPuzzleSounds, playPickup, playSnap, playVictory, playNudge } from '$lib/sounds/puzzleSounds.js';
   import Confetti from '$lib/components/Confetti.svelte';
   import { PUZZLE_IMAGES, getCategories, DIFFICULTIES } from '$lib/glossary-puzzle/images.js';
-  import { generatePieces } from '$lib/glossary-puzzle/pieces.js';
+  import { generatePieces, VIRTUAL_W, VIRTUAL_H } from '$lib/glossary-puzzle/pieces.js';
 
-  const VIRTUAL_W = 800;
-  const VIRTUAL_H = 600;
   const SNAP_RADIUS = 50;
 
   let view = $state('gallery');
@@ -141,11 +139,19 @@
           <feDropShadow dx="2" dy="5" stdDeviation="4" floodOpacity="0.4" />
         </filter>
       </defs>
-      <path d="${piece.path}" fill="url(#${patternId(piece.id)})"
+      <path d="${piece.path}" transform="translate(${piece.padding}, ${piece.padding})"
+        fill="url(#${patternId(piece.id)})"
         stroke="${isDragging ? 'rgba(0,0,0,0.5)' : 'rgba(0,0,0,0.15)'}" stroke-width="${isDragging ? 3 : 1.5}"
         filter="${isDragging ? `url(#${shId})` : 'none'}"
         style="pointer-events:none;touch-action:none" />
     </svg>`;
+  }
+
+  function renderBoardLinesSVG() {
+    const paths = pieces.map(p =>
+      `<path d="${p.path}" transform="translate(${p.targetX}, ${p.targetY})" style="fill:none;stroke:rgba(0,0,0,0.18);stroke-width:1;stroke-linejoin:round" />`
+    ).join('');
+    return `<svg viewBox="0 0 ${VIRTUAL_W} ${VIRTUAL_H}" preserveAspectRatio="none" style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none">${paths}</svg>`;
   }
 
   function startIdleTimer() {
@@ -264,6 +270,7 @@
   </div>
 
 {:else if view === 'play'}
+  <!-- svelte-ignore a11y_no_static_element_interactions -->
   <div class="gp-play"
     onpointermove={handlePointerMove}
     onpointerup={handlePointerUp}
@@ -278,6 +285,7 @@
       <div class="gp-board" bind:this={boardEl}>
 
         <div class="gp-board-bg" style:background-image="url({selectedImage.file})"></div>
+        {@html renderBoardLinesSVG()}
 
         {#each pieces as piece (piece.id)}
           {@const isPlaced = placed.has(piece.id)}

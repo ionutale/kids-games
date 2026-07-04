@@ -1,7 +1,10 @@
 import headbreaker from 'headbreaker';
 
 const { Rounded } = headbreaker.Outline;
-const { Tab, Slot, None, Piece } = headbreaker;
+const { Tab, Slot, None, Piece, vector } = headbreaker;
+
+export const VIRTUAL_W = 800;
+export const VIRTUAL_H = 600;
 
 const outline = new Rounded({
   bezelize: false,
@@ -39,7 +42,8 @@ function pointsToSvgPath(pts) {
 
 export function piecePath(edges, size = 100) {
   const hbPiece = edgesToHbPiece(edges);
-  const pts = outline.draw(hbPiece, size, 0);
+  const sizeVec = typeof size === 'number' ? size : vector(size.x, size.y);
+  const pts = outline.draw(hbPiece, sizeVec, 0);
   return pointsToSvgPath(pts);
 }
 
@@ -81,8 +85,9 @@ export function generatePieces(difficulty) {
     [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
   }
 
-  const s = 100;
-  const padding = Math.ceil(s * 0.27) + 5;
+  const s = { x: VIRTUAL_W / cols, y: VIRTUAL_H / rows };
+  const protrusion = Math.min(s.x, s.y) * (1 - 2 * (1 / 3)) * (4 / 5);
+  const padding = Math.ceil(protrusion * 1.2) + 5;
 
   shuffled.forEach((pos) => {
     const path = piecePath(pos.edgeTypes, s);
@@ -91,15 +96,15 @@ export function generatePieces(difficulty) {
       id: `${pos.row}-${pos.col}`,
       correctRow: pos.row,
       correctCol: pos.col,
-      w: s,
-      h: s,
+      w: s.x,
+      h: s.y,
       path,
       edges: pos.edgeTypes,
       padding,
-      boxW: s + padding * 2,
-      boxH: s + padding * 2,
-      targetX: pos.col * s,
-      targetY: pos.row * s,
+      boxW: s.x + padding * 2,
+      boxH: s.y + padding * 2,
+      targetX: pos.col * s.x,
+      targetY: pos.row * s.y,
       placed: false,
     });
   });
