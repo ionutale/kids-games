@@ -79,8 +79,8 @@
     dragging = pieceId;
 
     const v = getVirtualCoords(e.clientX, e.clientY);
-    dragOffset = { x: v.x - p.targetX, y: v.y - p.targetY };
-    dragPos = { x: p.targetX, y: p.targetY };
+    dragOffset = { x: 0, y: 0 };
+    dragPos = { x: v.x, y: v.y };
     resetIdleTimer();
     if (soundsLoaded) playPickup();
   }
@@ -123,27 +123,28 @@
     startIdleTimer();
   }
 
-  function patternId(id) { return `pat-${id}`; }
-
   function renderPieceSVG(piece, opts = {}) {
     const { isDragging = false } = opts;
+    const clipId = `cp-${piece.id}`;
     const shId = `sh-${piece.id}`;
     return `<svg viewBox="0 0 ${piece.boxW} ${piece.boxH}" style="width:100%;height:100%;overflow:visible">
       <defs>
-        <pattern id="${patternId(piece.id)}" patternUnits="userSpaceOnUse"
-          width="${VIRTUAL_W}" height="${VIRTUAL_H}"
-          x="${piece.padding - piece.targetX}" y="${piece.padding - piece.targetY}">
-          <image href="${selectedImage.file}" width="${VIRTUAL_W}" height="${VIRTUAL_H}" preserveAspectRatio="xMidYMid slice" />
-        </pattern>
+        <clipPath id="${clipId}">
+          <path d="${piece.path}" transform="translate(${piece.padding}, ${piece.padding})" />
+        </clipPath>
         <filter id="${shId}" x="-20%" y="-20%" width="140%" height="140%">
           <feDropShadow dx="2" dy="5" stdDeviation="4" floodOpacity="0.4" />
         </filter>
       </defs>
-      <path d="${piece.path}" transform="translate(${piece.padding}, ${piece.padding})"
-        fill="url(#${patternId(piece.id)})"
-        stroke="${isDragging ? 'rgba(0,0,0,0.5)' : 'rgba(0,0,0,0.15)'}" stroke-width="${isDragging ? 3 : 1.5}"
-        filter="${isDragging ? `url(#${shId})` : 'none'}"
-        style="pointer-events:none;touch-action:none" />
+      <g filter="${isDragging ? `url(#${shId})` : 'none'}">
+        <image href="${selectedImage.file}"
+          x="${piece.targetX - piece.padding}" y="${piece.targetY - piece.padding}"
+          width="${VIRTUAL_W}" height="${VIRTUAL_H}" preserveAspectRatio="xMidYMid slice"
+          clip-path="url(#${clipId})" style="pointer-events:none;touch-action:none" />
+        <path d="${piece.path}" transform="translate(${piece.padding}, ${piece.padding})"
+          fill="none" stroke="${isDragging ? 'rgba(0,0,0,0.5)' : 'rgba(0,0,0,0.15)'}" stroke-width="${isDragging ? 3 : 1.5}"
+          style="pointer-events:none;touch-action:none" />
+      </g>
     </svg>`;
   }
 
