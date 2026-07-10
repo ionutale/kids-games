@@ -31,6 +31,7 @@
   let soundsLoaded = $state(false);
   let activePointer = $state(null);
   let boardEl = $state(null);
+  let ghostStyle = $state({ left: 0, top: 0, width: 0, height: 0 });
 
   let difficulty = $derived(DIFFICULTIES[diffKey]);
 
@@ -46,6 +47,19 @@
     return {
       x: (clientX - r.left) * (VIRTUAL_W / r.width),
       y: (clientY - r.top) * (VIRTUAL_H / r.height),
+    };
+  }
+
+  function updateGhostStyle() {
+    if (!boardEl) return;
+    const dp = pieces.find(p => p.id === dragging);
+    if (!dp) return;
+    const r = boardEl.getBoundingClientRect();
+    ghostStyle = {
+      left: (dragPos.x - dp.padding) / VIRTUAL_W * r.width + r.left,
+      top: (dragPos.y - dp.padding) / VIRTUAL_H * r.height + r.top,
+      width: dp.boxW / VIRTUAL_W * r.width,
+      height: dp.boxH / VIRTUAL_H * r.height,
     };
   }
 
@@ -81,6 +95,7 @@
     const v = getVirtualCoords(e.clientX, e.clientY);
     dragOffset = { x: 0, y: 0 };
     dragPos = { x: v.x, y: v.y };
+    updateGhostStyle();
     resetIdleTimer();
     if (soundsLoaded) playPickup();
   }
@@ -89,6 +104,7 @@
     if (dragging === null || e.pointerId !== activePointer) return;
     const v = getVirtualCoords(e.clientX, e.clientY);
     dragPos = { x: v.x - dragOffset.x, y: v.y - dragOffset.y };
+    updateGhostStyle();
   }
 
   function handlePointerUp(e) {
@@ -306,15 +322,6 @@
           {/if}
         {/if}
 
-        {#if dragging}
-          {@const dp = pieces.find(p => p.id === dragging)}
-          {#if dp}
-            <div class="gp-drag-ghost" style="left:{(dragPos.x - dp.padding) / VIRTUAL_W * 100}%;top:{(dragPos.y - dp.padding) / VIRTUAL_H * 100}%;width:{dp.boxW / VIRTUAL_W * 100}%;height:{dp.boxH / VIRTUAL_H * 100}%">
-              {@html renderPieceSVG(dp, { isDragging: true })}
-            </div>
-          {/if}
-        {/if}
-
         {#if celebrating}<Confetti />{/if}
       </div>
     </div>
@@ -329,6 +336,15 @@
         </div>
       {/each}
     </div>
+
+    {#if dragging}
+      {@const dp = pieces.find(p => p.id === dragging)}
+      {#if dp}
+        <div class="gp-drag-ghost" style="left:{ghostStyle.left}px;top:{ghostStyle.top}px;width:{ghostStyle.width}px;height:{ghostStyle.height}px">
+          {@html renderPieceSVG(dp, { isDragging: true })}
+        </div>
+      {/if}
+    {/if}
 
     {#if showDone}
       <div class="gp-celebration">
@@ -367,7 +383,7 @@
   .gp-board-piece { position: absolute; }
   .gp-miss-hint { position: absolute; border-radius: 4px; background: rgba(255,215,0,0.15); border: 2px dashed rgba(255,215,0,0.5); animation: gpMissPulse 0.6s ease-in-out 3; pointer-events: none; }
   @keyframes gpMissPulse { 0%,100% { opacity: 1; } 50% { opacity: 0.3; } }
-  .gp-drag-ghost { position: absolute; z-index: 100; filter: drop-shadow(0 4px 12px rgba(0,0,0,0.3)); transform: scale(1.08); transform-origin: center center; pointer-events: none; }
+  .gp-drag-ghost { position: fixed; z-index: 100; filter: drop-shadow(0 4px 12px rgba(0,0,0,0.3)); transform: scale(1.08); transform-origin: center center; pointer-events: none; }
   .gp-tray { display: flex; gap: 6px; padding: 8px; padding-bottom: calc(8px + var(--safe-bottom)); flex-shrink: 0; min-height: 86px; overflow-x: auto; align-items: center; background: rgba(0,0,0,0.03); border-top: 1px solid rgba(0,0,0,0.06); }
   .gp-tray-piece { cursor: grab; touch-action: none; flex-shrink: 0; }
   .gp-tray-piece:active { cursor: grabbing; }
