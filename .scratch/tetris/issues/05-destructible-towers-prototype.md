@@ -1,8 +1,26 @@
 # 05 — Destructible Towers Prototype
 
 Type: prototype
-Status: open
+Status: resolved
 Blocked by:
+
+## Verdict
+
+User: **LGTM** — the AABB-only feel is good enough; the spec does NOT need rotating blocks.
+
+## Answer
+
+Prototype validated the physics core for the angry-emoji-2d spec:
+
+- **Collision model**: AABB-only (no rotation) — accepted as the v1 model.
+- **Stacking stability**: positional correction with 0.5px slop → 0px jitter on a 6-block tower.
+- **Tunneling**: 4 fixed substeps per frame → no pass-through at 1750px/s (max launch speed).
+- **Destruction feel**: kinetic-energy damage (speed² × impactor mass × 0.001), 150px/s threshold (resting contact never damages); wood hp 60, ice hp 25, stone hp 240.
+- **Materials**: density wood 1.0 / ice 0.8 / stone 1.6; restitution wood 0.05 / ice 0.10 / stone 0.00; friction wood 0.5 / ice 0.05 / stone 0.7.
+- **Performance**: ~0.1ms per step at 100+ bodies (≈600fps headroom) — comfortably holds 60fps on mid-range tablets.
+- **Coulomb friction** required: without it, impacted walls slide forever on the ground (the "creep-through" artifact).
+
+Context pointer: prototype at `src/lib/angry-emoji/phys-prototype.html` on branch `prototype/angry-emoji-towers` (commit 5fc2e89). Engine is a pure liftable module (`PHYS`) — the spec's physics section should reuse it directly.
 
 ## Question
 

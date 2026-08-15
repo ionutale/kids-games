@@ -31,6 +31,7 @@ Design specs + implementation plan for three arcade-style games, filed in `docs/
 - [Scoring and speed curve](issues/01-scoring-and-speed-curve.md) — level-1 drops Easy 1000ms / Medium 700ms / Hard 450ms; ~8% faster per level, 100ms floor; 10 lines per level everywhere; CW + CCW rotate buttons (tap = CW); line clears 100/300/500/800 × level, no difficulty multiplier; soft drop +1/cell, hard drop +2/cell.
 - [Help and celebration](issues/02-help-and-celebration.md) — hint button (no auto nudge); level-up = brief full-board flash + sound, new best = short confetti burst (both <1.5s, non-modal); sounds: lock=tap, line clear=ascending chime, Tetris=fanfare, level-up=two-note, new best=fanfare, failed drop=silence; fresh start every game, only best score persists.
 - [Emoji-jump design](issues/03-emoji-jump-design.md) — platforms spawn with gaps 1.5–3.5× jump height, guaranteed reachability; static ~70% early, moving/breakable mid-altitude; springs ≤5% (2.5× bounce); one enemy 👾 from mid-altitude, contact = death; jetpack (~150m, 5s) + shield (one hit) ≤3% each, collected by touching; score = height +50/spring, no dodge bonus; bands 0–150 static-only / 150–400 moving+springs / 400+ enemies+power-ups; fixed 😀 protagonist with squash-and-stretch.
+- [Destructible towers prototype](issues/05-destructible-towers-prototype.md) — LGTM: AABB-only physics (no rotation) accepted. 4 substeps (no tunneling at 1750px/s), slop 0.5px (0 jitter stacks), kinetic-energy damage @150px/s threshold (wood hp 60 / ice hp 25 / stone hp 240), Coulomb friction required, ~0.1ms/step at 100+ bodies. Prototype: `src/lib/angry-emoji/phys-prototype.html` on branch `prototype/angry-emoji-towers` (5fc2e89).
 - [Output shape: 3 specs + 1 plan](issues/00-charting-round.md) — one spec per game (repo convention) + one shared implementation plan across all three games.
 - [Tetris gets a plan too](issues/00-charting-round.md) — all three games ship end-to-end as one effort.
 - [Physics: per-game hand-rolled](issues/00-charting-round.md) — no shared engine, no new dependencies; each game rolls its own minimal kinematics.
@@ -46,7 +47,6 @@ Design specs + implementation plan for three arcade-style games, filed in `docs/
 ## Not yet specified
 
 - Angry-emoji design details — star thresholds, shots (ammo) per level, block materials, trajectory preview behavior, level-design conventions for 20+ levels (fog of [04-angry-emoji-design](issues/04-angry-emoji-design.md)).
-- Destructible-tower physics feel — how blocks stack, break, and collapse under hand-rolled physics (fog of [05-destructible-towers-prototype](issues/05-destructible-towers-prototype.md)).
 
 ## Out of scope
 
