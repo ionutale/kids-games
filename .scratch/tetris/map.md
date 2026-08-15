@@ -28,6 +28,7 @@ Design specs + implementation plan for three arcade-style games, filed in `docs/
 - [Difficulty model: speed + features](issues/00-charting-round.md) — drop speed + lines-per-level differ; Easy gets a ghost piece; Hard adds a hold piece; score unaffected.
 - [Board: 10×20 standard](issues/00-charting-round.md) — standard 10 columns × 20 rows, 7 tetrominoes.
 - [Pause & game over: pause + gate](issues/00-charting-round.md) — pause button + auto-pause on tab blur; game-over overlay shows score + best score; tap to restart; parental gate to exit.
+- [Scoring and speed curve](issues/01-scoring-and-speed-curve.md) — level-1 drops Easy 1000ms / Medium 700ms / Hard 450ms; ~8% faster per level, 100ms floor; 10 lines per level everywhere; CW + CCW rotate buttons (tap = CW); line clears 100/300/500/800 × level, no difficulty multiplier; soft drop +1/cell, hard drop +2/cell.
 - [Output shape: 3 specs + 1 plan](issues/00-charting-round.md) — one spec per game (repo convention) + one shared implementation plan across all three games.
 - [Tetris gets a plan too](issues/00-charting-round.md) — all three games ship end-to-end as one effort.
 - [Physics: per-game hand-rolled](issues/00-charting-round.md) — no shared engine, no new dependencies; each game rolls its own minimal kinematics.
@@ -42,6 +43,7 @@ Design specs + implementation plan for three arcade-style games, filed in `docs/
 
 ## Not yet specified
 
+- Idle nudge behavior, milestone celebrations, which events fire which sounds, and whether an in-progress game resumes (fog of [02-help-and-celebration](issues/02-help-and-celebration.md)).
 - Emoji-jump design details — platform generation rules, enemy & power-up catalog, scoring/best-height specifics, ramp curve (fog of [03-emoji-jump-design](issues/03-emoji-jump-design.md)).
 - Angry-emoji design details — star thresholds, shots (ammo) per level, block materials, trajectory preview behavior, level-design conventions for 20+ levels (fog of [04-angry-emoji-design](issues/04-angry-emoji-design.md)).
 - Destructible-tower physics feel — how blocks stack, break, and collapse under hand-rolled physics (fog of [05-destructible-towers-prototype](issues/05-destructible-towers-prototype.md)).
