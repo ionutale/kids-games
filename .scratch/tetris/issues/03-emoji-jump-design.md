@@ -1,7 +1,7 @@
 # 03 — Emoji Jump Design
 
 Type: grilling
-Status: open
+Status: resolved
 Blocked by:
 
 ## Question
@@ -17,3 +17,16 @@ What are the exact design details for emoji-jump?
 - The emoji protagonist: which emoji, how does it animate during a jump (rotate, squash)?
 
 Resolves the fog: platform generation rules, enemy & power-up catalog, scoring/best-height specifics, ramp curve.
+
+## Answer
+
+Settled in grilling session (all recommendations accepted):
+
+- **Platform generation**: platforms spawn ahead of the player with vertical gaps 1.5–3.5× jump height, horizontal jitter from the climb column; guaranteed reachable paths at every altitude.
+- **Platform mix**: altitude-based — static ~70% early; moving/breakable appear mid-altitude; mix tightens as height grows.
+- **Springs**: ≤5% of platforms, bounce = 2.5× normal jump, spring emoji compresses on contact.
+- **Enemies**: one type (👾) drifting horizontally on some platforms, from mid-altitude; contact = death.
+- **Power-ups**: jetpack (fly up ~150m, 5s) + shield (survive one enemy hit); ≤3% of platforms each, from mid-altitude; float above platforms, collect by touching.
+- **Scoring**: height climbed in meters +50 per spring bounce. No dodge bonus, no death penalty. Best height saved to localStorage. Difficulty ramps per altitude band.
+- **Altitude bands**: 0–150m static-only, no springs; 150–400m moving/breakable/springs appear; 400m+ enemies + power-ups spawn, platform density maxes.
+- **Protagonist**: fixed emoji (😀) with squash-and-stretch, slight tilt while moving; falls off-screen → game over.
