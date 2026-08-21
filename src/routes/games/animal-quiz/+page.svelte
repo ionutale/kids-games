@@ -5,6 +5,9 @@
   import { playTap, playMatch, playWin } from '$lib/sounds/audioManager';
   import Confetti from '$lib/components/Confetti.svelte';
   import ANIMALS from '$lib/animalQuizData.js';
+  import GameShell from '$lib/components/ui/GameShell.svelte';
+  import WinOverlay from '$lib/components/ui/WinOverlay.svelte';
+  import BigButton from '$lib/components/ui/BigButton.svelte';
 
   let round = $state(0);
   let currentAnimal = $state(null);
@@ -78,6 +81,7 @@
   nextRound();
 </script>
 
+<GameShell accent="#FDBA74">
 <div class="quiz">
   <h2 class="quiz-title">🐾 {$_('animalQuiz')}</h2>
 
@@ -102,16 +106,16 @@
       </div>
     {/if}
   {:else}
-    <div class="done-screen">
-      <p class="done-text">🎉 {$_('allDone')}</p>
-      <button class="replay-btn" onclick={restart}>{$_('playAgain')}</button>
-    </div>
+    <WinOverlay title="🎉 {$_('allDone')}">
+      <BigButton variant="primary" class="replay-btn" onclick={restart}>{$_('playAgain')}</BigButton>
+    </WinOverlay>
   {/if}
 
   {#if showConfetti}
     <Confetti />
   {/if}
 </div>
+</GameShell>
 
 <style>
   .quiz {
@@ -124,12 +128,12 @@
   }
   .quiz-title {
     font-size: 22px;
-    color: #333;
+    color: var(--text-hi);
   }
   .quiz-progress {
     font-size: 16px;
     font-weight: 600;
-    color: #999;
+    color: var(--text-lo);
   }
   .animal-display {
     display: flex;
@@ -137,8 +141,9 @@
     justify-content: center;
     width: 160px;
     height: 160px;
-    background: white;
-    border-radius: 32px;
+    background: var(--panel-glass);
+    border: 1px solid var(--panel-border);
+    border-radius: 24px;
     box-shadow: 0 4px 20px rgba(0,0,0,0.1);
   }
   .big-emoji {
@@ -157,11 +162,11 @@
     padding: 16px;
     font-size: 20px;
     font-weight: 700;
-    background: white;
+    background: var(--panel-glass);
+    border: 1px solid var(--panel-border);
     border-radius: 16px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
     transition: transform 0.1s;
-    color: #333;
+    color: var(--text-hi);
   }
   .opt-btn:active { transform: scale(0.97); }
   .opt-btn.shake {
@@ -174,25 +179,5 @@
     25% { transform: translateX(-10px); }
     50% { transform: translateX(10px); }
     75% { transform: translateX(-5px); }
-  }
-  .done-screen {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 20px;
-    margin-top: 60px;
-  }
-  .done-text {
-    font-size: 32px;
-    font-weight: 700;
-    color: #333;
-  }
-  .replay-btn {
-    padding: 14px 32px;
-    background: var(--color-primary);
-    color: white;
-    border-radius: 24px;
-    font-size: 18px;
-    font-weight: 600;
   }
 </style>
