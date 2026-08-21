@@ -2,7 +2,10 @@
   import { settings } from '$lib/stores/settings';
   import { _ } from '$lib/stores/locale';
   import { playTap, playGoal as playGoalSound } from '$lib/sounds/audioManager';
-  import Confetti from '$lib/components/Confetti.svelte';
+  import GameShell from '$lib/components/ui/GameShell.svelte';
+  import LevelBar from '$lib/components/ui/LevelBar.svelte';
+  import WinOverlay from '$lib/components/ui/WinOverlay.svelte';
+  import BigButton from '$lib/components/ui/BigButton.svelte';
 
   let ballX = $state(50);
   let ballY = $state(82);
@@ -100,66 +103,51 @@
   function setLevel(l) { level = l; resetGame(); }
 </script>
 
-<!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
-<div
-  class="soccer-game"
-  role="application"
-  ontouchstart={onFieldDown}
-  ontouchmove={onFieldMove}
-  ontouchend={onFieldUp}
-  onmousedown={onFieldDown}
-  onmousemove={onFieldMove}
-  onmouseup={onFieldUp}
-  onmouseleave={() => { if (isDragging && dragStart) { isDragging = false; dragStart = null; dragEnd = null; } }}
->
-  <div class="field">
-    <div class="goal-area"></div>
-    <div class="goal-text">🏆</div>
-    <div class="ball" style:left="{ballX}%" style:top="{ballY}%" class:kicking={ballMoving}>⚽</div>
-    {#if !gameOver}
-      <div class="score-display">{$_('score')}: {score}/{levelTargets(level).targetScore}</div>
-    {/if}
-    {#if !ballMoving && !gameOver && dragStart && dragEnd}
-      <svg class="arrow-line" viewBox="0 0 100 100">
-        <line x1="{dragStart.x}" y1="{dragStart.y}" x2="{dragEnd.x}" y2="{dragEnd.y}" stroke="#fff" stroke-width="0.5" stroke-dasharray="2,2" marker-end="url(#arrowhead)"/>
-        <defs><marker id="arrowhead" markerWidth="3" markerHeight="2" refX="3" refY="1" orient="auto"><polygon points="0 0, 3 1, 0 2" fill="#fff"/></marker></defs>
-      </svg>
-    {/if}
+<GameShell accent="#FFE082">
+  <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
+  <div
+    class="soccer-game"
+    role="application"
+    ontouchstart={onFieldDown}
+    ontouchmove={onFieldMove}
+    ontouchend={onFieldUp}
+    onmousedown={onFieldDown}
+    onmousemove={onFieldMove}
+    onmouseup={onFieldUp}
+    onmouseleave={() => { if (isDragging && dragStart) { isDragging = false; dragStart = null; dragEnd = null; } }}
+  >
+    <div class="field">
+      <div class="goal-area"></div>
+      <div class="goal-text">🏆</div>
+      <div class="ball" style:left="{ballX}%" style:top="{ballY}%" class:kicking={ballMoving}>⚽</div>
+      {#if !gameOver}
+        <div class="score-display">{$_('score')}: {score}/{levelTargets(level).targetScore}</div>
+      {/if}
+      {#if !ballMoving && !gameOver && dragStart && dragEnd}
+        <svg class="arrow-line" viewBox="0 0 100 100">
+          <line x1="{dragStart.x}" y1="{dragStart.y}" x2="{dragEnd.x}" y2="{dragEnd.y}" stroke="#fff" stroke-width="0.5" stroke-dasharray="2,2" marker-end="url(#arrowhead)"/>
+          <defs><marker id="arrowhead" markerWidth="3" markerHeight="2" refX="3" refY="1" orient="auto"><polygon points="0 0, 3 1, 0 2" fill="#fff"/></marker></defs>
+        </svg>
+      {/if}
+    </div>
   </div>
-
-  {#if showConfetti}
-    <Confetti />
-  {/if}
 
   {#if gameOver}
-    <div class="win-overlay">
-      <p class="win-text">{$_('greatGame')}</p>
-      <p class="win-score">{$_('goals')}: {score}</p>
-      <button class="replay-btn" onclick={resetGame}>{$_('playAgain')}</button>
-    </div>
+    <WinOverlay title={$_('greatGame')} subtitle="{$_('goals')}: {score}">
+      <BigButton variant="primary" class="replay-btn" onclick={resetGame}>{$_('playAgain')}</BigButton>
+    </WinOverlay>
   {/if}
 
-  <div class="level-bar">
-    {#each Array(10) as _, i}
-      <button class="level-btn" class:active={level === i + 1} onclick={() => setLevel(i + 1)}>{i + 1}</button>
-    {/each}
-  </div>
-</div>
+  <LevelBar current={level} onchange={setLevel} />
+</GameShell>
 
 <style>
   .soccer-game { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 8px; position: relative; }
-  .field { position: relative; width: 100%; max-width: 350px; aspect-ratio: 3/4; background: linear-gradient(180deg, #81C784 0%, #66BB6A 50%, #4CAF50 100%); border-radius: 24px; overflow: hidden; cursor: crosshair; touch-action: none; }
+  .field { position: relative; width: 100%; max-width: 350px; aspect-ratio: 3/4; background: linear-gradient(180deg, #81C784 0%, #66BB6A 50%, #4CAF50 100%); border-radius: 24px; border: 1px solid var(--panel-border); box-shadow: 0 8px 30px rgba(0,0,0,0.4); overflow: hidden; cursor: crosshair; touch-action: none; }
   .goal-area { position: absolute; top: 2%; left: 30%; width: 40%; height: 22%; border: 3px solid white; border-radius: 0 0 12px 12px; background: rgba(255,255,255,0.08); }
   .goal-text { position: absolute; top: 7%; left: 50%; transform: translateX(-50%); font-size: 20px; opacity: 0.4; }
   .ball { position: absolute; transform: translate(-50%, -50%); font-size: 48px; transition: all 0.4s cubic-bezier(0.25, 0.1, 0.25, 1); filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2)); z-index: 2; }
   .ball.kicking { transition: all 0.25s cubic-bezier(0.25, 0.1, 0.25, 1); }
   .arrow-line { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 3; }
-  .score-display { position: absolute; bottom: 12px; right: 12px; color: white; font-weight: 700; font-size: 18px; text-shadow: 0 1px 4px rgba(0,0,0,0.3); background: rgba(0,0,0,0.2); padding: 4px 12px; border-radius: 12px; }
-  .win-overlay { position: fixed; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; background: rgba(0,0,0,0.3); z-index: 50; gap: 8px; }
-  .win-text { font-size: 36px; color: white; font-weight: 700; text-shadow: 0 2px 8px rgba(0,0,0,0.3); }
-  .win-score { font-size: 20px; color: white; opacity: 0.8; }
-  .replay-btn { padding: 14px 32px; background: white; border-radius: 24px; font-size: 18px; font-weight: 600; color: var(--color-primary); margin-top: 8px; }
-  .level-bar { display: flex; justify-content: center; gap: 3px; margin-top: 8px; padding-bottom: calc(8px + var(--safe-bottom)); }
-  .level-btn { width: 30px; height: 28px; border-radius: 6px; font-size: 11px; font-weight: 600; color: #999; background: rgba(255,255,255,0.6); }
-  .level-btn.active { color: white; background: var(--color-primary); }
+  .score-display { position: absolute; bottom: 12px; right: 12px; color: white; font-weight: 700; font-size: 18px; text-shadow: 0 1px 4px rgba(0,0,0,0.3); background: var(--panel-glass); border: 1px solid var(--panel-border); backdrop-filter: blur(6px); padding: 4px 12px; border-radius: 12px; }
 </style>
