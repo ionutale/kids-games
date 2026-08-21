@@ -3,6 +3,10 @@
   import { _ } from '$lib/stores/locale';
   import { loadPuzzleSounds, playPickup, playSnap, playVictory, playNudge } from '$lib/sounds/puzzleSounds.js';
   import Confetti from '$lib/components/Confetti.svelte';
+  import HudPill from '$lib/components/ui/HudPill.svelte';
+  import BigButton from '$lib/components/ui/BigButton.svelte';
+  import WinOverlay from '$lib/components/ui/WinOverlay.svelte';
+  import Starfield from '$lib/components/ui/Starfield.svelte';
   import { PUZZLE_IMAGES, getCategories, DIFFICULTIES } from '$lib/glossary-puzzle/images.js';
   import { generatePieces, VIRTUAL_W, VIRTUAL_H } from '$lib/glossary-puzzle/pieces.js';
 
@@ -254,7 +258,8 @@
 </script>
 
 {#if view === 'gallery'}
-  <div class="gp-gallery">
+  <div class="gp-gallery night-bg" style="--accent: #5EEAD4;">
+    <Starfield count={30} />
     <h2 class="gp-gallery-title">🧩 {$_('puzzle')}</h2>
 
     {#if savedState}
@@ -288,14 +293,16 @@
 
 {:else if view === 'play'}
   <!-- svelte-ignore a11y_no_static_element_interactions -->
-  <div class="gp-play"
+  <div class="gp-play night-bg" style="--accent: #5EEAD4;"
     onpointermove={handlePointerMove}
     onpointerup={handlePointerUp}
     onpointercancel={handlePointerUp}>
 
+    <Starfield count={30} />
+
     <div class="gp-top-bar">
       <button class="gp-exit-btn" onclick={handleExitPress}>← {$_('back')}</button>
-      <span class="gp-progress">{placed.size}/{pieces.length}</span>
+      <HudPill icon="🧩" label="{placed.size}/{pieces.length}" />
     </div>
 
     <div class="gp-board-wrap">
@@ -347,49 +354,46 @@
     {/if}
 
     {#if showDone}
-      <div class="gp-celebration">
-        <p class="gp-celebration-text">🎉 {$_('puzzleDone')}</p>
-        <button class="gp-celebration-btn" onclick={() => { view = 'gallery'; }}>◀ {$_('back')}</button>
-        <button class="gp-celebration-btn" onclick={() => startPuzzle(selectedImage, diffKey)}>🔄 {$_('playAgain')}</button>
-      </div>
+      <WinOverlay title="🎉 {$_('puzzleDone')}">
+        <BigButton variant="ghost" class="gp-celebration-btn" onclick={() => { view = 'gallery'; }}>◀ {$_('back')}</BigButton>
+        <BigButton variant="primary" class="gp-celebration-btn" onclick={() => startPuzzle(selectedImage, diffKey)}>🔄 {$_('playAgain')}</BigButton>
+      </WinOverlay>
     {/if}
   </div>
 {/if}
 
 <style>
   .gp-gallery { display: flex; flex-direction: column; align-items: center; flex: 1; padding: 12px; gap: 12px; overflow-y: auto; }
-  .gp-gallery-title { font-size: 24px; }
-  .gp-resume-btn { padding: 10px 24px; background: #4caf50; color: white; border-radius: 20px; font-weight: 700; font-size: 16px; }
-  .gp-categories { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; }
-  .gp-cat-btn { display: flex; flex-direction: column; align-items: center; padding: 8px 16px; background: white; border-radius: 14px; box-shadow: 0 1px 4px rgba(0,0,0,0.1); }
-  .gp-cat-btn.active { box-shadow: 0 0 0 3px var(--color-primary); }
+  .gp-gallery-title { font-size: 24px; color: var(--gold); text-shadow: 0 0 14px var(--glow-gold); position: relative; z-index: 1; }
+  .gp-resume-btn { padding: 10px 24px; background: var(--panel-glass); border: 1px solid var(--panel-border); backdrop-filter: blur(6px); color: var(--text-hi); border-radius: 20px; font-weight: 700; font-size: 16px; position: relative; z-index: 1; }
+  .gp-resume-btn:active { background: rgba(94,234,212,0.25); border-color: var(--accent); }
+  .gp-categories { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; position: relative; z-index: 1; }
+  .gp-cat-btn { display: flex; flex-direction: column; align-items: center; padding: 8px 16px; background: var(--panel-glass); border: 1px solid var(--panel-border); border-radius: 14px; color: var(--text-hi); }
+  .gp-cat-btn.active { background: rgba(94,234,212,0.25); border-color: var(--accent); }
   .gp-cat-icon { font-size: 28px; }
-  .gp-cat-name { font-size: 12px; font-weight: 600; color: #666; }
-  .gp-diff-select { display: flex; gap: 6px; }
-  .gp-diff-btn { padding: 6px 18px; border-radius: 12px; font-size: 13px; font-weight: 600; background: rgba(255,255,255,0.7); color: #999; }
-  .gp-diff-btn.active { background: var(--color-primary); color: white; }
-  .gp-image-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; width: 100%; max-width: 360px; }
-  .gp-image-card { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 10px; background: white; border-radius: 14px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); overflow: hidden; }
+  .gp-cat-name { font-size: 12px; font-weight: 600; color: var(--text-lo); }
+  .gp-diff-select { display: flex; gap: 6px; position: relative; z-index: 1; }
+  .gp-diff-btn { padding: 6px 18px; border-radius: 12px; font-size: 13px; font-weight: 600; background: var(--panel-glass); border: 1px solid var(--panel-border); color: var(--text-hi); }
+  .gp-diff-btn.active { background: rgba(94,234,212,0.25); border-color: var(--accent); }
+  .gp-image-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; width: 100%; max-width: 360px; position: relative; z-index: 1; }
+  .gp-image-card { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 10px; background: var(--panel-glass); border: 1px solid var(--panel-border); border-radius: 14px; color: var(--text-hi); overflow: hidden; }
   .gp-thumb { width: 100%; aspect-ratio: 1; background-size: cover; background-position: center; border-radius: 8px; }
-  .gp-thumb-name { font-size: 13px; font-weight: 600; color: #666; }
+  .gp-thumb-name { font-size: 13px; font-weight: 600; color: var(--text-lo); }
 
   .gp-play { display: flex; flex-direction: column; flex: 1; touch-action: none; user-select: none; -webkit-user-select: none; }
-  .gp-top-bar { display: flex; justify-content: space-between; align-items: center; width: 100%; padding: 6px 12px; flex-shrink: 0; }
-  .gp-exit-btn { font-size: 14px; font-weight: 600; color: #999; padding: 4px 8px; }
-  .gp-progress { font-size: 16px; font-weight: 700; color: var(--color-primary); }
-  .gp-board-wrap { flex: 1; display: flex; align-items: center; justify-content: center; width: 100%; padding: 8px; }
+  .gp-top-bar { display: flex; justify-content: space-between; align-items: center; width: 100%; padding: 6px 12px; flex-shrink: 0; background: var(--panel-glass); backdrop-filter: blur(6px); position: relative; z-index: 1; }
+  .gp-exit-btn { font-size: 14px; font-weight: 600; color: var(--text-hi); background: var(--panel-glass); border: 1px solid var(--panel-border); border-radius: 12px; padding: 4px 8px; }
+  .gp-exit-btn:active { background: rgba(94,234,212,0.25); border-color: var(--accent); }
+  .gp-board-wrap { flex: 1; display: flex; align-items: center; justify-content: center; width: 100%; padding: 8px; position: relative; z-index: 1; }
   .gp-board { position: relative; width: min(100%, calc(100vh - 180px)); aspect-ratio: 4/3; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 12px rgba(0,0,0,0.15); background: #f0f0f0; }
   .gp-board-bg { position: absolute; inset: 0; background-size: cover; background-position: center; opacity: 0.12; filter: grayscale(1); }
   .gp-board-piece { position: absolute; }
   .gp-miss-hint { position: absolute; border-radius: 4px; background: rgba(255,215,0,0.15); border: 2px dashed rgba(255,215,0,0.5); animation: gpMissPulse 0.6s ease-in-out 3; pointer-events: none; }
   @keyframes gpMissPulse { 0%,100% { opacity: 1; } 50% { opacity: 0.3; } }
   .gp-drag-ghost { position: fixed; z-index: 100; filter: drop-shadow(0 4px 12px rgba(0,0,0,0.3)); transform: scale(1.08); transform-origin: center center; pointer-events: none; }
-  .gp-tray { display: flex; gap: 6px; padding: 8px; padding-bottom: calc(8px + var(--safe-bottom)); flex-shrink: 0; min-height: 86px; overflow-x: auto; align-items: center; background: rgba(0,0,0,0.03); border-top: 1px solid rgba(0,0,0,0.06); }
+  .gp-tray { display: flex; gap: 6px; padding: 8px; padding-bottom: calc(8px + var(--safe-bottom)); flex-shrink: 0; min-height: 86px; overflow-x: auto; align-items: center; background: var(--panel-glass); backdrop-filter: blur(6px); border-top: 1px solid var(--panel-border); position: relative; z-index: 1; }
   .gp-tray-piece { cursor: grab; touch-action: none; flex-shrink: 0; }
   .gp-tray-piece:active { cursor: grabbing; }
   .gp-nudge-shake { animation: gpShake 0.4s ease-in-out 3; }
   @keyframes gpShake { 0%,100% { transform: translateX(0); } 25% { transform: translateX(-4px); } 75% { transform: translateX(4px); } }
-  .gp-celebration { position: fixed; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; background: rgba(0,0,0,0.3); z-index: 50; gap: 16px; }
-  .gp-celebration-text { font-size: 32px; color: white; font-weight: 700; text-shadow: 0 2px 8px rgba(0,0,0,0.3); }
-  .gp-celebration-btn { padding: 12px 28px; background: white; border-radius: 24px; font-size: 16px; font-weight: 600; color: var(--color-primary); }
 </style>
