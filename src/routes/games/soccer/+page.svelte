@@ -2,6 +2,7 @@
   import { settings } from '$lib/stores/settings';
   import { _ } from '$lib/stores/locale';
   import { playTap, playGoal as playGoalSound } from '$lib/sounds/audioManager';
+  import Confetti from '$lib/components/Confetti.svelte';
   import GameShell from '$lib/components/ui/GameShell.svelte';
   import LevelBar from '$lib/components/ui/LevelBar.svelte';
   import WinOverlay from '$lib/components/ui/WinOverlay.svelte';
@@ -131,6 +132,10 @@
       {/if}
     </div>
   </div>
+
+  {#if showConfetti}
+    <Confetti />
+  {/if}
 
   {#if gameOver}
     <WinOverlay title={$_('greatGame')} subtitle="{$_('goals')}: {score}">
