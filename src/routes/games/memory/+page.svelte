@@ -2,7 +2,10 @@
   import { settings } from '$lib/stores/settings';
   import { _, locale } from '$lib/stores/locale';
   import { playTap, playMatch, playWin, playError } from '$lib/sounds/audioManager';
-  import Confetti from '$lib/components/Confetti.svelte';
+  import GameShell from '$lib/components/ui/GameShell.svelte';
+  import LevelDots from '$lib/components/ui/LevelDots.svelte';
+  import WinOverlay from '$lib/components/ui/WinOverlay.svelte';
+  import BigButton from '$lib/components/ui/BigButton.svelte';
 
   const emojis = ['🐶', '🐱', '🐰', '🐻', '🐸', '🐵', '🦊', '🐯', '🐭', '🐼', '🐨', '🦁'];
   const STORAGE_KEY = 'memory-unlocked-level';
@@ -112,53 +115,45 @@
   initGame();
 </script>
 
-<div class="memory-game">
-  <div class="level-indicator">
-    <span class="level-label">{$_('level')} {level}</span>
-    <div class="level-dots">
-      {#each Array(10) as _, i}
-        <span
-          class="level-dot"
-          class:current={level === i + 1}
-          class:unlocked={i + 1 <= unlockedLevel}
-          class:locked={i + 1 > unlockedLevel}
-        ></span>
+<GameShell accent="#7FD8FF">
+  {#snippet hudLeft()}
+    <div class="level-indicator">
+      <span class="level-label">{$_('level')} {level}</span>
+      <LevelDots total={10} current={level} unlocked={unlockedLevel} />
+    </div>
+  {/snippet}
+
+  <div class="memory-game">
+    <div class="grid" style:grid-template-columns="repeat({cols}, 1fr)">
+      {#each cards as card (card.id)}
+        <button
+          class="card"
+          class:flipped={card.flipped || matched.has(card.id) || showcasing.has(card.id)}
+          class:showcasing={showcasing.has(card.id)}
+          class:matched={matched.has(card.id)}
+          onclick={() => flipCard(card)}
+        >
+          <span class="card-front">{card.emoji}</span>
+          <span class="card-back">?</span>
+          {#if showcasing.has(card.id)}
+            <span class="sparkle s1">⭐</span>
+            <span class="sparkle s2">✨</span>
+            <span class="sparkle s3">💫</span>
+          {/if}
+        </button>
       {/each}
     </div>
-  </div>
 
-  <div class="grid" style:grid-template-columns="repeat({cols}, 1fr)">
-    {#each cards as card (card.id)}
-      <button
-        class="card"
-        class:flipped={card.flipped || matched.has(card.id) || showcasing.has(card.id)}
-        class:showcasing={showcasing.has(card.id)}
-        class:matched={matched.has(card.id)}
-        onclick={() => flipCard(card)}
-      >
-        <span class="card-front">{card.emoji}</span>
-        <span class="card-back">?</span>
-        {#if showcasing.has(card.id)}
-          <span class="sparkle s1">⭐</span>
-          <span class="sparkle s2">✨</span>
-          <span class="sparkle s3">💫</span>
+    {#if won}
+      <WinOverlay title={$_('greatJob')} subtitle={$_('levelComplete', { n: level })}>
+        {#if level < 10}
+          <BigButton variant="primary" class="next-btn" onclick={advanceLevel}>{$_('nextLevel')}</BigButton>
         {/if}
-      </button>
-    {/each}
+        <BigButton variant="ghost" class="replay-btn" onclick={replayLevel}>{$_('replay')}</BigButton>
+      </WinOverlay>
+    {/if}
   </div>
-
-  {#if won}
-    <Confetti />
-    <div class="win-overlay">
-      <p class="win-text">{$_('greatJob')}</p>
-      <p class="win-sub">{$_('levelComplete', { n: level })}</p>
-      {#if level < 10}
-        <button class="next-btn" onclick={advanceLevel}>{$_('nextLevel')}</button>
-      {/if}
-      <button class="replay-btn" onclick={replayLevel}>{$_('replay')}</button>
-    </div>
-  {/if}
-</div>
+</GameShell>
 
 <style>
   .memory-game {
@@ -177,30 +172,7 @@
   .level-label {
     font-size: 16px;
     font-weight: 700;
-    color: var(--color-primary);
-  }
-  .level-dots {
-    display: flex;
-    gap: 4px;
-  }
-  .level-dot {
-    width: 10px;
-    height: 10px;
-    border-radius: 50%;
-    transition: all 0.2s;
-  }
-  .level-dot.locked {
-    background: #ddd;
-  }
-  .level-dot.unlocked {
-    background: var(--color-primary);
-    opacity: 0.4;
-  }
-  .level-dot.current {
-    background: var(--color-primary);
-    opacity: 1;
-    transform: scale(1.3);
-    box-shadow: 0 0 4px rgba(79, 195, 247, 0.6);
+    color: var(--accent);
   }
   .grid {
     display: grid;
@@ -215,8 +187,9 @@
     position: relative;
     transform-style: preserve-3d;
     transition: transform 0.3s;
-    background: linear-gradient(135deg, var(--color-primary), #81D4FA);
-    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    background: linear-gradient(145deg, #23375F, #18294A);
+    border: 1px solid color-mix(in srgb, var(--accent) 45%, transparent);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.35);
   }
   .card.flipped { transform: rotateY(180deg); }
   .card.showcasing {
@@ -253,49 +226,11 @@
     backface-visibility: hidden;
   }
   .card-front {
-    background: white;
+    background: linear-gradient(145deg, #F5FAFF, #DCEBFF);
     transform: rotateY(180deg);
-    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
   }
   .card-back {
     font-size: 24px;
     color: white;
-  }
-  .win-overlay {
-    position: fixed;
-    inset: 0;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    background: rgba(0,0,0,0.3);
-    z-index: 50;
-    gap: 12px;
-  }
-  .win-text {
-    font-size: 36px;
-    color: white;
-    font-weight: 700;
-    text-shadow: 0 2px 8px rgba(0,0,0,0.3);
-  }
-  .win-sub {
-    font-size: 18px;
-    color: rgba(255,255,255,0.8);
-  }
-  .next-btn {
-    padding: 14px 32px;
-    background: white;
-    border-radius: 24px;
-    font-size: 18px;
-    font-weight: 600;
-    color: var(--color-primary);
-  }
-  .replay-btn {
-    padding: 10px 24px;
-    background: rgba(255,255,255,0.8);
-    border-radius: 20px;
-    font-size: 14px;
-    font-weight: 600;
-    color: #666;
   }
 </style>
