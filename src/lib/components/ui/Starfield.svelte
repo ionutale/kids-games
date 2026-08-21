@@ -1,18 +1,10 @@
 <script>
+  import { makeStars } from './stars.js';
+
   let { count = 40 } = $props();
 
-  let s = 42;
-  const rand = () => { s = (s * 9301 + 49297) % 233280; return s / 233280; };
-
   // svelte-ignore state_referenced_locally -- stars are generated once; regenerating would reshuffle positions
-  const stars = Array.from({ length: count }, (_, i) => ({
-    id: i,
-    top: rand() * 100,
-    left: rand() * 100,
-    size: 1 + rand() * 2,
-    delay: rand() * 4,
-    duration: 2 + rand() * 3
-  }));
+  const stars = makeStars(count);
 </script>
 
 <div class="starfield" aria-hidden="true">
