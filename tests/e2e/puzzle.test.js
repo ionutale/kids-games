@@ -22,7 +22,7 @@ test.describe('Puzzle E2E', () => {
 
   test('level 10 has 25 pieces', async ({ page }) => {
     await page.goto('/games/puzzle');
-    await page.locator('.lvl-btn').nth(9).click();
+    await page.locator('.level-btn').nth(9).click();
     await page.waitForTimeout(200);
     await expect(page.locator('.tray-piece')).toHaveCount(25);
     await expect(page.locator('.ghost-cell')).toHaveCount(25);

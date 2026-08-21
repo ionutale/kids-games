@@ -2,7 +2,10 @@
   import { settings } from '$lib/stores/settings';
   import { _ } from '$lib/stores/locale';
   import { playTap, playMatch, playWin } from '$lib/sounds/audioManager';
-  import Confetti from '$lib/components/Confetti.svelte';
+  import GameShell from '$lib/components/ui/GameShell.svelte';
+  import LevelBar from '$lib/components/ui/LevelBar.svelte';
+  import WinOverlay from '$lib/components/ui/WinOverlay.svelte';
+  import BigButton from '$lib/components/ui/BigButton.svelte';
 
   const emojiSets = {
     2: [['🐶','🐱'],['🐻','🐸']],
@@ -75,12 +78,9 @@
   initGame();
 </script>
 
-<div class="puzzle-game">
-  <div class="level-bar">
-    {#each Array(10) as _, i}
-      <button class="lvl-btn" class:active={level === i + 1} onclick={() => setLevel(i + 1)}>{i + 1}</button>
-    {/each}
-  </div>
+<GameShell accent="#93C5FD">
+  <div class="puzzle-game">
+    <LevelBar current={level} onchange={setLevel} />
 
   <div class="board" style:grid-template-columns="repeat({size}, 1fr)">
     {#each Array(size) as _, r}
@@ -120,34 +120,27 @@
   {/if}
 
   {#if won}
-    <Confetti />
-    <div class="win-overlay">
-      <p class="win-text">{$_('puzzleDone')}</p>
-      <button class="replay-btn" onclick={initGame}>{$_('newPuzzle')}</button>
-    </div>
+    <WinOverlay title={$_('puzzleDone')}>
+      <BigButton variant="primary" class="replay-btn" onclick={initGame}>{$_('newPuzzle')}</BigButton>
+    </WinOverlay>
   {/if}
-</div>
+  </div>
+</GameShell>
 
 <style>
   .puzzle-game { display: flex; flex-direction: column; align-items: center; flex: 1; padding: 8px; gap: 8px; }
-  .level-bar { display: flex; gap: 3px; }
-  .lvl-btn { width: 30px; height: 28px; border-radius: 6px; font-size: 11px; font-weight: 600; color: #999; background: rgba(255,255,255,0.6); }
-  .lvl-btn.active { color: white; background: var(--color-primary); }
   .board { display: grid; gap: 4px; width: 100%; max-width: 300px; aspect-ratio: 1; }
-  .ghost-cell { position: relative; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.04); border-radius: 10px; border: 2px dashed #ccc; transition: all 0.15s; }
+  .ghost-cell { position: relative; display: flex; align-items: center; justify-content: center; background: var(--panel-glass); border-radius: 10px; border: 2px dashed color-mix(in srgb, var(--accent) 40%, transparent); transition: all 0.15s; }
   .ghost-cell.drag-over { border-color: #66bb6a; background: rgba(102, 187, 106, 0.1); transform: scale(1.03); }
   .ghost-emoji { font-size: 42px; opacity: 0.2; filter: grayscale(1); }
   .ghost-emoji.small { font-size: 28px; }
   .placed-piece { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 38px; animation: popIn 0.3s ease-out; }
   .placed-piece.small { font-size: 26px; }
   @keyframes popIn { 0% { transform: scale(0); opacity: 0; } 60% { transform: scale(1.15); } 100% { transform: scale(1); opacity: 1; } }
-  .tray { display: flex; justify-content: center; gap: 6px; flex-wrap: wrap; padding: 8px; background: rgba(255,255,255,0.8); border-radius: 14px; width: 100%; max-width: 300px; min-height: 50px; }
-  .tray-piece { font-size: 32px; width: 48px; height: 48px; background: white; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.12); transition: transform 0.15s; }
+  .tray { display: flex; justify-content: center; gap: 6px; flex-wrap: wrap; padding: 8px; background: var(--panel-glass); border: 1px solid var(--panel-border); border-radius: 14px; width: 100%; max-width: 300px; min-height: 50px; }
+  .tray-piece { font-size: 32px; width: 48px; height: 48px; background: var(--panel-glass); border: 1px solid var(--panel-border); border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.12); transition: transform 0.15s; }
   .tray-piece.small { font-size: 24px; width: 40px; height: 40px; }
   .tray-piece:active { transform: scale(1.15); }
-  .tray-piece.dragging { transform: scale(1.2); box-shadow: 0 4px 16px rgba(0,0,0,0.2); }
-  .drag-hint { font-size: 14px; color: #999; font-weight: 600; }
-  .win-overlay { position: fixed; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; background: rgba(0,0,0,0.3); z-index: 50; gap: 16px; }
-  .win-text { font-size: 36px; color: white; font-weight: 700; text-shadow: 0 2px 8px rgba(0,0,0,0.3); }
-  .replay-btn { padding: 14px 32px; background: white; border-radius: 24px; font-size: 18px; font-weight: 600; color: var(--color-primary); }
+  .tray-piece.dragging { transform: scale(1.2); box-shadow: 0 4px 16px rgba(147,197,253,.5), 0 0 12px rgba(147,197,253,.5); }
+  .drag-hint { font-size: 14px; color: var(--text-lo); font-weight: 600; }
 </style>
