@@ -3,7 +3,7 @@ import { test, expect } from '@playwright/test';
 test.describe('Pop E2E', () => {
   test('loads with HUD and bubbles appear', async ({ page }) => {
     await page.goto('/games/pop');
-    await expect(page.locator('.hud')).toBeVisible();
+    await expect(page.locator('.game-shell .top-bar')).toBeVisible();
     await page.waitForTimeout(3000);
     const count = await page.locator('.bubble').count();
     expect(count).toBeGreaterThan(0);
@@ -32,7 +32,7 @@ test.describe('Pop E2E', () => {
 
   test('game area has gradient background', async ({ page }) => {
     await page.goto('/games/pop');
-    const bg = await page.locator('.pop-game').evaluate(el => getComputedStyle(el).background);
+    const bg = await page.locator('.game-shell').evaluate(el => getComputedStyle(el).background);
     expect(bg).toContain('gradient');
   });
 
@@ -58,6 +58,6 @@ test.describe('Pop E2E', () => {
     }
     await page.locator('.level-btn').nth(4).click();
     await page.waitForTimeout(500);
-    await expect(page.locator('.hud')).toBeVisible();
+    await expect(page.locator('.game-shell .top-bar')).toBeVisible();
   });
 });
