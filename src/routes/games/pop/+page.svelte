@@ -3,6 +3,12 @@
   import { settings } from '$lib/stores/settings';
   import { _ } from '$lib/stores/locale';
   import { playPop, playWin } from '$lib/sounds/audioManager';
+  import GameShell from '$lib/components/ui/GameShell.svelte';
+  import HudPill from '$lib/components/ui/HudPill.svelte';
+  import LevelBar from '$lib/components/ui/LevelBar.svelte';
+  import WinOverlay from '$lib/components/ui/WinOverlay.svelte';
+  import BigButton from '$lib/components/ui/BigButton.svelte';
+  import SoundToggle from '$lib/components/SoundToggle.svelte';
 
   const items = ['🫧', '🐟', '🦋', '⭐', '🌟', '💫', '🌸', '🍎'];
   let bubbles = $state([]);
@@ -76,131 +82,62 @@
   }
 </script>
 
-<div class="pop-game">
-  {#if !playing && timeLeft <= 0}
-    <div class="win-overlay">
-      <p class="score-text">{$_('score')}: {score}</p>
-      <button class="replay-btn" onclick={startGame}>{$_('playAgain')}</button>
+<GameShell accent="#C4B5FD">
+  {#snippet hudLeft()}
+    <HudPill icon="⭐" label="{$_('score')}: {score}" />
+  {/snippet}
+
+  {#snippet hudRight()}
+    <div class="hud-right">
+      <HudPill icon="⏱" label="{$_('time')}: {timeLeft}s" tone={timeLeft <= 5 ? 'warn' : 'default'} />
+      <SoundToggle />
     </div>
-  {/if}
+  {/snippet}
 
-  <div class="hud">
-    <span class="hud-item">{$_('score')}: {score}</span>
-    <span class="hud-item" class:hud-warn={timeLeft <= 5}>{$_('time')}: {timeLeft}s</span>
-  </div>
+  <div class="pop-game">
+    {#if !playing && timeLeft <= 0}
+      <WinOverlay title="{$_('score')}: {score}">
+        <BigButton variant="primary" class="replay-btn" onclick={startGame}>{$_('playAgain')}</BigButton>
+      </WinOverlay>
+    {/if}
 
-  {#each bubbles as b (b.id)}
-    <button
-      class="bubble"
-      style:left="{b.x}%"
-      style:font-size="{b.size}px"
-      style:--speed="{b.speed}s"
-      onclick={() => popBubble(b.id)}
-    >
-      {b.emoji}
-    </button>
-  {/each}
-
-  <div class="level-bar">
-    {#each Array(10) as _, i}
-      <button class="level-btn" class:active={level === i + 1} onclick={() => setLevel(i + 1)}>
-        {i + 1}
+    {#each bubbles as b (b.id)}
+      <button
+        class="bubble"
+        style:left="{b.x}%"
+        style:font-size="{b.size}px"
+        style:--speed="{b.speed}s"
+        onclick={() => popBubble(b.id)}
+      >
+        {b.emoji}
       </button>
     {/each}
+
+    <LevelBar current={level} onchange={setLevel} />
   </div>
-</div>
+</GameShell>
 
 <style>
   .pop-game {
     flex: 1;
     position: relative;
     overflow: hidden;
-    background: linear-gradient(180deg, #e3f2fd 0%, #bbdefb 100%);
   }
-  .hud {
-    position: absolute;
-    top: 8px;
-    left: 0;
-    right: 0;
+  .hud-right {
     display: flex;
-    justify-content: space-between;
-    padding: 0 16px;
-    z-index: 10;
-    pointer-events: none;
-  }
-  .hud-item {
-    background: rgba(255,255,255,0.8);
-    padding: 4px 12px;
-    border-radius: 12px;
-    font-size: 16px;
-    font-weight: 700;
-    color: #333;
-  }
-  .hud-warn { color: #E57373; animation: pulse 0.5s ease-in-out infinite; }
-  @keyframes pulse {
-    0%, 100% { transform: scale(1); }
-    50% { transform: scale(1.1); }
+    align-items: center;
+    gap: 8px;
   }
   .bubble {
     position: absolute;
     transform: translateX(-50%);
     animation: float var(--speed) linear infinite;
-    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));
+    filter: drop-shadow(0 2px 6px rgba(196,181,253,0.55));
   }
   @keyframes float {
     0% { bottom: -60px; opacity: 0; }
     5% { opacity: 1; }
     90% { opacity: 1; }
     100% { bottom: 100%; opacity: 0; }
-  }
-  .level-bar {
-    position: absolute;
-    bottom: calc(8px + var(--safe-bottom));
-    left: 0;
-    right: 0;
-    display: flex;
-    justify-content: center;
-    gap: 3px;
-    z-index: 10;
-    pointer-events: none;
-  }
-  .level-btn {
-    pointer-events: auto;
-    width: 30px;
-    height: 28px;
-    border-radius: 6px;
-    font-size: 11px;
-    font-weight: 600;
-    color: #999;
-    background: rgba(255,255,255,0.6);
-  }
-  .level-btn.active {
-    color: white;
-    background: var(--color-primary);
-  }
-  .win-overlay {
-    position: fixed;
-    inset: 0;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    background: rgba(0,0,0,0.3);
-    z-index: 50;
-    gap: 16px;
-  }
-  .score-text {
-    font-size: 36px;
-    color: white;
-    font-weight: 700;
-    text-shadow: 0 2px 8px rgba(0,0,0,0.3);
-  }
-  .replay-btn {
-    padding: 14px 32px;
-    background: white;
-    border-radius: 24px;
-    font-size: 18px;
-    font-weight: 600;
-    color: var(--color-primary);
   }
 </style>
