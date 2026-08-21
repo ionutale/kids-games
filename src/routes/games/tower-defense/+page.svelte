@@ -143,8 +143,8 @@
 {:else}
   <div class="td-game">
     <div class="td-hud">
-      <HudPill icon="❤️" label="{gameState?.lives ?? 10}" />
-      <HudPill icon="🪙" label="{gameState?.coins ?? 0}" />
+      <HudPill icon="❤️" label={String(gameState?.lives ?? 10)} />
+      <HudPill icon="🪙" label={String(gameState?.coins ?? 0)} />
       <HudPill icon="🌊" label="{gameState?.wave ?? 0}/{gameState?.totalWaves ?? 0}" />
     </div>
 
