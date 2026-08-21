@@ -1,6 +1,7 @@
 <script>
   import { settings } from '$lib/stores/settings';
   import { playTap, playPop } from '$lib/sounds/audioManager';
+  import GameShell from '$lib/components/ui/GameShell.svelte';
 
   const scenes = ['🌿', '🌊', '🚀', '🦁'];
   const stickerSets = {
@@ -84,48 +85,50 @@
   });
 </script>
 
-<div class="stickers-game">
-  <div class="scene-select">
-    {#each scenes as s}
-      <button class="scene-btn" class:active={scene === s} onclick={() => changeScene(s)}>
-        {s}
-      </button>
-    {/each}
-  </div>
+<GameShell accent="#F0ABFC">
+  <div class="stickers-game">
+    <div class="scene-select">
+      {#each scenes as s}
+        <button class="scene-btn" class:active={scene === s} onclick={() => changeScene(s)}>
+          {s}
+        </button>
+      {/each}
+    </div>
 
-  <div class="scene-area" style="background: linear-gradient(135deg, #e8f5e9 0%, #fff3e0 100%);"
-    ontouchmove={moveDrag}
-    ontouchend={endDrag}
-    onmousemove={moveDrag}
-    onmouseup={endDrag}
-    onmouseleave={endDrag}>
-    {#each placed as p (p.id)}
-      <span
-        class="placed-sticker"
-        class:dragging={dragging === p.id}
-        style:left="{p.x}%"
-        style:top="{p.y}%"
-        style:font-size="{$settings.ageLevel <= 2 ? '48px' : '36px'}"
-        ontouchstart={(e) => startDrag(e, p.id)}
-        onmousedown={(e) => startDrag(e, p.id)}
-      >
-        {p.emoji}
-      </span>
-    {/each}
-  </div>
+    <div class="scene-area" style="background: linear-gradient(135deg, #e8f5e9 0%, #fff3e0 100%);"
+      ontouchmove={moveDrag}
+      ontouchend={endDrag}
+      onmousemove={moveDrag}
+      onmouseup={endDrag}
+      onmouseleave={endDrag}>
+      {#each placed as p (p.id)}
+        <span
+          class="placed-sticker"
+          class:dragging={dragging === p.id}
+          style:left="{p.x}%"
+          style:top="{p.y}%"
+          style:font-size="{$settings.ageLevel <= 2 ? '48px' : '36px'}"
+          ontouchstart={(e) => startDrag(e, p.id)}
+          onmousedown={(e) => startDrag(e, p.id)}
+        >
+          {p.emoji}
+        </span>
+      {/each}
+    </div>
 
-  <div class="tray">
-    {#each activeStickers as sticker}
-      <button class="sticker-btn" onclick={() => trayTap(sticker)}>
-        {sticker}
-      </button>
-    {/each}
-  </div>
+    <div class="tray">
+      {#each activeStickers as sticker}
+        <button class="sticker-btn" onclick={() => trayTap(sticker)}>
+          {sticker}
+        </button>
+      {/each}
+    </div>
 
-  {#if placed.length > 0}
-    <button class="clear-btn" onclick={clearAll}>🗑️</button>
-  {/if}
-</div>
+    {#if placed.length > 0}
+      <button class="clear-btn" onclick={clearAll}>🗑️</button>
+    {/if}
+  </div>
+</GameShell>
 
 <style>
   .stickers-game {
@@ -140,16 +143,21 @@
     gap: 8px;
     padding: 8px;
     flex-shrink: 0;
+    background: var(--panel-glass);
+    border-top: 1px solid var(--panel-border);
+    border-bottom: 1px solid var(--panel-border);
+    backdrop-filter: blur(6px);
   }
   .scene-btn {
     font-size: 28px;
     width: 52px;
     height: 52px;
     border-radius: 12px;
-    background: rgba(255,255,255,0.7);
+    background: var(--panel-glass);
+    border: 1px solid var(--panel-border);
     transition: transform 0.15s;
   }
-  .scene-btn.active { transform: scale(1.15); background: white; box-shadow: 0 2px 8px rgba(0,0,0,0.15); }
+  .scene-btn.active { transform: scale(1.15); background: rgba(240,171,252,0.25); border-color: var(--accent); box-shadow: 0 2px 8px rgba(0,0,0,0.15); }
   .scene-area {
     flex: 1;
     position: relative;
@@ -179,14 +187,18 @@
     padding-bottom: calc(8px + var(--safe-bottom));
     flex-wrap: wrap;
     flex-shrink: 0;
-    background: rgba(255,255,255,0.8);
+    background: var(--panel-glass);
+    border-top: 1px solid var(--panel-border);
+    border-bottom: 1px solid var(--panel-border);
+    backdrop-filter: blur(6px);
   }
   .sticker-btn {
     font-size: 32px;
     width: 52px;
     height: 52px;
     border-radius: 12px;
-    background: white;
+    background: var(--panel-glass);
+    border: 1px solid var(--panel-border);
     box-shadow: 0 1px 4px rgba(0,0,0,0.1);
   }
   .sticker-btn:active { transform: scale(1.2); }
@@ -198,7 +210,8 @@
     width: 48px;
     height: 48px;
     border-radius: 50%;
-    background: white;
+    background: var(--panel-glass);
+    border: 1px solid var(--panel-border);
     box-shadow: 0 2px 8px rgba(0,0,0,0.15);
     z-index: 20;
   }
