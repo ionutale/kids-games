@@ -1,14 +1,10 @@
 <script>
   import { onMount } from 'svelte';
-  import { page } from '$app/stores';
   import { settings } from '$lib/stores/settings';
   import { _ } from '$lib/stores/locale';
-  import BackButton from '$lib/components/BackButton.svelte';
-  import SoundToggle from '$lib/components/SoundToggle.svelte';
   import '../app.css';
 
   let { children } = $props();
-  let isGame = $derived($page.url.pathname.startsWith('/games'));
   let showInstall = $state(false);
   let deferredPrompt = null;
 
@@ -35,13 +31,6 @@
 </script>
 
 <div class="shell">
-  {#if isGame}
-    <header class="top-bar">
-      <BackButton />
-      <SoundToggle />
-    </header>
-  {/if}
-
   <main class="game-area">
     {@render children()}
   </main>
@@ -64,15 +53,6 @@
     position: fixed;
     inset: 0;
     overflow: hidden;
-  }
-  .top-bar {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 8px 12px;
-    padding-top: calc(8px + var(--safe-top));
-    z-index: 10;
-    flex-shrink: 0;
   }
   .game-area {
     flex: 1;
