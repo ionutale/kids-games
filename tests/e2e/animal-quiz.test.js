@@ -106,6 +106,6 @@ test.describe('Animal Quiz E2E', () => {
       }
     }
 
-    await expect(page.locator('.done-text')).toBeVisible();
+    await expect(page.locator('.win-title')).toBeVisible();
   });
 });
