@@ -166,9 +166,9 @@
 
   function renderBoardLinesSVG() {
     const paths = pieces.map(p =>
-      `<path d="${p.path}" transform="translate(${p.targetX}, ${p.targetY})" style="fill:none;stroke:rgba(0,0,0,0.18);stroke-width:1;stroke-linejoin:round" />`
+      `<path d="${p.path}" transform="translate(${p.targetX}, ${p.targetY})" style="fill:none;stroke:rgba(0,0,0,0.18);stroke-width:1.5;stroke-linejoin:round" />`
     ).join('');
-    return `<svg viewBox="0 0 ${VIRTUAL_W} ${VIRTUAL_H}" preserveAspectRatio="none" style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none">${paths}</svg>`;
+    return `<svg viewBox="0 0 ${VIRTUAL_W} ${VIRTUAL_H}" preserveAspectRatio="xMidYMid meet" style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none">${paths}</svg>`;
   }
 
   function startIdleTimer() {
