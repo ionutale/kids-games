@@ -1,6 +1,5 @@
 <script>
   import Confetti from '$lib/components/Confetti.svelte';
-  import StarBurst from '$lib/components/StarBurst.svelte';
   import Starfield from './Starfield.svelte';
 
   let { title, subtitle = '', children } = $props();
