@@ -2,7 +2,10 @@
   import { settings } from '$lib/stores/settings';
   import { _ } from '$lib/stores/locale';
   import { playTap, playMatch, playError, playWin } from '$lib/sounds/audioManager';
-  import Confetti from '$lib/components/Confetti.svelte';
+  import GameShell from '$lib/components/ui/GameShell.svelte';
+  import LevelBar from '$lib/components/ui/LevelBar.svelte';
+  import WinOverlay from '$lib/components/ui/WinOverlay.svelte';
+  import BigButton from '$lib/components/ui/BigButton.svelte';
 
   const categories = {
     colors: {
@@ -83,7 +86,8 @@
   initGame();
 </script>
 
-<div class="sorting-game">
+<GameShell accent="#FCA5A5">
+  <div class="sorting-game">
   <div class="items-row">
     {#each items as item (item.id)}
       {#if !sorted.has(item.id)}
@@ -121,22 +125,15 @@
     {/each}
   </div>
 
-  <div class="level-bar">
-    {#each Array(10) as _, i}
-      <button class="level-btn" class:active={level === i + 1} onclick={() => { level = i + 1; initGame(); }}>
-        {i + 1}
-      </button>
-    {/each}
-  </div>
+  <LevelBar current={level} onchange={(l) => { level = l; initGame(); }} />
 
   {#if won}
-    <Confetti />
-    <div class="win-overlay">
-      <p class="win-text">{$_('allSorted')}</p>
-      <button class="replay-btn" onclick={initGame}>{$_('again')}</button>
-    </div>
+    <WinOverlay title={$_('allSorted')}>
+      <BigButton variant="ghost" class="replay-btn" onclick={initGame}>{$_('again')}</BigButton>
+    </WinOverlay>
   {/if}
-</div>
+  </div>
+</GameShell>
 
 <style>
   .sorting-game {
@@ -157,15 +154,15 @@
     font-size: 40px;
     width: 64px;
     height: 64px;
-    background: white;
+    background: var(--panel-glass);
+    border: 1px solid var(--panel-border);
     border-radius: 16px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-    transition: transform 0.15s, box-shadow 0.15s;
+    transition: transform 0.15s;
   }
   .item:active { transform: scale(1.15); }
   .item.selected {
     transform: scale(1.15);
-    box-shadow: 0 0 0 4px var(--color-primary);
+    box-shadow: 0 0 0 4px var(--accent);
   }
   .item.wobble { animation: wobble 0.4s ease-in-out; }
   @keyframes wobble {
@@ -176,7 +173,7 @@
   .hint {
     text-align: center;
     font-size: 14px;
-    color: #999;
+    color: var(--text-lo);
     min-height: 20px;
   }
   .baskets-row {
@@ -192,63 +189,19 @@
     gap: 4px;
     width: 70px;
     padding: 12px 8px;
-    background: white;
+    background: var(--panel-glass);
+    border: 1px solid var(--panel-border);
     border-radius: 16px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
     min-height: 80px;
   }
   .basket-label {
     font-size: 12px;
     font-weight: 600;
-    color: #666;
+    color: var(--text-lo);
   }
   .basket-count {
     font-size: 20px;
     font-weight: 700;
-    color: var(--color-primary);
-  }
-  .win-overlay {
-    position: fixed;
-    inset: 0;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    background: rgba(0,0,0,0.3);
-    z-index: 50;
-    gap: 16px;
-  }
-  .win-text {
-    font-size: 36px;
-    color: white;
-    font-weight: 700;
-    text-shadow: 0 2px 8px rgba(0,0,0,0.3);
-  }
-  .replay-btn {
-    padding: 14px 32px;
-    background: white;
-    border-radius: 24px;
-    font-size: 18px;
-    font-weight: 600;
-    color: var(--color-primary);
-  }
-  .level-bar {
-    display: flex;
-    justify-content: center;
-    gap: 3px;
-    padding-bottom: calc(8px + var(--safe-bottom));
-  }
-  .level-btn {
-    width: 30px;
-    height: 28px;
-    border-radius: 6px;
-    font-size: 11px;
-    font-weight: 600;
-    color: #999;
-    background: rgba(255,255,255,0.6);
-  }
-  .level-btn.active {
-    color: white;
-    background: var(--color-primary);
+    color: var(--accent);
   }
 </style>
