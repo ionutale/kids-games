@@ -1,6 +1,7 @@
 <script>
   import { settings } from '$lib/stores/settings';
   import { playSplash } from '$lib/sounds/audioManager';
+  import GameShell from '$lib/components/ui/GameShell.svelte';
 
   const colors = ['#FF6B6B', '#4FC3F7', '#81C784', '#FFD54F', '#BA68C8', '#FF8A65', '#E57373', '#64B5F6'];
   const emojis = ['⭐', '🌸', '🦋', '💫', '🎈', '🌈', '✨', '❤️'];
@@ -45,35 +46,36 @@
   }
 </script>
 
-<!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
-<div
-  class="splash-game"
-  role="application"
-  ontouchstart={createSplash}
-  ontouchmove={handleMove}
-  onmousedown={createSplash}
-  onmousemove={handleMove}
->
-  {#each splashes as s (s.id)}
-    <span
-      class="splash"
-      style:left="{s.x}%"
-      style:top="{s.y}%"
-      style:font-size="{s.size}px"
-      style:--delay="{s.delay}s"
-      style:--color="{s.color}"
-    >
-      {s.emoji}
-    </span>
-  {/each}
-</div>
+<GameShell accent="#6EE7B7">
+  <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
+  <div
+    class="splash-game"
+    role="application"
+    ontouchstart={createSplash}
+    ontouchmove={handleMove}
+    onmousedown={createSplash}
+    onmousemove={handleMove}
+  >
+    {#each splashes as s (s.id)}
+      <span
+        class="splash"
+        style:left="{s.x}%"
+        style:top="{s.y}%"
+        style:font-size="{s.size}px"
+        style:--delay="{s.delay}s"
+        style:--color="{s.color}"
+      >
+        {s.emoji}
+      </span>
+    {/each}
+  </div>
+</GameShell>
 
 <style>
   .splash-game {
     flex: 1;
     position: relative;
     overflow: hidden;
-    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
     cursor: crosshair;
   }
   .splash {
