@@ -4,19 +4,20 @@
   import { _, locale } from '$lib/stores/locale';
   import SoundToggle from '$lib/components/SoundToggle.svelte';
   import AgeSelector from '$lib/components/AgeSelector.svelte';
+  import Starfield from '$lib/components/ui/Starfield.svelte';
 
   const games = [
-    { id: 'paint', icon: '🎨', key: 'paint' },
-    { id: 'stickers', icon: '🌟', key: 'stickers' },
-    { id: 'memory', icon: '🧠', key: 'memory' },
-    { id: 'puzzle', icon: '🧩', key: 'puzzle' },
-    { id: 'pop', icon: '🫧', key: 'pop' },
-    { id: 'soccer', icon: '⚽', key: 'soccer' },
-    { id: 'sorting', icon: '📦', key: 'sorting' },
-    { id: 'splash', icon: '🌈', key: 'splash' },
-    { id: 'tower-defense', icon: '🛡️', key: 'towerDefense' },
-    { id: 'animal-quiz', icon: '🐾', key: 'animalQuiz' },
-    { id: 'glossary-puzzle', icon: '🧩', key: 'puzzle' },
+    { id: 'paint', icon: '🎨', key: 'paint', accent: '#FF8FB1' },
+    { id: 'stickers', icon: '🌟', key: 'stickers', accent: '#F0ABFC' },
+    { id: 'memory', icon: '🧠', key: 'memory', accent: '#7FD8FF' },
+    { id: 'puzzle', icon: '🧩', key: 'puzzle', accent: '#93C5FD' },
+    { id: 'pop', icon: '🫧', key: 'pop', accent: '#C4B5FD' },
+    { id: 'soccer', icon: '⚽', key: 'soccer', accent: '#FFE082' },
+    { id: 'sorting', icon: '📦', key: 'sorting', accent: '#FCA5A5' },
+    { id: 'splash', icon: '🌈', key: 'splash', accent: '#6EE7B7' },
+    { id: 'tower-defense', icon: '🛡️', key: 'towerDefense', accent: '#F87171' },
+    { id: 'animal-quiz', icon: '🐾', key: 'animalQuiz', accent: '#FDBA74' },
+    { id: 'glossary-puzzle', icon: '🧩', key: 'puzzle', accent: '#5EEAD4' },
   ];
 
   let showSettings = $state(false);
@@ -38,12 +39,18 @@
   });
 </script>
 
-<div class="hub">
+<div class="hub night-bg">
+  <Starfield />
   <h1 class="title">🎮 {$_('title')}</h1>
 
   <div class="grid">
-    {#each games as game (game.id)}
-      <button class="game-btn" onclick={() => goToGame(game.id)}>
+    {#each games as game, i (game.id)}
+      <button
+        class="game-btn glass"
+        style:--accent={game.accent}
+        style:animation-delay="{i * 0.07}s"
+        onclick={() => goToGame(game.id)}
+      >
         <span class="icon">{game.icon}</span>
         <span class="label">{$_(game.key)}</span>
       </button>
@@ -79,74 +86,86 @@
     height: 100%;
     padding: 20px;
     gap: 24px;
+    overflow-y: auto;
   }
   .title {
     font-size: 32px;
+    font-weight: 700;
     text-align: center;
-    color: #333;
+    color: var(--gold);
+    text-shadow: 0 0 14px var(--glow-gold);
+    z-index: 1;
   }
   .grid {
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: repeat(2, 1fr);
     gap: 16px;
     width: 100%;
     max-width: 400px;
+    z-index: 1;
   }
+  @media (min-width: 480px) { .grid { grid-template-columns: repeat(3, 1fr); max-width: 560px; } }
+  @media (min-width: 768px) { .grid { grid-template-columns: repeat(4, 1fr); max-width: 720px; } }
   .game-btn {
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
     gap: 8px;
-    padding: 20px 16px;
-    background: white;
-    border-radius: 20px;
-    box-shadow: 0 2px 12px rgba(0,0,0,0.08);
-    min-height: 110px;
+    padding: 20px 12px;
+    min-height: 120px;
+    border-radius: var(--radius-card);
+    animation: floaty 5s ease-in-out infinite, popIn 0.4s ease-out backwards;
     transition: transform 0.15s;
   }
-  .game-btn:active { transform: scale(0.95); }
-  .icon { font-size: 40px; }
-  .label { font-size: 14px; font-weight: 600; color: #666; }
+  .game-btn:active { transform: scale(0.94); animation-play-state: paused; }
+  .game-btn:nth-child(2n) { animation-delay: 0.8s; }
+  .game-btn:nth-child(3n) { animation-delay: 1.6s; }
+  .icon { font-size: 42px; filter: drop-shadow(0 0 8px var(--accent)); }
+  .label { font-size: 14px; font-weight: 600; color: var(--text-lo); }
   .settings-trigger {
     font-size: 28px;
-    width: 50px;
-    height: 50px;
+    width: 56px;
+    height: 56px;
     border-radius: 50%;
-    background: rgba(255,255,255,0.8);
+    background: var(--panel-glass);
+    border: 1px solid var(--panel-border);
     display: flex;
     align-items: center;
     justify-content: center;
-    opacity: 0.5;
+    opacity: 0.75;
+    z-index: 1;
   }
   .settings-bar {
     display: flex;
     align-items: center;
     gap: 12px;
     padding: 12px 16px;
-    background: white;
+    background: var(--panel-glass);
+    border: 1px solid var(--panel-border);
+    backdrop-filter: blur(10px);
     border-radius: 24px;
-    box-shadow: 0 2px 12px rgba(0,0,0,0.1);
+    z-index: 1;
   }
   .close-settings {
-    padding: 6px 16px;
-    background: var(--color-primary);
-    color: white;
-    border-radius: 16px;
+    padding: 8px 18px;
+    min-height: var(--touch-min);
+    background: var(--btn-gradient);
+    color: #062033;
+    border-radius: 18px;
     font-weight: 600;
     font-size: 14px;
   }
   .lang-btn {
-    padding: 4px 10px;
-    border-radius: 8px;
+    padding: 6px 12px;
+    min-height: var(--touch-min);
+    border-radius: 10px;
     font-size: 13px;
     font-weight: 700;
-    color: #999;
-    background: rgba(255,255,255,0.6);
+    color: var(--text-lo);
+    background: transparent;
+    border: 1px solid var(--panel-border);
     letter-spacing: 0.5px;
   }
-  .lang-btn.active {
-    color: white;
-    background: var(--color-primary);
-  }
+  .lang-btn.active { color: #062033; background: var(--cyan); border-color: var(--cyan); }
 </style>
