@@ -2,6 +2,7 @@
   import { onMount } from 'svelte';
   import { settings } from '$lib/stores/settings';
   import { playTap, playSplash } from '$lib/sounds/audioManager';
+  import GameShell from '$lib/components/ui/GameShell.svelte';
 
   let canvasEl;
   let ctx = $state(null);
@@ -95,47 +96,49 @@
   }
 </script>
 
-<div class="paint-game">
-  <div class="canvas-wrap">
-    <canvas
-      bind:this={canvasEl}
-      class="draw-canvas"
-      ontouchstart={startDraw}
-      ontouchmove={keepDrawing}
-      ontouchend={endDraw}
-      onmousedown={startDraw}
-      onmousemove={keepDrawing}
-      onmouseup={endDraw}
-      onmouseleave={endDraw}
-    ></canvas>
-  </div>
+<GameShell accent="#FF8FB1">
+  <div class="paint-game">
+    <div class="canvas-wrap">
+      <canvas
+        bind:this={canvasEl}
+        class="draw-canvas"
+        ontouchstart={startDraw}
+        ontouchmove={keepDrawing}
+        ontouchend={endDraw}
+        onmousedown={startDraw}
+        onmousemove={keepDrawing}
+        onmouseup={endDraw}
+        onmouseleave={endDraw}
+      ></canvas>
+    </div>
 
-  <div class="toolbar">
-    {#each colors as c}
-      <button
-        class="color-btn"
-        style:background={c}
-        class:active={currentColor === c}
-        aria-label={c}
-        onclick={() => { currentColor = c; mode = 'brush'; }}
-      ></button>
-    {/each}
-  </div>
-
-  <div class="bottom-bar">
-    <button class="action-btn" onclick={() => switchMode(mode === 'brush' ? 'stamp' : 'brush')}>
-      {mode === 'brush' ? '⭐' : '🖌️'}
-    </button>
-    {#if mode === 'brush'}
-      {#each ['small', 'medium', 'big'] as s}
-        <button class="size-btn" class:active={currentSize === s} onclick={() => currentSize = s}>
-          {s === 'small' ? '─' : s === 'medium' ? '━' : '━━'}
-        </button>
+    <div class="toolbar">
+      {#each colors as c}
+        <button
+          class="color-btn"
+          style:background={c}
+          class:active={currentColor === c}
+          aria-label={c}
+          onclick={() => { currentColor = c; mode = 'brush'; }}
+        ></button>
       {/each}
-    {/if}
-    <button class="action-btn" onclick={clearCanvas}>🗑️</button>
+    </div>
+
+    <div class="bottom-bar">
+      <button class="action-btn" onclick={() => switchMode(mode === 'brush' ? 'stamp' : 'brush')}>
+        {mode === 'brush' ? '⭐' : '🖌️'}
+      </button>
+      {#if mode === 'brush'}
+        {#each ['small', 'medium', 'big'] as s}
+          <button class="size-btn" class:active={currentSize === s} onclick={() => currentSize = s}>
+            {s === 'small' ? '─' : s === 'medium' ? '━' : '━━'}
+          </button>
+        {/each}
+      {/if}
+      <button class="action-btn" onclick={clearCanvas}>🗑️</button>
+    </div>
   </div>
-</div>
+</GameShell>
 
 <style>
   .paint-game {
@@ -143,13 +146,16 @@
     flex-direction: column;
     flex: 1;
     position: relative;
-    background: white;
     overflow: hidden;
   }
   .canvas-wrap {
     flex: 1;
     position: relative;
+    margin: 8px;
+    border-radius: 16px;
     overflow: hidden;
+    border: 1px solid var(--panel-border);
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);
   }
   .draw-canvas {
     display: block;
@@ -157,13 +163,16 @@
     height: 100%;
     touch-action: none;
     cursor: crosshair;
+    background: white;
   }
   .toolbar {
     display: flex;
     justify-content: center;
     gap: 8px;
     padding: 8px 12px;
-    background: #f5f5f5;
+    background: var(--panel-glass);
+    border-top: 1px solid var(--panel-border);
+    backdrop-filter: blur(6px);
     flex-shrink: 0;
   }
   .color-btn {
@@ -172,7 +181,7 @@
     border-radius: 50%;
     border: 3px solid transparent;
   }
-  .color-btn.active { border-color: #333; }
+  .color-btn.active { border-color: var(--accent); }
   .bottom-bar {
     display: flex;
     align-items: center;
@@ -180,7 +189,9 @@
     gap: 12px;
     padding: 8px 12px;
     padding-bottom: calc(8px + var(--safe-bottom));
-    background: #f5f5f5;
+    background: var(--panel-glass);
+    border-top: 1px solid var(--panel-border);
+    backdrop-filter: blur(6px);
     flex-shrink: 0;
   }
   .action-btn {
@@ -191,14 +202,17 @@
     align-items: center;
     justify-content: center;
     border-radius: 12px;
-    background: white;
+    background: var(--panel-glass);
+    border: 1px solid var(--panel-border);
+    color: var(--text-lo);
   }
   .size-btn {
     font-size: 20px;
     padding: 4px 12px;
     border-radius: 8px;
-    background: white;
-    color: #999;
+    background: var(--panel-glass);
+    border: 1px solid var(--panel-border);
+    color: var(--text-lo);
   }
-  .size-btn.active { color: #333; font-weight: 700; background: #ddd; }
+  .size-btn.active { color: var(--text-hi); font-weight: 700; background: rgba(255, 143, 177, 0.25); border-color: var(--accent); }
 </style>
