@@ -36,7 +36,7 @@ test.describe('Splash E2E', () => {
 
   test('dark gradient background', async ({ page }) => {
     await page.goto('/games/splash');
-    const bg = await page.locator('.splash-game').evaluate(el => getComputedStyle(el).background);
+    const bg = await page.locator('.game-shell').evaluate(el => getComputedStyle(el).background);
     expect(bg).toContain('gradient');
   });
 });
