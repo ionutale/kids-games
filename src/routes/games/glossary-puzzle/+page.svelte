@@ -105,7 +105,7 @@
   function handlePointerMove(e) {
     if (dragging === null || e.pointerId !== activePointer) return;
     const v = getVirtualCoords(e.clientX, e.clientY);
-    dragPos = { x: v.x - dragOffset.x, y: v.y - dragOffset.y };
+    dragPos = { x: v.x, y: v.y };
     updateGhostStyle();
   }
 
