@@ -82,3 +82,16 @@ export const DIFFICULTIES = {
   medium: { label: 'Medium', cols: 3, rows: 3, snapRadius: 25 },
   hard: { label: 'Hard', cols: 4, rows: 4, snapRadius: 18 },
 };
+
+export const LEVELS = [
+  { imageId: 'garden', difficulty: 'easy' },
+  { imageId: 'ocean', difficulty: 'easy' },
+  { imageId: 'space', difficulty: 'medium' },
+  { imageId: 'farm', difficulty: 'medium' },
+  { imageId: 'jungle', difficulty: 'medium' },
+  { imageId: 'food', difficulty: 'hard' },
+  { imageId: 'pets', difficulty: 'hard' },
+  { imageId: 'transport', difficulty: 'hard' },
+  { imageId: 'food', difficulty: 'hard' },
+  { imageId: 'transport', difficulty: 'hard' },
+];

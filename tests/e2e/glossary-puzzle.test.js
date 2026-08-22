@@ -5,6 +5,13 @@ test.describe('Glossary Puzzle E2E', () => {
     await page.goto('/games/glossary-puzzle');
     await expect(page.locator('.gp-gallery')).toBeVisible();
     await expect(page.locator('.gp-image-card').first()).toBeVisible();
+    await expect(page.locator('.back-btn')).toBeVisible();
+  });
+
+  test('level bar shows 10 levels, locked beyond unlocked', async ({ page }) => {
+    await page.goto('/games/glossary-puzzle');
+    await expect(page.locator('.level-btn')).toHaveCount(10);
+    await expect(page.locator('.level-btn.locked')).toHaveCount(9);
   });
 
   test('difficulty buttons work', async ({ page }) => {
@@ -19,27 +26,39 @@ test.describe('Glossary Puzzle E2E', () => {
     await expect(page.locator('.gp-image-card').first()).toBeVisible();
   });
 
-  test('clicking image starts puzzle', async ({ page }) => {
+  test('clicking image starts puzzle on its own URL', async ({ page }) => {
     await page.goto('/games/glossary-puzzle');
     await page.locator('.gp-image-card').first().click();
-    await page.waitForTimeout(500);
+    await page.waitForURL(/\/games\/glossary-puzzle\/play\?image=/);
     await expect(page.locator('.gp-board')).toBeVisible();
     await expect(page.locator('.gp-tray')).toBeVisible();
   });
 
-  test('board shows ghost cells', async ({ page }) => {
+  test('level 1 link starts the level puzzle', async ({ page }) => {
     await page.goto('/games/glossary-puzzle');
-    await page.locator('.gp-image-card').first().click();
-    await page.waitForTimeout(500);
+    await page.locator('.level-btn').first().click();
+    await page.waitForURL('/games/glossary-puzzle/play/1');
     await expect(page.locator('.gp-board')).toBeVisible();
     await expect(page.locator('.gp-board svg path')).toHaveCount(4);
     await expect(page.locator('.gp-tray-piece').first()).toBeVisible();
   });
 
-  test('drag and drop places a piece on its target cell', async ({ page }) => {
+  test('locked level link is blocked', async ({ page }) => {
     await page.goto('/games/glossary-puzzle');
-    await page.locator('.gp-image-card').first().click();
-    await page.waitForTimeout(500);
+    await page.locator('.level-btn').nth(9).click();
+    await page.waitForTimeout(300);
+    await expect(page).toHaveURL('/games/glossary-puzzle');
+  });
+
+  test('back button from play links to gallery', async ({ page }) => {
+    await page.goto('/games/glossary-puzzle/play/1');
+    await expect(page.locator('.gp-board')).toBeVisible();
+    await expect(page.locator('.gp-exit-btn')).toHaveAttribute('href', '/games/glossary-puzzle');
+  });
+
+  test('drag and drop places a piece on its target cell', async ({ page }) => {
+    await page.goto('/games/glossary-puzzle/play/1');
+    await expect(page.locator('.gp-board')).toBeVisible();
 
     const board = await page.locator('.gp-board').boundingBox();
     expect(board).toBeTruthy();

@@ -1,16 +1,33 @@
 <script>
-  let { current = 1, count = 10, onchange } = $props();
+  let { current = 1, count = 10, onchange, maxUnlocked = count, hrefFor = null } = $props();
 </script>
 
 <div class="level-bar">
   {#each Array(count) as _, i}
-    <button
-      class="level-btn"
-      class:active={current === i + 1}
-      onclick={() => onchange?.(i + 1)}
-    >
-      {i + 1}
-    </button>
+    {@const num = i + 1}
+    {@const locked = num > maxUnlocked}
+    {#if hrefFor}
+      <a
+        class="level-btn"
+        class:active={current === num}
+        class:locked={locked}
+        aria-disabled={locked}
+        href={locked ? undefined : hrefFor(num)}
+        onclick={(e) => { if (locked) e.preventDefault(); }}
+      >
+        {num}
+      </a>
+    {:else}
+      <button
+        class="level-btn"
+        class:active={current === num}
+        class:locked={locked}
+        disabled={locked}
+        onclick={() => onchange?.(num)}
+      >
+        {num}
+      </button>
+    {/if}
   {/each}
 </div>
 
@@ -39,6 +56,10 @@
     color: var(--text-lo);
     background: var(--panel-glass);
     border: 1px solid var(--panel-border);
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
   }
   .level-btn.active {
     color: #062033;
@@ -46,4 +67,9 @@
     border-color: var(--cyan);
     box-shadow: 0 0 8px rgba(127,216,255,0.6);
   }
+  .level-btn.locked {
+    opacity: 0.35;
+    cursor: not-allowed;
+  }
+  .level-btn.locked:active { transform: none; }
 </style>

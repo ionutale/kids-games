@@ -1,10 +1,16 @@
 <script>
-  let { variant = 'primary', onclick, children, class: extraClass = '' } = $props();
+  let { variant = 'primary', onclick, href = '', children, class: extraClass = '' } = $props();
 </script>
 
-<button class="big-btn {variant} {extraClass}" {onclick}>
-  {@render children?.()}
-</button>
+{#if href}
+  <a class="big-btn {variant} {extraClass}" {href}>
+    {@render children?.()}
+  </a>
+{:else}
+  <button class="big-btn {variant} {extraClass}" {onclick}>
+    {@render children?.()}
+  </button>
+{/if}
 
 <style>
   .big-btn {
@@ -19,6 +25,7 @@
     font-size: 18px;
     font-weight: 600;
     transition: transform 0.15s;
+    text-decoration: none;
   }
   .big-btn:active { transform: scale(0.95); }
 
