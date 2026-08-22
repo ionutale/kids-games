@@ -10,10 +10,10 @@
   const categories = {
     colors: {
       items: [
-        { emoji: '🔴', cat: 0 }, { emoji: '🟡', cat: 1 },
-        { emoji: '🔵', cat: 2 }, { emoji: '🟢', cat: 3 },
-        { emoji: '🟣', cat: 0 }, { emoji: '🟠', cat: 1 },
-        { emoji: '⚪', cat: 2 }, { emoji: '🟤', cat: 3 }
+        { emoji: '🔴', cat: 0 }, { emoji: '❤️', cat: 0 },
+        { emoji: '🟡', cat: 1 }, { emoji: '⭐', cat: 1 },
+        { emoji: '🔵', cat: 2 }, { emoji: '💧', cat: 2 },
+        { emoji: '🟢', cat: 3 }, { emoji: '🍀', cat: 3 }
       ],
       baskets: ['Red', 'Yellow', 'Blue', 'Green']
     },
@@ -42,7 +42,6 @@
     const numBaskets = l <= 3 ? 2 : 4;
     return { numItems, numBaskets };
   }
-
   function initGame() {
     const keys = Object.keys(categories);
     currentCat = keys[Math.floor(Math.random() * keys.length)];
@@ -51,7 +50,8 @@
 
     baskets = cat.baskets.slice(0, config.numBaskets);
     const eligible = cat.items.filter(item => item.cat < config.numBaskets);
-    const shuffled = [...eligible].sort(() => Math.random() - 0.5).slice(0, config.numItems);
+    const num = Math.min(config.numItems, eligible.length);
+    const shuffled = [...eligible].sort(() => Math.random() - 0.5).slice(0, num);
     items = shuffled.map((item, i) => ({ ...item, id: i }));
     sorted = new Set();
     won = false;
