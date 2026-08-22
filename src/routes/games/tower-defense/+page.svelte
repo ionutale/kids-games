@@ -1,6 +1,8 @@
 <script>
   import { onDestroy } from 'svelte';
   import { _ } from '$lib/stores/locale';
+  import { settings } from '$lib/stores/settings';
+  import { playWinCheer } from '$lib/sounds/audioManager';
   import { TOWERS } from '$lib/tower-defense/towers.js';
   import { MAPS } from '$lib/tower-defense/maps.js';
   import { createEngine } from '$lib/tower-defense/engine.js';
@@ -118,6 +120,10 @@
   }
 
   let gridSize = $derived(MAPS[selectedLevel - 1]?.grid || 6);
+
+  $effect(() => {
+    if (gameState?.won && $settings.soundEnabled) playWinCheer();
+  });
 
   onDestroy(() => { engine?.stop(); });
 </script>

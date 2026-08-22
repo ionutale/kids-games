@@ -1,8 +1,15 @@
 <script>
+  import { onMount } from 'svelte';
   import Confetti from '$lib/components/Confetti.svelte';
+  import { settings } from '$lib/stores/settings';
+  import { playWinCheer } from '$lib/sounds/audioManager';
   import Starfield from './Starfield.svelte';
 
   let { title, subtitle = '', children } = $props();
+
+  onMount(() => {
+    if ($settings.soundEnabled) playWinCheer();
+  });
 </script>
 
 <div class="win-overlay">

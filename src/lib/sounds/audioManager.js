@@ -48,6 +48,48 @@ export function playWin() {
   });
 }
 
+let cheerBuffer = null;
+let cheerLoading = null;
+
+async function loadCheer() {
+  if (cheerBuffer) return cheerBuffer;
+  if (!cheerLoading) {
+    cheerLoading = (async () => {
+      try {
+        const res = await fetch('/sounds/kids-cheer.mp3');
+        if (!res.ok) return null;
+        const ctx = getContext();
+        cheerBuffer = await ctx.decodeAudioData(await res.arrayBuffer());
+      } catch {
+        cheerBuffer = null;
+      }
+      return cheerBuffer;
+    })();
+  }
+  return cheerLoading;
+}
+
+export function playWinCheer() {
+  loadCheer().then((buffer) => {
+    if (buffer) {
+      try {
+        const ctx = getContext();
+        const src = ctx.createBufferSource();
+        const gain = ctx.createGain();
+        gain.gain.value = 0.7;
+        src.buffer = buffer;
+        src.connect(gain);
+        gain.connect(ctx.destination);
+        src.start();
+      } catch {
+        playWin();
+      }
+    } else {
+      playWin();
+    }
+  });
+}
+
 export function playError() {
   playTone(200, 0.2, 'sawtooth', 0.15);
 }
