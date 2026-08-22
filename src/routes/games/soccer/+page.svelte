@@ -1,4 +1,5 @@
 <script>
+  import { onDestroy } from 'svelte';
   import { settings } from '$lib/stores/settings';
   import { _ } from '$lib/stores/locale';
   import { playTap, playGoal as playGoalSound } from '$lib/sounds/audioManager';
@@ -17,10 +18,12 @@
   let level = $state(3);
   let dragStart = $state(null);
   let dragEnd = $state(null);
+  let dragPower = $state(0);
   let isDragging = $state(false);
+  let rafId = null;
 
-  const goalTop = 5;
-  const goalBottom = 23;
+  const GOAL_X0 = 30, GOAL_X1 = 70;
+  const GOAL_Y0 = 2, GOAL_Y1 = 24;
   const ballStartX = 50, ballStartY = 82;
 
   function levelTargets(l) {
@@ -33,6 +36,7 @@
     const clientX = e.touches ? e.touches[0].clientX : e.clientX;
     const clientY = e.touches ? e.touches[0].clientY : e.clientY;
     isDragging = true;
+    dragPower = 0;
     dragStart = { x: ((clientX - rect.left) / rect.width) * 100, y: ((clientY - rect.top) / rect.height) * 100 };
   }
 
@@ -43,6 +47,8 @@
     const clientX = e.touches ? e.touches[0].clientX : e.clientX;
     const clientY = e.touches ? e.touches[0].clientY : e.clientY;
     dragEnd = { x: ((clientX - rect.left) / rect.width) * 100, y: ((clientY - rect.top) / rect.height) * 100 };
+    const dist = Math.hypot(dragEnd.x - dragStart.x, dragEnd.y - dragStart.y);
+    dragPower = Math.max(0.15, Math.min(1, dist / 45));
   }
 
   function onFieldUp(e) {
@@ -55,30 +61,63 @@
     const endY = ((clientY - rect.top) / rect.height) * 100;
 
     dragEnd = { x: endX, y: endY };
-    performKick(dragStart, dragEnd);
+    performKick({ x: endX, y: endY });
     dragStart = null;
     dragEnd = null;
   }
 
-  function performKick(from, to) {
-    const dx = to.x - from.x;
-    const dy = to.y - from.y;
+  function quadPoint(p0, p1, p2, t) {
+    const inv = 1 - t;
+    return {
+      x: inv * inv * p0.x + 2 * inv * t * p1.x + t * t * p2.x,
+      y: inv * inv * p0.y + 2 * inv * t * p1.y + t * t * p2.y
+    };
+  }
+
+  function flightScores(p0, p1, p2) {
+    for (let i = 0; i <= 10; i++) {
+      const pt = quadPoint(p0, p1, p2, i / 10);
+      if (pt.x > GOAL_X0 && pt.x < GOAL_X1 && pt.y > GOAL_Y0 && pt.y < GOAL_Y1) return true;
+    }
+    return false;
+  }
+
+  function performKick(to) {
+    const p0 = { x: ballStartX, y: ballStartY };
+    const dx = to.x - p0.x;
+    const dy = to.y - p0.y;
     const dist = Math.sqrt(dx * dx + dy * dy);
     if (dist < 3) return;
 
     ballMoving = true;
     if ($settings.soundEnabled) playTap();
 
+    const power = dragPower;
+    const p2 = { x: to.x, y: to.y };
+    const aimVec = { x: 50 - p0.x, y: 13 - p0.y };
+    const aimLen = Math.hypot(aimVec.x, aimVec.y) || 1;
+    const perpAim = { x: -aimVec.y / aimLen, y: aimVec.x / aimLen };
+    const lateral = (p2.x - p0.x) * perpAim.x + (p2.y - p0.y) * perpAim.y;
+    const p1 = {
+      x: (p0.x + p2.x) / 2 + perpAim.x * lateral * 0.35,
+      y: (p0.y + p2.y) / 2 + perpAim.y * lateral * 0.35
+    };
+
     const targets = levelTargets(level);
-    const goalHalf = targets.goalSize / 2;
-    const inGoalX = to.x > 50 - goalHalf && to.x < 50 + goalHalf;
-    const inGoalY = to.y > goalTop && to.y < goalBottom;
-    const willScore = inGoalX && inGoalY;
+    const willScore = flightScores(p0, p1, p2);
+    const duration = 650 - 350 * power;
+    const startTime = performance.now();
 
-    ballX = to.x;
-    ballY = to.y;
-
-    setTimeout(() => {
+    function tick(now) {
+      const t = Math.min(1, (now - startTime) / duration);
+      const pt = quadPoint(p0, p1, p2, t);
+      ballX = pt.x;
+      ballY = pt.y;
+      if (t < 1) {
+        rafId = requestAnimationFrame(tick);
+        return;
+      }
+      rafId = null;
       ballMoving = false;
       if (willScore) {
         score++;
@@ -93,15 +132,21 @@
       } else {
         setTimeout(() => { ballX = ballStartX; ballY = ballStartY; }, 800);
       }
-    }, 400);
+    }
+
+    rafId = requestAnimationFrame(tick);
   }
 
   function resetGame() {
+    if (rafId) cancelAnimationFrame(rafId);
+    rafId = null;
     score = 0; gameOver = false; ballX = ballStartX; ballY = ballStartY;
-    dragStart = null; dragEnd = null; isDragging = false;
+    dragStart = null; dragEnd = null; isDragging = false; dragPower = 0;
   }
 
   function setLevel(l) { level = l; resetGame(); }
+
+  onDestroy(() => { if (rafId) cancelAnimationFrame(rafId); });
 </script>
 
 <GameShell accent="#FFE082">
@@ -130,6 +175,11 @@
           <defs><marker id="arrowhead" markerWidth="3" markerHeight="2" refX="3" refY="1" orient="auto"><polygon points="0 0, 3 1, 0 2" fill="#fff"/></marker></defs>
         </svg>
       {/if}
+      {#if isDragging && dragEnd}
+        <div class="power-meter">
+          <div class="power-fill" style:width="{dragPower * 100}%"></div>
+        </div>
+      {/if}
     </div>
   </div>
 
@@ -152,7 +202,9 @@
   .goal-area { position: absolute; top: 2%; left: 30%; width: 40%; height: 22%; border: 3px solid white; border-radius: 0 0 12px 12px; background: rgba(255,255,255,0.08); }
   .goal-text { position: absolute; top: 7%; left: 50%; transform: translateX(-50%); font-size: 20px; opacity: 0.4; }
   .ball { position: absolute; transform: translate(-50%, -50%); font-size: 48px; transition: all 0.4s cubic-bezier(0.25, 0.1, 0.25, 1); filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2)); z-index: 2; }
-  .ball.kicking { transition: all 0.25s cubic-bezier(0.25, 0.1, 0.25, 1); }
+  .ball.kicking { transition: none; }
   .arrow-line { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 3; }
+  .power-meter { position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%); width: 45%; height: 12px; border-radius: 8px; background: rgba(4,8,24,0.55); border: 1px solid var(--panel-border); overflow: hidden; z-index: 4; pointer-events: none; }
+  .power-fill { height: 100%; background: linear-gradient(90deg, #7FD8FF, #FFE082); transition: width 0.1s linear; }
   .score-display { position: absolute; bottom: 12px; right: 12px; color: white; font-weight: 700; font-size: 18px; text-shadow: 0 1px 4px rgba(0,0,0,0.3); background: var(--panel-glass); border: 1px solid var(--panel-border); backdrop-filter: blur(6px); padding: 4px 12px; border-radius: 12px; }
 </style>
