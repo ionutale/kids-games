@@ -200,17 +200,18 @@
             </div>
           {/each}
         {/each}
+
+        {#if gameState?.projectiles?.length}
+          <div class="proj-layer" style:--p-grid={gridSize}>
+            {#each gameState.projectiles as proj (proj.id)}
+              {@const tgt = gameState.enemies.find(e => e.id === proj.targetId && e.alive)}
+              {@const cell = enemyCell(tgt)}
+              <span class="projectile" class:hit={proj.progress >= 1} style:--r="{cell ? cell.row : proj.fromRow}" style:--c="{cell ? cell.col : proj.fromCol}">💥</span>
+            {/each}
+          </div>
+        {/if}
       </div>
 
-      {#if gameState?.projectiles?.length}
-        <div class="proj-layer" style:--grid="{gridSize}">
-          {#each gameState.projectiles as proj (proj.id)}
-            {@const tgt = gameState.enemies.find(e => e.id === proj.targetId && e.alive)}
-            {@const cell = enemyCell(tgt)}
-            <span class="projectile" class:hit={proj.progress >= 1} style:--r="{cell ? cell.row : proj.fromRow}" style:--c="{cell ? cell.col : proj.fromCol}">💥</span>
-          {/each}
-        </div>
-      {/if}
     {/if}
 
     {#if selectedTower}
@@ -297,24 +298,27 @@
   .proj-layer {
     position: absolute;
     inset: 0;
-    width: 100%;
-    height: 100%;
+    display: grid;
+    grid-template-columns: repeat(var(--p-grid, 6), 1fr);
+    grid-template-rows: repeat(var(--p-grid, 6), 1fr);
+    gap: 2px;
     pointer-events: none;
     z-index: 10;
   }
   .projectile {
-    position: absolute;
+    grid-row: calc(var(--r) + 1);
+    grid-column: calc(var(--c) + 1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
     font-size: 14px;
-    left: calc((var(--c) + 0.5) / var(--grid, 6) * 100%);
-    top: calc((var(--r) + 0.5) / var(--grid, 6) * 100%);
-    transform: translate(-50%, -50%);
     animation: projFly 0.3s ease-out forwards;
     z-index: 11;
   }
   @keyframes projFly {
-    0% { opacity: 1; transform: translate(-50%, -50%) scale(0.3); }
-    50% { opacity: 1; transform: translate(-50%, -50%) scale(1.2); }
-    100% { opacity: 0; transform: translate(-50%, -50%) scale(0.3); }
+    0% { opacity: 1; transform: scale(0.3); }
+    50% { opacity: 1; transform: scale(1.2); }
+    100% { opacity: 0; transform: scale(0.3); }
   }
   .spot-hint { opacity: 0.3; font-size: 14px; }
   .ghost-tower { font-size: 24px; opacity: 0.6; filter: drop-shadow(0 0 4px rgba(0,0,0,0.3)); }
