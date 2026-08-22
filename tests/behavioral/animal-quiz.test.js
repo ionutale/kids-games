@@ -69,8 +69,8 @@ describe('Animal Quiz behavior', () => {
     expect(score).toBe(2);
   });
 
-  it('all 20 rounds complete shows done', () => {
-    let round = 20;
+  it(`all ${ANIMALS.length} rounds complete shows done`, () => {
+    let round = ANIMALS.length;
     const done = round >= ANIMALS.length;
     expect(done).toBe(true);
   });

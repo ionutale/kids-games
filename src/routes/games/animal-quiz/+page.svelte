@@ -98,6 +98,7 @@
           <button
             class="opt-btn"
             class:shake={shakeId === opt.name}
+            class:correct={showConfetti && opt.correct}
             onclick={() => pick(opt)}
           >
             {opt.name}
@@ -169,6 +170,19 @@
     color: var(--text-hi);
   }
   .opt-btn:active { transform: scale(0.97); }
+  .opt-btn.correct {
+    background: var(--mint);
+    border-color: var(--mint);
+    color: #062033;
+    transform: scale(1.12);
+    box-shadow: 0 0 20px rgba(110, 231, 183, 0.6);
+    animation: correctPop 0.25s ease-out;
+  }
+  @keyframes correctPop {
+    0% { transform: scale(1); }
+    60% { transform: scale(1.18); }
+    100% { transform: scale(1.12); }
+  }
   .opt-btn.shake {
     animation: shake 0.4s ease-in-out;
     background: #FFEBEE;

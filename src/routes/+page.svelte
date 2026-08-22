@@ -61,9 +61,12 @@
     <div class="settings-bar">
       <SoundToggle />
       <AgeSelector />
-      <button class="lang-btn en" class:active={$lang === 'en'} onclick={() => setLang('en')}>EN</button>
-      <button class="lang-btn it" class:active={$lang === 'it'} onclick={() => setLang('it')}>IT</button>
-      <button class="lang-btn ro" class:active={$lang === 'ro'} onclick={() => setLang('ro')}>RO</button>
+      <button class="lang-btn en" class:active={lang === 'en'} onclick={() => setLang('en')}>EN</button>
+      <button class="lang-btn it" class:active={lang === 'it'} onclick={() => setLang('it')}>IT</button>
+      <button class="lang-btn ro" class:active={lang === 'ro'} onclick={() => setLang('ro')}>RO</button>
+      <button class="lang-btn de" class:active={lang === 'de'} onclick={() => setLang('de')}>DE</button>
+      <button class="lang-btn fr" class:active={lang === 'fr'} onclick={() => setLang('fr')}>FR</button>
+      <button class="lang-btn zh" class:active={lang === 'zh'} onclick={() => setLang('zh')}>中文</button>
       <button class="close-settings" onclick={() => showSettings = false}>{$_('done')}</button>
     </div>
   {:else}
@@ -139,7 +142,10 @@
   .settings-bar {
     display: flex;
     align-items: center;
-    gap: 12px;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 8px 10px;
+    max-width: calc(100vw - 24px);
     padding: 12px 16px;
     background: var(--panel-glass);
     border: 1px solid var(--panel-border);
