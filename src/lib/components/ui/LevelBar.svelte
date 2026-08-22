@@ -18,13 +18,20 @@
   .level-bar {
     display: flex;
     justify-content: center;
-    flex-wrap: wrap;
-    gap: 4px;
+    flex-wrap: nowrap;
+    gap: 3px;
     padding-bottom: calc(8px + var(--safe-bottom));
+    padding-left: 8px;
+    padding-right: 8px;
+    overflow-x: auto;
+    scrollbar-width: none;
   }
+  .level-bar::-webkit-scrollbar { display: none; }
   .level-btn {
-    width: 34px;
+    width: 32px;
     height: 32px;
+    min-width: 32px;
+    flex: 0 0 auto;
     border-radius: 8px;
     font-size: 12px;
     font-weight: 600;

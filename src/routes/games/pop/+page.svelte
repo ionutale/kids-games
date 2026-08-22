@@ -122,7 +122,10 @@
     flex: 1;
     position: relative;
     overflow: hidden;
+    display: flex;
+    flex-direction: column;
   }
+  .pop-game :global(.level-bar) { margin-top: auto; }
   .hud-right {
     display: flex;
     align-items: center;

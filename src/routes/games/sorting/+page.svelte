@@ -141,8 +141,10 @@
     flex-direction: column;
     flex: 1;
     padding: 16px;
+    padding-bottom: 0;
     gap: 16px;
   }
+  .sorting-game :global(.level-bar) { margin-top: auto; }
   .items-row {
     display: flex;
     justify-content: center;
