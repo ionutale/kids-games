@@ -31,6 +31,8 @@ test.describe('Glossary Puzzle E2E', () => {
     await page.goto('/games/glossary-puzzle');
     await page.locator('.gp-image-card').first().click();
     await page.waitForTimeout(500);
-    await expect(page.locator('.gp-board-cell').first()).toBeVisible();
+    await expect(page.locator('.gp-board')).toBeVisible();
+    await expect(page.locator('.gp-board svg path')).toHaveCount(4);
+    await expect(page.locator('.gp-tray-piece').first()).toBeVisible();
   });
 });

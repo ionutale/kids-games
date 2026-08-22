@@ -22,7 +22,6 @@
   let cols = $state(2);
   let dragging = $state(null);
   let dragPos = $state({ x: 0, y: 0 });
-  let dragOffset = $state({ x: 0, y: 0 });
   let celebrating = $state(false);
   let showDone = $state(false);
   let missHintId = $state(null);
@@ -60,8 +59,8 @@
     if (!dp) return;
     const r = boardEl.getBoundingClientRect();
     ghostStyle = {
-      left: (dragPos.x - dp.padding) / VIRTUAL_W * r.width + r.left,
-      top: (dragPos.y - dp.padding) / VIRTUAL_H * r.height + r.top,
+      left: (dragPos.x - dp.w / 2 - dp.padding) / VIRTUAL_W * r.width + r.left,
+      top: (dragPos.y - dp.h / 2 - dp.padding) / VIRTUAL_H * r.height + r.top,
       width: dp.boxW / VIRTUAL_W * r.width,
       height: dp.boxH / VIRTUAL_H * r.height,
     };
@@ -97,7 +96,6 @@
     dragging = pieceId;
 
     const v = getVirtualCoords(e.clientX, e.clientY);
-    dragOffset = { x: 0, y: 0 };
     dragPos = { x: v.x, y: v.y };
     updateGhostStyle();
     resetIdleTimer();
@@ -117,8 +115,8 @@
     const piece = pieces.find(p => p.id === dragging);
     if (!piece) { dragging = null; activePointer = null; return; }
 
-    const cx = dragPos.x + piece.w / 2;
-    const cy = dragPos.y + piece.h / 2;
+    const cx = dragPos.x;
+    const cy = dragPos.y;
     const tx = piece.targetX + piece.w / 2;
     const ty = piece.targetY + piece.h / 2;
     const dist = Math.hypot(cx - tx, cy - ty);
@@ -158,7 +156,7 @@
       </defs>
       <g filter="${isDragging ? `url(#${shId})` : 'none'}">
         <image href="${selectedImage.file}"
-          x="${piece.targetX - piece.padding}" y="${piece.targetY - piece.padding}"
+          x="${piece.padding - piece.targetX}" y="${piece.padding - piece.targetY}"
           width="${VIRTUAL_W}" height="${VIRTUAL_H}" preserveAspectRatio="xMidYMid slice"
           clip-path="url(#${clipId})" style="pointer-events:none;touch-action:none" />
         <path d="${piece.path}" transform="translate(${piece.padding}, ${piece.padding})"
