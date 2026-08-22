@@ -16,12 +16,21 @@
 - **Fixed Orientation**: Pieces are always upright — no rotation mechanics.
 - **Open Gallery**: Visual menu with image thumbnails letting users freely select any Puzzle.
 - **Positive-Only Audio**: Successful snap → satisfying sound. Failed drop → silence. No punitive sounds.
-- **Parental Gate**: 3-tap- within-3s required to exit an active puzzle.
+- **Parental Gate**: *Removed (2026-08)* — exit is now an ordinary link back to the gallery (see Glossary Puzzle below).
 - **Monochrome Blueprint**: Ghost image on the Board rendered in heavily washed-out greyscale.
 - **Single-Touch Lock**: Only one touch registered during a drag — resting palms ignored.
 - **Drag Offset and Magnify**: Dragged Piece scales up 1.12× and shifts above the touch point.
 - **Flat Borders**: Outer-perimeter Pieces have straight external edges.
 - **Permanent Lock**: Snapped Pieces ignore all future touch events.
+
+## Glossary Puzzle (Jigsaw) Game
+
+- **Gallery Page** (`/games/glossary-puzzle`): the landing view — Level Bar, categories, difficulty selector, image grid. Full app chrome via GameShell (back link + sound toggle).
+- **Level**: 1–10 predefined puzzle (image + grid difficulty); unlocked sequentially; persisted in localStorage (`glossary-puzzle-level-unlocked`).
+- **Level Page**: `/games/glossary-puzzle/play/{n}` — each Level has its own URL/entry point.
+- **Free-Play Page**: `/games/glossary-puzzle/play?image={id}&diff={key}` — opened from gallery image cards; resumed via `?resume=1` from saved Progress State.
+- **PuzzleBoard**: shared solving component (board, Tray, drag ghost, Snap, Idle Nudge, win overlay) used by both play routes; Back/Next are real links.
+- **Link-based Back**: exiting an active puzzle or leaving the gallery uses ordinary `<a href>` navigation — no parental gate.
 
 ## TODO — New Game Ideas
 
