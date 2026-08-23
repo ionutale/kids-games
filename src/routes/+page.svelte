@@ -25,6 +25,7 @@
     { id: 'tetris', icon: '🧱', key: 'tetris', accent: '#FFB74D' },
     { id: 'emoji-jump', icon: '🦘', key: 'emojiJump', accent: '#6EE7B7' },
     { id: 'angry-emoji', icon: '😡', key: 'angryEmoji', accent: '#F87171' },
+    { id: 'sequence-memory', icon: '🎵', key: 'sequenceMemory', accent: '#BA68C8' },
   ];
 
   let showSettings = $state(false);
