@@ -5,7 +5,9 @@ export default defineConfig({
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 1,
-  workers: process.env.CI ? 1 : 2,
+  // 1 worker: parallel browsers starve the games' timers on modest machines
+  // (symptom was one random timing-test failure per run). CI also uses 1.
+  workers: 1,
   reporter: 'html',
   use: {
     baseURL: 'http://localhost:4173',
