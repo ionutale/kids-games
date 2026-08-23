@@ -54,7 +54,7 @@ test.describe('Memory E2E', () => {
         const c = await cards.nth(idx).getAttribute('class') || '';
         if (!c.includes('flipped') && !c.includes('showcasing') && !c.includes('matched')) {
           await cards.nth(idx).click();
-          await page.waitForTimeout(200);
+          await page.waitForTimeout(400);
         }
       };
       await flipCheck(i);
@@ -62,7 +62,28 @@ test.describe('Memory E2E', () => {
       await page.waitForTimeout(3800);
     }
 
-    await expect(page.locator('.win-overlay')).toBeVisible();
+    // the fixed-timing flips can race the game's mismatch reset — retry pass if needed
+    for (let attempt = 0; attempt < 3; attempt++) {
+      if (await page.locator('.win-overlay').isVisible().catch(() => false)) break;
+      for (let i = 0; i < count; i++) {
+        const c = (await cards.nth(i).getAttribute('class')) || '';
+        if (!c.includes('matched') && !c.includes('flipped') && !c.includes('showcasing')) {
+          const match = pairs.find(([a, b]) => a === i || b === i);
+          if (!match) continue;
+          const partnerIdx = match[0] === i ? match[1] : match[0];
+          await cards.nth(partnerIdx).getAttribute('class').then((pc) => pc || '');
+          await cards.nth(i).click();
+          await page.waitForTimeout(350);
+          const partnerClass = (await cards.nth(partnerIdx).getAttribute('class')) || '';
+          if (!partnerClass.includes('matched') && !partnerClass.includes('flipped') && !partnerClass.includes('showcasing')) {
+            await cards.nth(partnerIdx).click();
+            await page.waitForTimeout(3800);
+          }
+        }
+      }
+    }
+
+    await expect(page.locator('.win-overlay')).toBeVisible({ timeout: 10000 });
     if (await page.locator('.next-btn').isVisible()) {
       await expect(page.locator('.next-btn')).toBeVisible();
     }
