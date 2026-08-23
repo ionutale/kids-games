@@ -44,9 +44,9 @@ The following games have been proposed but not yet designed or implemented. Each
 | 3 | **Spot the Difference** | Two emoji grids, player taps cells that differ. Visual scanning + attention. | [spec](docs/superpowers/specs/2026-07-10-spot-the-difference-design.md) | [issues](docs/issues/spot-the-difference-01-core-game.md) | Spec ready |
 | 4 | **Category Sort** | Drag emojis into correct category bins. Categorization + logic. | [spec](docs/superpowers/specs/2026-07-10-category-sort-design.md) | [issues](docs/issues/category-sort-01-core-game.md) | Spec ready |
 | 5 | **Path Builder** | Draw a path from Start to Goal avoiding obstacles. Spatial reasoning. | [spec](docs/superpowers/specs/2026-07-10-path-builder-design.md) | [issues](docs/issues/path-builder-01-engine.md) | Spec ready |
-| 6 | **Tetris** | Classic falling-block puzzle with line clears, difficulty levels, classic scoring + best score. | [spec](docs/superpowers/specs/2026-08-15-tetris-design.md) | — | [Spec ready](docs/superpowers/plans/2026-08-15-arcade-trilogy-plan.md) |
-| 7 | **Emoji Jump** (Doodle Jump clone) | Endless vertical climber — touch-button steering, full Doodle Jump depth (platforms, springs, enemies, power-ups). | [spec](docs/superpowers/specs/2026-08-15-emoji-jump-design.md) | — | [Spec ready](docs/superpowers/plans/2026-08-15-arcade-trilogy-plan.md) |
-| 8 | **Angry Emoji 2D** (Angry Birds clone) | Slingshot-drag emoji projectiles against destructible block towers; 20+ levels, 1-3 stars each. | [spec](docs/superpowers/specs/2026-08-15-angry-emoji-2d-design.md) | — | [Spec ready](docs/superpowers/plans/2026-08-15-arcade-trilogy-plan.md) |
+| 6 | **Tetris** | Classic falling-block puzzle with line clears, difficulty levels, classic scoring + best score. | [spec](docs/superpowers/specs/2026-08-15-tetris-design.md) | [plan](docs/superpowers/plans/2026-08-15-arcade-trilogy-plan.md) | Implemented |
+| 7 | **Emoji Jump** (Doodle Jump clone) | Endless vertical climber — touch-button steering, full Doodle Jump depth (platforms, springs, enemies, power-ups). | [spec](docs/superpowers/specs/2026-08-15-emoji-jump-design.md) | [plan](docs/superpowers/plans/2026-08-15-arcade-trilogy-plan.md) | Implemented |
+| 8 | **Angry Emoji 2D** (Angry Birds clone) | Slingshot-drag emoji projectiles against destructible block towers; 20+ levels, 1-3 stars each. | [spec](docs/superpowers/specs/2026-08-15-angry-emoji-2d-design.md) | [plan](docs/superpowers/plans/2026-08-15-arcade-trilogy-plan.md) | Implemented |
 | 9 | **Focus tap** (Brain Trainer 1) | Floating emoji stream; catch only the Target, resist Distractors. Selective attention + impulse control. | [spec](docs/superpowers/specs/2026-08-23-focus-tap-design.md) | [issues](docs/issues/focus-tap-01-core-game.md) | Implemented |
 | 10 | **Quick Count** (Brain Trainer 2) | Emojis flash briefly, child answers "how many?" via 3 Answer Pills. Subitizing + estimation. | [spec](docs/superpowers/specs/2026-08-23-quick-count-design.md) | [issues](docs/issues/quick-count-01-core-game.md) | Implemented |
 | 11 | **Speed Match** (Brain Trainer 3) | Deck of emoji Pair Cards; same or different? Auto-advance window keeps tempo. Processing speed. | [spec](docs/superpowers/specs/2026-08-23-speed-match-design.md) | [issues](docs/issues/speed-match-01-core-game.md) | Implemented |
@@ -157,6 +157,39 @@ The following games have been proposed but not yet designed or implemented. Each
 - **Pattern Unit**: The repeating emoji block (e.g., AB, AABB, ABC) underlying a Prompt Strip.
 - **Pattern Arc**: The fixed pedagogical ordering by level: AB → AAB/AABB → ABC → growing blocks `[A×k][B]`.
 - **Prompt Strip**: The visible emoji sequence with exactly one ❓ slot; answered from 3 options.
+
+## Tetris Game
+
+- **Board**: A 10×20 grid where Pieces fall and Line Clears happen.
+- **Drop Interval**: Milliseconds per row-fall; difficulty-based at level 1, shrinking ~8% per level with a 100ms floor.
+- **Line Clear**: 1–4 completed rows removed; scores 100/300/500/800 × Level.
+- **Ghost Piece**: Easy-only preview showing where the Piece will land.
+- **Hold Piece**: Hard-only ability to stash a Piece for later.
+- **Soft Drop**: Press-and-hold descent, +1 point per cell.
+- **Hard Drop**: Instant drop, +2 points per cell.
+- **Hint Button**: Highlights the best landing spot for the current Piece; no cooldown.
+- **Best Score**: Per-difficulty high score persisted in localStorage.
+
+## Emoji Jump Game
+
+- **Climb**: The endless upward progression; score = height in meters.
+- **Platform**: Static/moving/breakable surfaces that bounce the protagonist; spawn gaps 1.5–3.5× jump height with guaranteed reachability.
+- **Altitude Band**: Start (0–150m, static-only), Mid (150–400m, moving/breakable/springs), Deep (400m+, enemies + power-ups, max density).
+- **Spring**: ≤5% of platforms; bounces 2.5× a normal jump.
+- **Enemy**: 👾 drifting on platforms from mid-altitude; contact = death.
+- **Power-up**: Jetpack (fly ~150m/5s) and Shield (one hit); ≤3% each, collected by touching.
+- **Best Height**: Highest climb persisted in localStorage.
+
+## Angry Emoji 2D Game
+
+- **Slingshot**: Touch drag-to-aim, release-to-launch; dotted aim-line always on.
+- **Projectile**: 😡 default, 🐦🔥 heavy (breaks stone), 🧱 bouncy.
+- **Target**: 😠 basic, 🤬 tough (2 hits), 👿 boss (shielded); hit state = cracked face + circling stars.
+- **Block**: Wood/Ice/Stone destructible tower materials (validated AABB physics); crack overlay at ≤40% HP.
+- **Physics Core**: AABB-only, no rotation; 4 substeps (no tunneling); kinetic-energy damage with 150px/s threshold.
+- **Tier**: 4 tiers × 5 Levels; sequential unlock; tier 1 no stone → tier 4 multi-tower + moving blocks.
+- **Ammo**: 1–3 shots per Level, tuned per layout; exhaustion ends the Level with a replay prompt.
+- **Star**: 1★ ≥1 target, 2★ ≥60% max score, 3★ ≥90% max score; best stars persisted per Level.
 
 ## Assets
 
