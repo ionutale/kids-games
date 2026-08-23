@@ -19,6 +19,7 @@
     { id: 'animal-quiz', icon: '🐾', key: 'animalQuiz', accent: '#FDBA74' },
     { id: 'glossary-puzzle', icon: '🧩', key: 'puzzle', accent: '#5EEAD4' },
     { id: 'focus-tap', icon: '🎯', key: 'focusTap', accent: '#F87171' },
+    { id: 'quick-count', icon: '🔢', key: 'quickCount', accent: '#FDBA74' },
   ];
 
   let showSettings = $state(false);
