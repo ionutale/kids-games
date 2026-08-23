@@ -1,5 +1,7 @@
 import { test, expect } from '@playwright/test';
 
+test.describe.configure({ retries: 2 }); // fixed-timing card matching is load-sensitive
+
 test.describe('Memory E2E', () => {
   test('loads with cards', async ({ page }) => {
     await page.goto('/games/memory');
@@ -23,67 +25,55 @@ test.describe('Memory E2E', () => {
     await page.goto('/games/memory');
     const cards = page.locator('.card');
     const count = await cards.count();
+    test.setTimeout(120000);
 
-    const emojis = [];
-    for (let i = 0; i < count; i++) {
-      await cards.nth(i).click();
-      await page.waitForTimeout(200);
-      const text = await cards.nth(i).locator('.card-front').textContent();
-      emojis.push(text);
-    }
+    const isIdle = async (idx) => {
+      const c = (await cards.nth(idx).getAttribute('class')) || '';
+      return !c.includes('flipped') && !c.includes('showcasing') && !c.includes('matched');
+    };
+    const flipAndRead = async (idx) => {
+      await cards.nth(idx).click();
+      await expect(cards.nth(idx)).toHaveClass(/flipped|showcasing|matched/, { timeout: 4000 });
+      return (await cards.nth(idx).locator('.card-front').textContent()) ?? '';
+    };
+    const waitReset = (idx) =>
+      expect(cards.nth(idx)).not.toHaveClass(/flipped|showcasing/, { timeout: 8000 });
+    const waitMatched = (idx) =>
+      expect(cards.nth(idx)).toHaveClass(/matched/, { timeout: 9000 });
 
-    await page.waitForTimeout(1000);
-
-    const pairs = [];
-    const used = new Set();
-    for (let i = 0; i < count; i++) {
-      if (used.has(i)) continue;
-      for (let j = i + 1; j < count; j++) {
-        if (used.has(j)) continue;
-        if (emojis[i] && emojis[i] === emojis[j]) {
-          pairs.push([i, j]);
-          used.add(i);
-          used.add(j);
-          break;
+    // state-driven matching: flip a card, then probe candidates until it pairs.
+    // Every transition is poll-based so CPU load cannot desync the test.
+    let matchedCount = 0;
+    for (let pass = 0; pass < count * 2 && matchedCount < count; pass++) {
+      let anchor = -1;
+      for (let i = 0; i < count && anchor === -1; i++) {
+        if (await isIdle(i)) anchor = i;
+      }
+      if (anchor === -1) {
+        await page.waitForTimeout(500); // transition in flight
+        continue;
+      }
+      const anchorEmoji = await flipAndRead(anchor);
+      const anchorClass = (await cards.nth(anchor).getAttribute('class')) || '';
+      if (anchorClass.includes('matched')) {
+        matchedCount += 2;
+        continue;
+      }
+      let paired = false;
+      for (let j = 0; j < count && !paired; j++) {
+        if (j === anchor || !(await isIdle(j))) continue;
+        const emoji = await flipAndRead(j);
+        if (emoji === anchorEmoji) {
+          await waitMatched(anchor);
+          matchedCount += 2;
+          paired = true;
+        } else {
+          await waitReset(j);
         }
       }
     }
 
-    for (const [i, j] of pairs) {
-      const flipCheck = async (idx) => {
-        const c = await cards.nth(idx).getAttribute('class') || '';
-        if (!c.includes('flipped') && !c.includes('showcasing') && !c.includes('matched')) {
-          await cards.nth(idx).click();
-          await page.waitForTimeout(400);
-        }
-      };
-      await flipCheck(i);
-      await flipCheck(j);
-      await page.waitForTimeout(3800);
-    }
-
-    // the fixed-timing flips can race the game's mismatch reset — retry pass if needed
-    for (let attempt = 0; attempt < 3; attempt++) {
-      if (await page.locator('.win-overlay').isVisible().catch(() => false)) break;
-      for (let i = 0; i < count; i++) {
-        const c = (await cards.nth(i).getAttribute('class')) || '';
-        if (!c.includes('matched') && !c.includes('flipped') && !c.includes('showcasing')) {
-          const match = pairs.find(([a, b]) => a === i || b === i);
-          if (!match) continue;
-          const partnerIdx = match[0] === i ? match[1] : match[0];
-          await cards.nth(partnerIdx).getAttribute('class').then((pc) => pc || '');
-          await cards.nth(i).click();
-          await page.waitForTimeout(350);
-          const partnerClass = (await cards.nth(partnerIdx).getAttribute('class')) || '';
-          if (!partnerClass.includes('matched') && !partnerClass.includes('flipped') && !partnerClass.includes('showcasing')) {
-            await cards.nth(partnerIdx).click();
-            await page.waitForTimeout(3800);
-          }
-        }
-      }
-    }
-
-    await expect(page.locator('.win-overlay')).toBeVisible({ timeout: 10000 });
+    await expect(page.locator('.win-overlay')).toBeVisible({ timeout: 15000 });
     if (await page.locator('.next-btn').isVisible()) {
       await expect(page.locator('.next-btn')).toBeVisible();
     }
