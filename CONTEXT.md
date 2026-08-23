@@ -47,6 +47,10 @@ The following games have been proposed but not yet designed or implemented. Each
 | 6 | **Tetris** | Classic falling-block puzzle with line clears, difficulty levels, classic scoring + best score. | [spec](docs/superpowers/specs/2026-08-15-tetris-design.md) | — | [Spec ready](docs/superpowers/plans/2026-08-15-arcade-trilogy-plan.md) |
 | 7 | **Emoji Jump** (Doodle Jump clone) | Endless vertical climber — touch-button steering, full Doodle Jump depth (platforms, springs, enemies, power-ups). | [spec](docs/superpowers/specs/2026-08-15-emoji-jump-design.md) | — | [Spec ready](docs/superpowers/plans/2026-08-15-arcade-trilogy-plan.md) |
 | 8 | **Angry Emoji 2D** (Angry Birds clone) | Slingshot-drag emoji projectiles against destructible block towers; 20+ levels, 1-3 stars each. | [spec](docs/superpowers/specs/2026-08-15-angry-emoji-2d-design.md) | — | [Spec ready](docs/superpowers/plans/2026-08-15-arcade-trilogy-plan.md) |
+| 9 | **Focus Tap** (Brain Trainer 1) | Floating emoji stream; catch only the Target, resist Distractors. Selective attention + impulse control. | [spec](docs/superpowers/specs/2026-08-23-focus-tap-design.md) | [issues](docs/issues/focus-tap-01-core-game.md) | Spec ready |
+| 10 | **Quick Count** (Brain Trainer 2) | Emojis flash briefly, child answers "how many?" via 3 Answer Pills. Subitizing + estimation. | [spec](docs/superpowers/specs/2026-08-23-quick-count-design.md) | [issues](docs/issues/quick-count-01-core-game.md) | Spec ready |
+| 11 | **Speed Match** (Brain Trainer 3) | Deck of emoji Pair Cards; same or different? Auto-advance window keeps tempo. Processing speed. | [spec](docs/superpowers/specs/2026-08-23-speed-match-design.md) | [issues](docs/issues/speed-match-01-core-game.md) | Spec ready |
+| 12 | **What Comes Next** (Brain Trainer 4) | Complete the emoji Pattern Unit from 3 options; pedagogical arc AB → AABB → ABC → growing. Pattern logic / pre-math. | [spec](docs/superpowers/specs/2026-08-23-what-comes-next-design.md) | [issues](docs/issues/what-comes-next-01-core-game.md) | Spec ready |
 
 ## Sequence Memory Game
 
@@ -116,6 +120,39 @@ The following games have been proposed but not yet designed or implemented. Each
 - **Tier**: 4 tiers × 5 Levels; sequential unlock; tier 1 no stone → tier 4 multi-tower + moving blocks.
 - **Ammo**: 1–3 shots per Level, tuned per layout; exhaustion ends the Level with a replay prompt.
 - **Star**: 1★ ≥1 target, 2★ ≥60% max score, 3★ ≥90% max score; best stars persisted per Level.
+
+## Brain Trainers (shared)
+
+- **Trainer**: A short, goal-driven mini-game that trains one cognitive skill. No score, no fail state; Positive-Only Audio throughout; celebration only at round end.
+- **Trainer Routes**: Every trainer uses `/games/{id}` (landing: Level Bar + Play), `/games/{id}/play` (redirects to the saved level), and `/games/{id}/play/[n]` (plays round *n*, saves it). Accepts `?seed=` for deterministic tests.
+- **Trainer Progress**: Only the current level persists per game, via `src/lib/trainers/progress.js`.
+- **Emoji Catalog**: Shared categorized emoji sets (`src/lib/trainers/emojiSets.js`: animals, food, vehicles, nature, sea, toys) plus an explicit Lookalikes table of visually confusable pairs reserved for high difficulty.
+
+## Focus Tap Game
+
+- **Target**: The emoji type the round asks the child to catch; shown large in the header ("Catch 🍎!").
+- **Distractor**: Any non-target emoji in the Stream. Tapping one → gentle wobble, silent, never penalized.
+- **Catch**: A successful tap on the Target; increments progress toward the round goal.
+- **Stream**: The floating emojis rising up the screen; spawn interval shrinks and rise time drops with level.
+- **Sneaky Tier**: Distractor difficulty band by level — L1–2 cross-category, L3–5 same-category, L6+ lookalikes.
+
+## Quick Count Game
+
+- **Flash**: The brief, level-scaled display of emojis to count (`max(800, 3000 − 150·n)` ms).
+- **Glimpse Set**: The scattered, non-overlapping group of emojis shown during a Flash.
+- **Answer Pill**: One of three big tappable number buttons (correct count ± near-misses) answering "how many?".
+
+## Speed Match Game
+
+- **Pair Card**: One deck card showing two emojis side by side; the child judges same or different.
+- **Deck**: The full set of Pair Cards for a round (`8 + min(n, 12)`); finishing the Deck completes the round.
+- **Auto-Advance Window**: Level-shrinking tempo window (`max(1500, 4000 − 100·n)` ms); expired cards advance silently — no penalty, ever.
+
+## What Comes Next Game
+
+- **Pattern Unit**: The repeating emoji block (e.g., AB, AABB, ABC) underlying a Prompt Strip.
+- **Pattern Arc**: The fixed pedagogical ordering by level: AB → AAB/AABB → ABC → growing blocks `[A×k][B]`.
+- **Prompt Strip**: The visible emoji sequence with exactly one ❓ slot; answered from 3 options.
 
 ## Assets
 
