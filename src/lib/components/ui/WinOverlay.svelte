@@ -5,7 +5,7 @@
   import { playWinCheer } from '$lib/sounds/audioManager';
   import Starfield from './Starfield.svelte';
 
-  let { title, subtitle = '', sound = true, children } = $props();
+  let { title, subtitle = '', sound = true, badge = null, children } = $props();
 
   onMount(() => {
     if (sound && $settings.soundEnabled) playWinCheer();
@@ -16,6 +16,7 @@
   <Starfield count={25} />
   <Confetti />
   <div class="win-card">
+    {#if badge}{@render badge()}{/if}
     <p class="win-burst">🎉 ✨ 🎉</p>
     <p class="win-title">{title}</p>
     {#if subtitle}<p class="win-sub">{subtitle}</p>{/if}
@@ -48,6 +49,7 @@
     animation: popIn 0.35s ease-out;
     max-width: 90vw;
   }
+  .win-card :global(.win-badge) { font-size: 52px; filter: drop-shadow(0 0 12px var(--glow-gold)); }
   .win-burst { font-size: 26px; letter-spacing: 8px; animation: floaty 2.4s ease-in-out infinite; }
   .win-title {
     font-size: 32px;
