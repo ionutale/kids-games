@@ -29,6 +29,8 @@
   let newBestStars = $state(false);
 
   let raf = null;
+  let stageWidth = $state(0);
+  const worldScale = $derived(stageWidth > 0 ? stageWidth / WORLD_W : 1);
   let settling = false;
   let settleFrames = 0;
   let dragging = null; // {x,y}
@@ -209,6 +211,7 @@
       if (raf) cancelAnimationFrame(raf);
     };
   });
+
 </script>
 
 <GameShell accent="#F87171">
@@ -243,12 +246,14 @@
 
       <div
         class="stage"
+        bind:clientWidth={stageWidth}
         data-testid="stage"
         onpointerdown={down}
         onpointermove={move}
         onpointerup={up}
         onpointercancel={up}
       >
+        <div class="world" style:transform="scale({worldScale})">
         {#each frameBodies as b (b.id)}
           {#if b.type !== 'ground'}
             {@const cracked = b.hpRatio <= 0.4 && !b.isTarget}
@@ -276,10 +281,11 @@
 
         <div class="sling" style:left="{SLING.x}px" style:top="{SLING.y}px"></div>
         {#if aimPoint}
-          <svg class="aimline" viewBox="0 0 {WORLD_W} {WORLD_H}" preserveAspectRatio="none">
+          <svg class="aimline" viewBox="0 0 {WORLD_W} {WORLD_H}">
             <line x1={SLING.x} y1={SLING.y} x2={2 * SLING.x - aimPoint.x} y2={2 * SLING.y - aimPoint.y} stroke="#FFD54F" stroke-width="3" stroke-dasharray="6 8" opacity="0.8" />
           </svg>
         {/if}
+        </div>
 
         {#if paused && screen === 'playing'}
           <div class="overlay">
@@ -346,6 +352,14 @@
     touch-action: none;
     user-select: none;
   }
+  .world {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 900px;
+    height: 620px;
+    transform-origin: top left;
+  }
   .body { position: absolute; border-radius: 6px; display: flex; align-items: center; justify-content: center; }
   .body .face { font-size: 22px; line-height: 1; z-index: 1; }
   .body.wood .mat, .body.ice .mat, .body.stone .mat { position: absolute; inset: 2px; border-radius: 4px; background: var(--c); opacity: 0.9; }
@@ -354,7 +368,7 @@
   .hpbar { position: absolute; bottom: 2px; left: 4px; right: 4px; height: 3px; background: rgba(0,0,0,.4); border-radius: 2px; overflow: hidden; }
   .hpbar i { display: block; height: 100%; background: #7ee787; }
   .sling { position: absolute; width: 18px; height: 44px; margin: -44px 0 0 -9px; border-radius: 8px; background: linear-gradient(180deg, #a06a3a, #7a4a28); box-shadow: 0 0 12px rgba(255,213,79,.5); }
-  .aimline { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+  .aimline { position: absolute; inset: 0; width: 900px; height: 620px; pointer-events: none; }
   .overlay {
     position: absolute; inset: 0; z-index: 6;
     display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px;

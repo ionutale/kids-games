@@ -3,6 +3,7 @@ import { test, expect } from '@playwright/test';
 test.describe('Sequence Memory E2E', () => {
   test('start screen shows play button and 4 pads appear in-game', async ({ page }) => {
     await page.goto('/games/sequence-memory');
+    await page.waitForTimeout(600);
     await expect(page.getByTestId('seq-root').locator('.title')).toBeVisible();
     await page.locator('.big-btn.primary').click();
     for (let i = 0; i < 4; i++) {

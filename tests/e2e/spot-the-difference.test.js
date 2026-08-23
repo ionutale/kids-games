@@ -3,6 +3,7 @@ import { test, expect } from '@playwright/test';
 test.describe('Spot the Difference E2E', () => {
   test('two grids render side by side (stacked) with cells', async ({ page }) => {
     await page.goto('/games/spot-the-difference');
+    await page.waitForTimeout(600);
     await expect(page.getByTestId('grid-left')).toBeVisible();
     await expect(page.getByTestId('grid-right')).toBeVisible();
     const cells = await page.locator('[data-testid^="left-"]').count();

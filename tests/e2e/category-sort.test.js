@@ -3,6 +3,7 @@ import { test, expect } from '@playwright/test';
 test.describe('Category Sort E2E', () => {
   test('bins render with labels and an item waits below', async ({ page }) => {
     await page.goto('/games/category-sort');
+    await page.waitForTimeout(600);
     await expect(page.getByTestId('bins')).toBeVisible();
     const bins = page.getByTestId('bins').locator('.bin');
     await expect(bins).toHaveCount(2); // first set is 2-bin

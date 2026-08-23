@@ -23,6 +23,8 @@
   let items = $state([]);
   let caught = $state(0);
   let won = $state(false);
+  let wrongFxId = $state(-1);
+  let catchFx = $state(null); // { x, y } viewport-relative % for burst
   let idSeq = 0;
   let spawnTimer = null;
   let touchLock = false;
@@ -58,6 +60,8 @@
     if (item.isTarget) {
       item.popping = true;
       playPop(0.94 + (caught % 4) * 0.04); // slight variation per catch
+      catchFx = { x: item.x, y: lastTouchY ?? 50 };
+      setTimeout(() => (catchFx = null), 450);
       caught += 1;
       setTimeout(() => removeItem(item.id), 180);
       if (caught >= round.config.goal) {
@@ -66,8 +70,18 @@
       }
     } else {
       item.wobbling = true; // silent — positive-only
-      setTimeout(() => (item.wobbling = false), 320);
+      wrongFxId = item.id;
+      setTimeout(() => {
+        item.wobbling = false;
+        if (wrongFxId === item.id) wrongFxId = -1;
+      }, 420);
     }
+  }
+
+  let lastTouchY = null;
+  function touchY(e) {
+    const rect = e.currentTarget.getBoundingClientRect();
+    lastTouchY = ((e.clientY - rect.top) / rect.height) * 100;
   }
 
   function startSpawning() {
@@ -111,16 +125,27 @@
 
   <div class="stream" data-testid="stream">
     <p class="hint">{$_('catchTarget', { e: round.target })}</p>
+    {#if catchFx}
+      <div
+        class="catch-fx"
+        style:left="{catchFx.x}%"
+        style:top="{catchFx.y}%"
+        data-testid="catch-fx"
+      >
+        ⭐
+      </div>
+    {/if}
     {#each items as item (item.id)}
       <button
         class="emoji"
         class:wobbling={item.wobbling}
         class:popping={item.popping}
+        class:wrong-fx={wrongFxId === item.id}
+        onpointerdown={(e) => { touchY(e); tap(item); }}
         style:left="{item.x}%"
         style:animation-duration="{round.config.riseSec}s"
         data-testid={item.isTarget ? 'target' : 'distractor'}
-        onpointerdown={() => tap(item)}
-        oncontextmenu={(e) => e.preventDefault()}
+                oncontextmenu={(e) => e.preventDefault()}
       >
         {item.emoji}
       </button>
@@ -175,8 +200,26 @@
     animation-fill-mode: forwards;
     filter: drop-shadow(0 0 6px var(--accent-glow));
   }
+  .emoji.wrong-fx {
+    outline: 3px solid rgba(255, 120, 120, 0.9);
+    outline-offset: -2px;
+    border-radius: 12px;
+    opacity: 0.75;
+  }
   .emoji.wobbling {
     animation: fxWobbleFloat 0.3s ease-in-out;
+  }
+  .catch-fx {
+    position: absolute;
+    transform: translate(-50%, -50%);
+    font-size: 40px;
+    pointer-events: none;
+    z-index: 4;
+    animation: catchBurst 0.45s ease-out forwards;
+  }
+  @keyframes catchBurst {
+    0% { transform: translate(-50%, -50%) scale(0.4); opacity: 1; }
+    100% { transform: translate(-50%, -50%) scale(2.2); opacity: 0; }
   }
   .emoji.popping {
     animation: fxPopFloat 0.18s ease-out forwards;

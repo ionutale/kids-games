@@ -1,5 +1,5 @@
 <script>
-  import { onMount } from 'svelte';
+  import { onMount, tick } from 'svelte';
   import { goto } from '$app/navigation';
   import { _ } from '$lib/stores/locale';
   import GameShell from '$lib/components/ui/GameShell.svelte';
@@ -50,13 +50,15 @@
     advance(); // silent — no sound, no penalty
   }
 
-  function advance() {
+  async function advance() {
     clearTimer();
     if (index + 1 >= deck.length) {
       won = true;
       return;
     }
     index += 1;
+    remainingMs = config.windowMs;
+    await tick(); // the {#key index} block remounts the bar — arm the NEW element
     armWindow(config.windowMs);
   }
 

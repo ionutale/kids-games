@@ -1,8 +1,8 @@
 import { makeRng } from '../trainers/rng.js';
 
-export const GRAVITY = 980; // px/s²
-export const JUMP_V = 500; // px/s upward impulse → ~127px jump height
-export const MOVE_SPEED = 240; // px/s steering
+export const GRAVITY = 520; // px/s² — ~80% gentler arcs (user feedback)
+export const JUMP_V = 364; // keeps ~127px apex with the softer gravity
+export const MOVE_SPEED = 140; // px/s steering
 export const SPRING_BOUNCE = 2.5; // × normal jump
 export const SPRING_RATE = 0.05;
 export const POWERUP_RATE = 0.03;
@@ -97,10 +97,38 @@ export function nextPlatform(prev, rng = Math.random()) {
 export function generateLadder(count, seed = Date.now()) {
   const r = makeRng(seed);
   const ladder = [];
-  let prev = { id: 0, x: (WORLD_W - PLATFORM_W) / 2, y: 0, heightM: 0 };
-  for (let i = 0; i < count; i++) {
-    prev = nextPlatform(prev, r);
-    ladder.push(prev);
+  // STARTER: a wide platform right under the spawn point so the player
+  // always lands on something in the first seconds (user bug report).
+  const starter = {
+    id: 1,
+    x: (WORLD_W - PLATFORM_W) / 2,
+    y: 90,
+    w: PLATFORM_W + 30,
+    h: PLATFORM_H,
+    type: 'static',
+    heightM: 0,
+    vx: 0,
+    broken: false,
+    spring: false,
+    powerup: null,
+    enemy: null
+  };
+  ladder.push(starter);
+  let prev = starter;
+  // first GENTLE_PLATFORMS platforms use compressed gaps (~55%) — easy opening
+  for (let i = 1; i < count; i++) {
+    let p;
+    if (i <= 8) {
+      p = nextPlatform(prev, r);
+      p.y = prev.y - (prev.y - p.y) * 0.55;
+      p.heightM = prev.heightM + (prev.y - p.y) / PX_PER_M;
+      if (p.type === 'moving') p.type = 'static';
+      if (p.enemy) p.enemy = null;
+    } else {
+      p = nextPlatform(prev, r);
+    }
+    ladder.push(p);
+    prev = p;
   }
   return ladder;
 }

@@ -459,8 +459,10 @@
   .best-line { text-align: center; color: var(--text-lo); font-size: 16px; margin: 0; }
   .play-row {
     display: flex;
-    align-items: stretch;
-    gap: 10px;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
     height: 100%;
     max-height: 100%;
   }
@@ -481,7 +483,8 @@
   .board {
     position: relative;
     aspect-ratio: 10 / 20;
-    height: min(100%, 78vh);
+    height: min(52vh, 460px);
+    max-width: 92vw;
     display: grid;
     grid-template-columns: repeat(10, 1fr);
     grid-template-rows: repeat(20, 1fr);
@@ -518,9 +521,10 @@
   .score-line { font-size: 34px; font-weight: 700; color: var(--gold); margin: 0; }
   .controls {
     display: grid;
-    grid-template-columns: repeat(2, minmax(56px, 72px));
-    gap: 10px;
-    align-content: start;
+    grid-template-columns: repeat(5, minmax(58px, 1fr));
+    gap: 8px;
+    width: min(94vw, 420px);
+    padding-bottom: calc(8px + var(--safe-bottom));
   }
   .ctrl {
     min-height: calc(var(--touch-min) * 1.05);
@@ -533,6 +537,11 @@
   }
   .ctrl:active { transform: scale(0.92); }
   .ctrl.wide { grid-column: span 2; }
+  @media (min-width: 700px) and (orientation: landscape) {
+    .play-row { flex-direction: row; }
+    .board { height: min(88%, 78vh); }
+    .controls { grid-template-columns: repeat(2, minmax(56px, 72px)); width: auto; align-content: start; padding-bottom: 0; }
+  }
   .ctrl.accent { background: linear-gradient(135deg, #FFD54F, #FFB74D); }
   .ctrl.ghosty { color: var(--text-lo); background: var(--panel-glass); border: 1px solid var(--panel-border); box-shadow: none; }
 </style>

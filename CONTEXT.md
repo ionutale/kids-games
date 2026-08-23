@@ -33,17 +33,52 @@
 - **PuzzleBoard**: shared solving component (board, Tray, drag ghost, Snap, Idle Nudge, win overlay) used by both play routes; remounted per URL via `{#key}` so navigation always yields a fresh board.
 - **Link-based Back / Next**: exiting an active puzzle uses an ordinary `<a href>` to the gallery; the win dialog offers **Play Again** (same image + level), **Next Level ▶** (same image, level + 1 — always available), and **Back** (gallery link). No parental gate, no unlock gating.
 
+## Sequence Memory Game
+
+- **Pad**: One of 4 emoji buttons in a 2×2 grid that lights up during sequence playback.
+- **Sequence**: An ordered list of Pads that the player must memorize and reproduce.
+- **Round**: One complete cycle of sequence playback → player input → either advance or game over.
+- **Second Chance**: After the first wrong tap, the Sequence replays at half speed before the player tries again.
+
+## Emoji Math Game
+
+- **Equation**: An arithmetic expression shown with emoji counts (e.g., `🍎 + 🍎 = ?`).
+- **Distractor**: One of the three incorrect multiple-choice answers, positioned ±1 or ±2 from the correct answer.
+- **Milestone**: A celebration triggered every 10 correct answers.
+
+## Spot the Difference Game
+
+- **Difference**: A cell that contains a different Emoji between the two Grids.
+- **Puzzle**: A single round consisting of two Grids with N Differences to find.
+- **Found Difference**: A Difference cell that the player has correctly tapped, marked with a highlight ring.
+
+## Category Sort Game
+
+- **Bin**: A drop target area representing one Category.
+- **Category**: A labeled group of related Emojis (e.g., Animals, Food, Vehicles).
+- **Round**: A set of 8-10 Emojis the player must sort into the correct Bins.
+
+## Path Builder Game
+
+- **Puzzle**: A single Grid with a Start, Goal, and Obstacles that the player must solve.
+- **Start**: The origin cell marked with 🚩 where the Path begins.
+- **Goal**: The destination cell marked with 🏁 that the Path must reach.
+- **Obstacle**: An impassable cell marked with 🧱 that the Path cannot cross.
+- **Path**: An ordered list of adjacent cells connecting Start to Goal.
+- **Hint**: A visual indicator showing the next optimal cell on the shortest Path.
+
+
 ## TODO — New Game Ideas
 
 The following games have been proposed but not yet designed or implemented. Each needs to go through the full brainstorming → design → spec → issues pipeline.
 
 | # | Game | Concept | Spec | Issues | Status |
 |---|------|---------|------|--------|--------|
-| 1 | **Sequence Memory** (Simon Says) | Emoji sequence flashes, player repeats by tapping in order. Tests working memory. | [spec](docs/superpowers/specs/2026-07-10-sequence-memory-design.md) | [issues](docs/issues/sequence-memory-01-core-game.md) | Spec ready |
-| 2 | **Emoji Math** | Arithmetic shown with emoji counts. Covers counting, addition, comparison. | [spec](docs/superpowers/specs/2026-07-10-emoji-math-design.md) | [issues](docs/issues/emoji-math-01-core-game.md) | Spec ready |
-| 3 | **Spot the Difference** | Two emoji grids, player taps cells that differ. Visual scanning + attention. | [spec](docs/superpowers/specs/2026-07-10-spot-the-difference-design.md) | [issues](docs/issues/spot-the-difference-01-core-game.md) | Spec ready |
-| 4 | **Category Sort** | Drag emojis into correct category bins. Categorization + logic. | [spec](docs/superpowers/specs/2026-07-10-category-sort-design.md) | [issues](docs/issues/category-sort-01-core-game.md) | Spec ready |
-| 5 | **Path Builder** | Draw a path from Start to Goal avoiding obstacles. Spatial reasoning. | [spec](docs/superpowers/specs/2026-07-10-path-builder-design.md) | [issues](docs/issues/path-builder-01-engine.md) | Spec ready |
+| 1 | **Sequence Memory** (Simon Says) | Emoji sequence flashes, player repeats by tapping in order. Tests working memory. | [spec](docs/superpowers/specs/2026-07-10-sequence-memory-design.md) | [sequence-memory-01-core-game.md) | Implemented |
+| 2 | **Emoji Math** | Arithmetic shown with emoji counts. Covers counting, addition, comparison. | [spec](docs/superpowers/specs/2026-07-10-emoji-math-design.md) | [emoji-math-01-core-game.md) | Implemented |
+| 3 | **Spot the Difference** | Two emoji grids, player taps cells that differ. Visual scanning + attention. | [spec](docs/superpowers/specs/2026-07-10-spot-the-difference-design.md) | [spot-the-difference-01-core-game.md) | Implemented |
+| 4 | **Category Sort** | Drag emojis into correct category bins. Categorization + logic. | [spec](docs/superpowers/specs/2026-07-10-category-sort-design.md) | [category-sort-01-core-game.md) | Implemented |
+| 5 | **Path Builder** | Draw a path from Start to Goal avoiding obstacles. Spatial reasoning. | [spec](docs/superpowers/specs/2026-07-10-path-builder-design.md) | [path-builder-01-engine.md) | Implemented |
 | 6 | **Tetris** | Classic falling-block puzzle with line clears, difficulty levels, classic scoring + best score. | [spec](docs/superpowers/specs/2026-08-15-tetris-design.md) | [plan](docs/superpowers/plans/2026-08-15-arcade-trilogy-plan.md) | Implemented |
 | 7 | **Emoji Jump** (Doodle Jump clone) | Endless vertical climber — touch-button steering, full Doodle Jump depth (platforms, springs, enemies, power-ups). | [spec](docs/superpowers/specs/2026-08-15-emoji-jump-design.md) | [plan](docs/superpowers/plans/2026-08-15-arcade-trilogy-plan.md) | Implemented |
 | 8 | **Angry Emoji 2D** (Angry Birds clone) | Slingshot-drag emoji projectiles against destructible block towers; 20+ levels, 1-3 stars each. | [spec](docs/superpowers/specs/2026-08-15-angry-emoji-2d-design.md) | [plan](docs/superpowers/plans/2026-08-15-arcade-trilogy-plan.md) | Implemented |

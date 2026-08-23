@@ -29,7 +29,7 @@
 
   function startGame() {
     platforms = generateLadder(400, Date.now() % 1000000);
-    player = { x: 170, y: -40, vy: 200, shield: false, jetpackMs: 0 };
+    player = { x: 170, y: -30, vy: 100, shield: false, jetpackMs: 0 };
     input = 0;
     cameraY = -VIEW_H + 120;
     heightM = 0;

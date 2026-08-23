@@ -3,6 +3,7 @@ import { test, expect } from '@playwright/test';
 test.describe('Path Builder E2E', () => {
   test('grid renders with start flag and goal', async ({ page }) => {
     await page.goto('/games/path-builder');
+    await page.waitForTimeout(600);
     const grid = page.getByTestId('grid');
     await expect(grid).toBeVisible();
     await expect(grid.locator('.cell', { hasText: '🚩' }).first()).toBeVisible();
