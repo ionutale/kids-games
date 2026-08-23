@@ -2,6 +2,19 @@
 
 Inventory of every sound in this repo, plus curated free-license sites for future assets.
 
+## Planned: Brain Trainers Asset Batch (2026-08)
+
+The 4 brain trainers add a hybrid audio/art layer ([spec](superpowers/specs/2026-08-23-trainers-assets-design.md)):
+
+| Asset | Source target | Destination |
+|-------|--------------|-------------|
+| `fanfare.mp3` (shared level-up sting) | kenney.nl CC0 audio / mixkit | `static/sounds/` |
+| `music/focus-tap.mp3`, `music/quick-count.mp3`, `music/speed-match.mp3`, `music/what-comes-next.mp3` | kenney.nl CC0 packs → pixabay.com/music fallback; 15–30 s seamless, ≤ 400 KB | `static/sounds/music/` |
+| Landing hero + win badge sprites | kenney.nl CC0 (SVG preferred) | `static/art/trainers/{trainer}/` |
+| Synth micro-SFX (`trainerSounds.js`) | Web Audio — no files | `src/lib/sounds/` |
+
+When these land, record provenance in the Sound Sources section below using the same CC0 format.
+
 ## Audio Inventory (this repo)
 
 No songs/background music exist yet — only short SFX mp3s and Web Audio synthesized tones.
@@ -121,4 +134,5 @@ runtime licenses.
 
 - `src/lib/sounds/audioManager.js` — synthesized tones + kids-cheer playback + vibration
 - `src/lib/sounds/puzzleSounds.js` — mp3 loader for the jigsaw game
+- `src/lib/sounds/trainerSounds.js`, `src/lib/sounds/trainerMusic.js` — *planned* trainer synth SFX + Theme Loop loader (see spec above)
 - `static/sounds/` — mp3 sources (add new files here first)

@@ -127,6 +127,10 @@ The following games have been proposed but not yet designed or implemented. Each
 - **Trainer Routes**: Every trainer uses `/games/{id}` (landing: Level Bar + Play), `/games/{id}/play` (redirects to the saved level), and `/games/{id}/play/[n]` (plays round *n*, saves it). Accepts `?seed=` for deterministic tests.
 - **Trainer Progress**: Only the current level persists per game, via `src/lib/trainers/progress.js`.
 - **Emoji Catalog**: Shared categorized emoji sets (`src/lib/trainers/emojiSets.js`: animals, food, vehicles, nature, sea, toys) plus an explicit Lookalikes table of visually confusable pairs reserved for high difficulty.
+- **Trainer SFX Set**: The hybrid sound layer per trainer — synthesized micro-events (`trainerSounds.js`) + CC0 mp3 stings. Wobble and Speed Match window expiry are always silent.
+- **Theme Loop**: A trainer's seamless background music track (15–30s, CC0, ≤400KB), volume ≈ 0.2, controlled solely by the existing SoundToggle; no separate music toggle.
+- **Fanfare Sting**: Shared CC0 `fanfare.mp3` played when pressing Next Level ▶, pitch-shifted per game for identity.
+- **Accent Sprites**: Kenney CC0 decorations allowed in exactly two places — trainer landing hero band and WinOverlay badge; play areas stay clean.
 
 ## Focus Tap Game
 
