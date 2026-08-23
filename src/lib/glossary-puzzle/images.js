@@ -97,6 +97,6 @@ export function levelConfig(n) {
   const level = Math.max(1, Math.floor(n) || 1);
   const cols = 2 + Math.floor(level / 2);
   const rows = 2 + Math.floor((level - 1) / 2);
-  const snapRadius = Math.max(10, Math.round(38 - level * 2.5));
+  const snapRadius = Math.max(14, Math.round(44 - level * 2));
   return { level, cols, rows, snapRadius };
 }

@@ -118,3 +118,18 @@ export function computeVisibleTray(queueIds, placedIds, draggingId = null, capac
   const placedSet = placedIds instanceof Set ? placedIds : new Set(placedIds);
   return queueIds.filter(id => !placedSet.has(id) && id !== draggingId).slice(0, capacity);
 }
+
+export const ACCEPT_MARGIN_RATIO = 0.2;
+
+export function snapMargin(pieceW, pieceH, snapRadius) {
+  return Math.max(snapRadius, Math.min(pieceW, pieceH) * ACCEPT_MARGIN_RATIO);
+}
+
+// Toddler-friendly acceptance: the drop point may land anywhere inside the
+// piece's own target hole expanded by a generous margin. Pieces are only ever
+// tested against their own slot, so overlap with neighbouring zones is safe.
+export function isWithinSnapZone(x, y, piece, snapRadius) {
+  const m = snapMargin(piece.w, piece.h, snapRadius);
+  return x >= piece.targetX - m && x <= piece.targetX + piece.w + m
+    && y >= piece.targetY - m && y <= piece.targetY + piece.h + m;
+}

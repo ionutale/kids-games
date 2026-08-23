@@ -11,13 +11,14 @@
   import WinOverlay from '$lib/components/ui/WinOverlay.svelte';
   import Starfield from '$lib/components/ui/Starfield.svelte';
   import { levelConfig } from '$lib/glossary-puzzle/images.js';
-  import { generatePieces, computeVisibleTray, TRAY_CAPACITY, VIRTUAL_W, VIRTUAL_H } from '$lib/glossary-puzzle/pieces.js';
+  import { generatePieces, computeVisibleTray, isWithinSnapZone, TRAY_CAPACITY, VIRTUAL_W, VIRTUAL_H } from '$lib/glossary-puzzle/pieces.js';
   import { buildSaveData, writeSave } from '$lib/glossary-puzzle/save.js';
   import { pieceSvgHtml, boardLinesSvgHtml } from '$lib/glossary-puzzle/rendering.js';
 
   const GHOST_LIFT_PX = 26;
   const IDLE_MS = 8000;
   const NUDGE_MS = 3000;
+  const GLIDE_MS = 160;
 
   let { image, level = 1, backHref = '/games/glossary-puzzle', initialPlaced = null, onWin = () => {} } = $props();
 
@@ -35,10 +36,14 @@
   let idleTimer = null;
   let nudgeTimer = null;
   let popTimer = null;
+  let glideTimer = null;
   let nudgeTarget = $state(null);
   let showNudge = $state(false);
   let proximityId = $state(null);
   let justPlacedId = $state(null);
+  let glidingPiece = $state(null);
+  let glideBox = $state({ left: 0, top: 0, width: 0, height: 0 });
+  let glideGo = $state(false);
   let soundsLoaded = $state(false);
   let activePointer = $state(null);
   let boardEl = $state(null);
@@ -49,6 +54,7 @@
 
   let trayPieces = $derived(
     computeVisibleTray(trayQueue, placed, dragging)
+      .filter(id => id !== glidingPiece)
       .map(id => pieces.find(p => p.id === id))
       .filter(Boolean)
   );
@@ -76,6 +82,8 @@
     missHintId = null;
     proximityId = null;
     justPlacedId = null;
+    glidingPiece = null;
+    glideGo = false;
     activePointer = null;
     resetIdleTimers();
     scheduleIdleNudge();
@@ -110,7 +118,7 @@
   }
 
   function handlePointerDown(e, pieceId) {
-    if (placed.has(pieceId) || activePointer !== null) return;
+    if (placed.has(pieceId) || activePointer !== null || glidingPiece === pieceId) return;
     const p = pieces.find(p => p.id === pieceId);
     if (!p) return;
 
@@ -139,9 +147,9 @@
     const v = getVirtualCoords(e.clientX, e.clientY);
     dragPos = { x: v.x, y: v.y };
     updateGhostStyle();
-    const tx = dp.targetX + dp.w / 2;
-    const ty = dp.targetY + dp.h / 2;
-    proximityId = Math.hypot(v.x - tx, v.y - virtualLiftY() - ty) <= snapRadius * 2 ? dp.id : null;
+    const lift = virtualLiftY();
+    proximityId = isWithinSnapZone(v.x, v.y - lift, dp, snapRadius)
+      || isWithinSnapZone(v.x, v.y, dp, snapRadius) ? dp.id : null;
   }
 
   function handlePointerUp(e) {
@@ -152,30 +160,19 @@
     proximityId = null;
     if (!piece) { dragging = null; activePointer = null; return; }
 
-    const cx = dragPos.x;
-    const cy = dragPos.y;
-    const tx = piece.targetX + piece.w / 2;
-    const ty = piece.targetY + piece.h / 2;
-
-    // Accept if either the lifted ghost's visual center or the raw thumb
-    // lands within the snap radius — kids align what they see (above finger).
+    // Toddler-friendly acceptance: visual (lifted) point or raw thumb anywhere
+    // inside the piece's own expanded target zone counts as a snap.
     const lift = virtualLiftY();
-    const distVisual = Math.hypot(cx - tx, cy - lift - ty);
-    const distThumb = Math.hypot(cx - tx, cy - ty);
+    const vx = dragPos.x;
+    const vy = dragPos.y - lift;
+    const accepted = isWithinSnapZone(vx, vy, piece, snapRadius)
+      || isWithinSnapZone(dragPos.x, dragPos.y, piece, snapRadius);
 
-    if (Math.min(distVisual, distThumb) <= snapRadius && !placed.has(piece.id)) {
-      placed = new Set([...placed, piece.id]);
-      justPlacedId = piece.id;
-      clearTimeout(popTimer);
-      popTimer = setTimeout(() => { justPlacedId = null; }, 500);
-      if (soundsLoaded) playSnap();
-      vibrate(30);
-      if (placed.size === pieces.length) {
-        celebrating = true;
-        if (soundsLoaded) playVictory();
-        onWin();
-        setTimeout(() => { showDone = true; celebrating = false; }, 2000);
-      }
+    if (accepted) {
+      const tx = piece.targetX + piece.w / 2;
+      const ty = piece.targetY + piece.h / 2;
+      const farFromCenter = Math.hypot(vx - tx, vy - ty) > snapRadius;
+      acceptPiece(piece, farFromCenter ? { x: vx, y: vy } : null);
     } else {
       trayQueue = [piece.id, ...trayQueue.filter(id => id !== piece.id)];
       missHintId = piece.id;
@@ -189,6 +186,48 @@
     showNudge = false;
     resetIdleTimers();
     scheduleIdleNudge();
+  }
+
+  function centerBox(piece, cx, cy) {
+    return {
+      left: (cx - piece.w / 2 - piece.padding) / VIRTUAL_W * 100,
+      top: (cy - piece.h / 2 - piece.padding) / VIRTUAL_H * 100,
+      width: piece.boxW / VIRTUAL_W * 100,
+      height: piece.boxH / VIRTUAL_H * 100,
+    };
+  }
+
+  function acceptPiece(piece, fromPoint) {
+    if (!fromPoint) { settlePiece(piece); return; }
+    glidingPiece = piece.id;
+    glideGo = false;
+    glideBox = centerBox(piece, fromPoint.x, fromPoint.y);
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      glideGo = true;
+      glideBox = centerBox(piece, piece.targetX + piece.w / 2, piece.targetY + piece.h / 2);
+    }));
+    clearTimeout(glideTimer);
+    glideTimer = setTimeout(() => settlePiece(piece), GLIDE_MS + 60);
+  }
+
+  function settlePiece(piece) {
+    clearTimeout(glideTimer);
+    glidingPiece = null;
+    glideGo = false;
+    placed = new Set([...placed, piece.id]);
+    justPlacedId = piece.id;
+    clearTimeout(popTimer);
+    popTimer = setTimeout(() => { justPlacedId = null; }, 500);
+    if (soundsLoaded) playSnap();
+    vibrate(30);
+    if (placed.size === pieces.length) startCelebration();
+  }
+
+  function startCelebration() {
+    celebrating = true;
+    if (soundsLoaded) playVictory();
+    onWin();
+    setTimeout(() => { showDone = true; celebrating = false; }, 2000);
   }
 
   function scheduleIdleNudge() {
@@ -233,6 +272,7 @@
     resetIdleTimers();
     clearTimeout(missTimer);
     clearTimeout(popTimer);
+    clearTimeout(glideTimer);
     stopDragLoop();
     saveProgress();
   });
@@ -297,6 +337,16 @@
         {/if}
       {/if}
 
+      {#if glidingPiece}
+        {@const gp = pieces.find(p => p.id === glidingPiece)}
+        {#if gp}
+          <div class="gp-board-piece gp-glide-piece" class:gp-glide-go={glideGo}
+            style="left:{glideBox.left}%;top:{glideBox.top}%;width:{glideBox.width}%;height:{glideBox.height}%">
+            {@html gp.html}
+          </div>
+        {/if}
+      {/if}
+
       {#if celebrating}<Confetti emoji />{/if}
     </div>
   </div>
@@ -354,6 +404,13 @@
     0% { transform: scale(0.9); filter: drop-shadow(0 0 0 rgba(94,234,212,0)); }
     40% { transform: scale(1.08); filter: drop-shadow(0 0 14px rgba(94,234,212,0.9)); }
     100% { transform: scale(1); filter: drop-shadow(0 0 0 rgba(94,234,212,0)); }
+  }
+  .gp-glide-piece {
+    z-index: 5;
+    pointer-events: none;
+  }
+  .gp-glide-piece.gp-glide-go {
+    transition: left 160ms cubic-bezier(0.22, 1, 0.36, 1), top 160ms cubic-bezier(0.22, 1, 0.36, 1);
   }
   .gp-drag-ghost { position: fixed; z-index: 100; filter: drop-shadow(0 4px 12px rgba(0,0,0,0.3)); transform: scale(1.12); transform-origin: center center; pointer-events: none; }
   .gp-tray { display: flex; gap: 6px; padding: 8px; padding-bottom: calc(8px + var(--safe-bottom)); flex-shrink: 0; min-height: 86px; align-items: center; justify-content: center; background: var(--panel-glass); backdrop-filter: blur(6px); border-top: 1px solid var(--panel-border); position: relative; z-index: 1; }

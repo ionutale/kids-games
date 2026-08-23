@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { PUZZLE_IMAGES, getCategories, levelConfig } from '$lib/glossary-puzzle/images.js';
-import { generatePieces, piecePath } from '$lib/glossary-puzzle/pieces.js';
+import { generatePieces, piecePath, isWithinSnapZone } from '$lib/glossary-puzzle/pieces.js';
 import { buildSaveData } from '$lib/glossary-puzzle/save.js';
 
 describe('Puzzle images', () => {
@@ -49,6 +49,12 @@ describe('Levels are difficulty steps', () => {
   it('snap radius tightens with level', () => {
     expect(levelConfig(1).snapRadius).toBeGreaterThan(levelConfig(5).snapRadius);
     expect(levelConfig(5).snapRadius).toBeGreaterThan(levelConfig(9).snapRadius);
+  });
+
+  it('radius is generous for toddlers and has a high floor', () => {
+    expect(levelConfig(1).snapRadius).toBe(42);
+    expect(levelConfig(9).snapRadius).toBe(26);
+    expect(levelConfig(50).snapRadius).toBe(14);
   });
 
   it('clamps bad input to level 1', () => {
@@ -135,5 +141,38 @@ describe('Save data', () => {
     const d = buildSaveData('x', 1, set);
     set.add('b');
     expect(d.placedIds).toEqual(['a']);
+  });
+});
+
+describe('Snap zones (toddler-friendly acceptance)', () => {
+  const mk = (w, h, targetX, targetY) => ({ w, h, targetX, targetY });
+
+  it('accepts any point inside the hole itself', () => {
+    const p = mk(100, 100, 200, 200);
+    expect(isWithinSnapZone(200, 200, p, 10)).toBe(true);
+    expect(isWithinSnapZone(295, 240, p, 10)).toBe(true);
+    expect(isWithinSnapZone(205, 205, p, 10)).toBe(true);
+  });
+
+  it('accepts within the expanded margin beyond the hole', () => {
+    const p = mk(100, 100, 0, 0);
+    expect(isWithinSnapZone(-15, -15, p, 10)).toBe(true);
+    expect(isWithinSnapZone(115, 50, p, 10)).toBe(true);
+    expect(isWithinSnapZone(-25, -25, p, 10)).toBe(false);
+  });
+
+  it('margin never shrinks below snapRadius', () => {
+    const p = mk(40, 40, 0, 0);
+    expect(isWithinSnapZone(-12, -12, p, 14)).toBe(true);
+    expect(isWithinSnapZone(-16, -16, p, 14)).toBe(false);
+  });
+
+  it('generated pieces accept drops near their own slot', () => {
+    const r = generatePieces(levelConfig(3));
+    r.pieces.forEach(p => {
+      const cx = p.targetX + p.w / 2;
+      const cy = p.targetY + p.h / 2;
+      expect(isWithinSnapZone(cx, cy, p, r.snapRadius)).toBe(true);
+    });
   });
 });

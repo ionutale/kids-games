@@ -26,7 +26,8 @@
 ## Glossary Puzzle (Jigsaw) Game
 
 - **Gallery Page** (`/games/glossary-puzzle`): the landing view — Level Bar, categories, image grid. Full app chrome via GameShell (back link + sound toggle). Accepts `?level={n}` to preselect the difficulty step.
-- **Level**: 1–10 shown in the Level Bar, but the **Level = Difficulty Step** and the ladder is unbounded: Level *N* ⇒ grid `cols = 2 + ⌊N/2⌋`, `rows = 2 + ⌊(N−1)/2⌋`, snap radius `max(10, 38 − 2.5N)`. Any image can be played at any level.
+- **Level**: 1–10 shown in the Level Bar, but the **Level = Difficulty Step** and the ladder is unbounded: Level *N* ⇒ grid `cols = 2 + ⌊N/2⌋`, `rows = 2 + ⌊(N−1)/2⌋`, snap radius `max(14, 44 − 2N)`. Any image can be played at any level.
+- **Toddler Snap**: a drop is accepted if the lifted ghost's visual point *or* raw thumb lands anywhere inside the piece's own target hole expanded by `max(snapRadius, 20% cell size)`; accepted drops that land far from center glide magnetically into place (~160ms).
 - **Level Page**: `/games/glossary-puzzle/play/{n}?image={id}` — every solving session is its own URL; without `?image=` the image rotates by level.
 - **Free-Play Page**: `/games/glossary-puzzle/play?image={id}&level={n}` — opened from gallery image cards; also serves `?resume=1` for saved Progress State (placed pieces handed off via sessionStorage).
 - **PuzzleBoard**: shared solving component (board, Tray, drag ghost, Snap, Idle Nudge, win overlay) used by both play routes; remounted per URL via `{#key}` so navigation always yields a fresh board.
