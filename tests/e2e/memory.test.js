@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 
-test.describe.configure({ retries: 2 }); // fixed-timing card matching is load-sensitive
+test.describe.configure({ retries: 2 }); // load-sensitive suite; retries smooth local runs
 
 test.describe('Memory E2E', () => {
   test('loads with cards', async ({ page }) => {
@@ -22,55 +22,44 @@ test.describe('Memory E2E', () => {
   });
 
   test('matching all cards shows win overlay with Next Level', async ({ page }) => {
+    test.setTimeout(120000);
     await page.goto('/games/memory');
     const cards = page.locator('.card');
     const count = await cards.count();
-    test.setTimeout(120000);
 
-    const isIdle = async (idx) => {
-      const c = (await cards.nth(idx).getAttribute('class')) || '';
-      return !c.includes('flipped') && !c.includes('showcasing') && !c.includes('matched');
-    };
-    const flipAndRead = async (idx) => {
-      await cards.nth(idx).click();
-      await expect(cards.nth(idx)).toHaveClass(/flipped|showcasing|matched/, { timeout: 4000 });
-      return (await cards.nth(idx).locator('.card-front').textContent()) ?? '';
-    };
-    const waitReset = (idx) =>
-      expect(cards.nth(idx)).not.toHaveClass(/flipped|showcasing/, { timeout: 8000 });
-    const waitMatched = (idx) =>
-      expect(cards.nth(idx)).toHaveClass(/matched/, { timeout: 9000 });
+    // The emoji renders unconditionally in .card-front (CSS-hidden until flipped),
+    // so we can read the full layout without touching the game's flip state,
+    // then play only known pairs — no mismatches, no resets, no races.
+    const emojis = [];
+    for (let i = 0; i < count; i++) {
+      emojis.push((await cards.nth(i).locator('.card-front').textContent()) ?? '');
+    }
 
-    // state-driven matching: flip a card, then probe candidates until it pairs.
-    // Every transition is poll-based so CPU load cannot desync the test.
-    let matchedCount = 0;
-    for (let pass = 0; pass < count * 2 && matchedCount < count; pass++) {
-      let anchor = -1;
-      for (let i = 0; i < count && anchor === -1; i++) {
-        if (await isIdle(i)) anchor = i;
-      }
-      if (anchor === -1) {
-        await page.waitForTimeout(500); // transition in flight
-        continue;
-      }
-      const anchorEmoji = await flipAndRead(anchor);
-      const anchorClass = (await cards.nth(anchor).getAttribute('class')) || '';
-      if (anchorClass.includes('matched')) {
-        matchedCount += 2;
-        continue;
-      }
-      let paired = false;
-      for (let j = 0; j < count && !paired; j++) {
-        if (j === anchor || !(await isIdle(j))) continue;
-        const emoji = await flipAndRead(j);
-        if (emoji === anchorEmoji) {
-          await waitMatched(anchor);
-          matchedCount += 2;
-          paired = true;
-        } else {
-          await waitReset(j);
+    const pairs = [];
+    const used = new Set();
+    for (let i = 0; i < count; i++) {
+      if (used.has(i)) continue;
+      for (let j = i + 1; j < count; j++) {
+        if (used.has(j)) continue;
+        if (emojis[i] && emojis[i] === emojis[j]) {
+          pairs.push([i, j]);
+          used.add(i);
+          used.add(j);
+          break;
         }
       }
+    }
+
+    for (const [i, j] of pairs) {
+      for (const idx of [i, j]) {
+        const c = (await cards.nth(idx).getAttribute('class')) || '';
+        if (!c.includes('matched') && !c.includes('showcasing')) {
+          await cards.nth(idx).click();
+          await expect(cards.nth(idx)).toHaveClass(/flipped|showcasing|matched/, { timeout: 4000 });
+        }
+      }
+      // showcase lasts ~3s before 'matched' lands on both cards
+      await expect(cards.nth(i)).toHaveClass(/matched/, { timeout: 10000 });
     }
 
     await expect(page.locator('.win-overlay')).toBeVisible({ timeout: 15000 });
