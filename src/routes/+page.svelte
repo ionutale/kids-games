@@ -23,6 +23,7 @@
     { id: 'speed-match', icon: '🃏', key: 'speedMatch', accent: '#93C5FD' },
     { id: 'what-comes-next', icon: '🔁', key: 'whatComesNext', accent: '#6EE7B7' },
     { id: 'tetris', icon: '🧱', key: 'tetris', accent: '#FFB74D' },
+    { id: 'emoji-jump', icon: '🦘', key: 'emojiJump', accent: '#6EE7B7' },
   ];
 
   let showSettings = $state(false);
