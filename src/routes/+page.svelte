@@ -28,6 +28,7 @@
     { id: 'sequence-memory', icon: '🎵', key: 'sequenceMemory', accent: '#BA68C8' },
     { id: 'emoji-math', icon: '➕', key: 'emojiMath', accent: '#81C784' },
     { id: 'spot-the-difference', icon: '🔍', key: 'spotDiff', accent: '#7FD8FF' },
+    { id: 'category-sort', icon: '🗂️', key: 'categorySort', accent: '#F0ABFC' },
   ];
 
   let showSettings = $state(false);
