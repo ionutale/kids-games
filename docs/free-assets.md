@@ -4,16 +4,20 @@ Inventory of every sound in this repo, plus curated free-license sites for futur
 
 ## Planned: Brain Trainers Asset Batch (2026-08)
 
-The 4 brain trainers add a hybrid audio/art layer ([spec](superpowers/specs/2026-08-23-trainers-assets-design.md)):
+The 4 brain trainers add a hybrid audio/art layer ([spec](superpowers/specs/2026-08-23-trainers-assets-design.md)).
 
-| Asset | Source target | Destination |
-|-------|--------------|-------------|
-| `fanfare.mp3` (shared level-up sting) | kenney.nl CC0 audio / mixkit | `static/sounds/` |
-| `music/focus-tap.mp3`, `music/quick-count.mp3`, `music/speed-match.mp3`, `music/what-comes-next.mp3` | kenney.nl CC0 packs → pixabay.com/music fallback; 15–30 s seamless, ≤ 400 KB | `static/sounds/music/` |
-| Landing hero + win badge sprites | kenney.nl CC0 (SVG preferred) | `static/art/trainers/{trainer}/` |
-| Synth micro-SFX (`trainerSounds.js`) | Web Audio — no files | `src/lib/sounds/` |
+**✅ Shipped 2026-08-23:**
 
-When these land, record provenance in the Sound Sources section below using the same CC0 format.
+| Asset | Source & license | Notes |
+|-------|------------------|-------|
+| `static/sounds/fanfare.mp3` | `jingles_NES00.ogg` — [Kenney "Music Jingles"](https://kenney.nl/assets/music-jingles), **CC0** | shared level-up sting; pitch-shifted per trainer via `playbackRate` |
+| `static/sounds/music/focus-tap.mp3` | "Carefree" — Kevin MacLeod (incompetech.com), **CC-BY 4.0** | trimmed 28.5s, mono 96 kbps (~344 KB) |
+| `static/sounds/music/quick-count.mp3` | "Fluffing a Duck" — Kevin MacLeod, **CC-BY 4.0** | same treatment |
+| `static/sounds/music/speed-match.mp3` | "Life of Riley" — Kevin MacLeod, **CC-BY 4.0** | same treatment |
+| `static/sounds/music/what-comes-next.mp3` | "Bright Wish" — Kevin MacLeod, **CC-BY 4.0** | 26s @ ~121 kbps (~393 KB) |
+| `static/art/trainers/{trainer}/win-badge.png`, `hero-star.png` | [Kenney "UI Pack"](https://kenney.nl/assets/ui-pack), **CC0** | Red/Yellow/Blue/Green star variants per trainer |
+
+> **Attribution (required by CC-BY):** Music by Kevin MacLeod ("Carefree", "Fluffing a Duck", "Life of Riley", "Bright Wish"), licensed under CC BY 4.0. Tracks converted to mono loops for in-app background playback.
 
 ## Audio Inventory (this repo)
 

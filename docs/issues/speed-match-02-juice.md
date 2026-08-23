@@ -16,11 +16,11 @@ Wire the shared assets kit into Speed Match:
 - [x] Wrong taps AND window expiries are 100% silent (spot-check with sound on)
 - [x] Drain bar animation duration tracks `levelConfig` window exactly at L1/L10
 - [x] Music + fanfare behavior identical in shape to other trainers, distinct in pitch
-- [ ] Hero band + badge render from this trainer's art folder; no console errors
+- [x] Hero band + badge render from this trainer's art folder; no console errors
 
 ## Blocked by
 
 - [trainers-02-assets-kit](trainers-02-assets-kit.md)
 - [speed-match-01-core-game](speed-match-01-core-game.md)
 
-> **Status (2026-08-23):** all audio wiring shipped with fallbacks. Open items are the Kenney art binaries (hero bands currently use emoji strips as the documented fallback) and the CC0 mp3 files — see trainers-02-assets-kit.
+> **Status (2026-08-23):** complete — art + audio binaries wired.

@@ -135,7 +135,7 @@
 
   {#if won}
     <WinOverlay title={$_('wellDone')} subtitle={`🔢 ${solved}/${config.goal}`}>
-      {#snippet badge()}<span class="win-badge">🏆</span>{/snippet}
+      {#snippet badge()}<img class="win-badge" src="/art/trainers/quick-count/win-badge.png" alt="" />{/snippet}
       <a
         class="big-btn primary"
         href={`/games/quick-count/play/${level + 1}`}
@@ -213,7 +213,7 @@
   .pill:active { transform: scale(0.92); }
   .pill.wobbling { animation: fxWobble 0.3s ease-in-out; }
 
-  .win-badge { font-size: 52px; }
+  .win-badge { width: 64px; height: 64px; filter: drop-shadow(0 0 12px var(--glow-gold)); }
   .big-btn {
     display: inline-flex; align-items: center; justify-content: center; gap: 8px;
     min-height: var(--touch-min); padding: 12px 32px;

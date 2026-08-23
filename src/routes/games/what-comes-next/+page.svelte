@@ -5,6 +5,7 @@
 
 <TrainerLanding
   trainerId="what-comes-next"
+  heroArt="true"
   title={`🔁 ${$_('whatComesNext')}`}
   tagline={$_('whatsNext')}
   hero="🍎🍌🍎🍌 ❓ 🔁"

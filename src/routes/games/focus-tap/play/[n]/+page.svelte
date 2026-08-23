@@ -129,7 +129,7 @@
 
   {#if won}
     <WinOverlay title={$_('wellDone')} subtitle={`🎯 ${caught}/${round.config.goal}`}>
-      {#snippet badge()}<span class="win-badge">🏆</span>{/snippet}
+      {#snippet badge()}<img class="win-badge" src="/art/trainers/focus-tap/win-badge.png" alt="" />{/snippet}
       <a
         class="big-btn primary"
         href={`/games/focus-tap/play/${level + 1}`}
@@ -195,7 +195,7 @@
     to { transform: scale(1.6); opacity: 0; }
   }
 
-  .win-badge { font-size: 52px; }
+  .win-badge { width: 64px; height: 64px; filter: drop-shadow(0 0 12px var(--glow-gold)); }
   .big-btn {
     display: inline-flex;
     align-items: center;

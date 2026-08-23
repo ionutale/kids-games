@@ -7,7 +7,7 @@
   import { loadLevel } from '$lib/trainers/progress';
   import { startTrainerMusic, stopTrainerMusic } from '$lib/sounds/trainerMusic';
 
-  let { trainerId = '', titleKey = '', tagline = '', hero = '', accent = '#7FD8FF' } = $props();
+  let { trainerId = '', titleKey = '', tagline = '', hero = '', accent = '#7FD8FF', heroArt = '' } = $props();
 
   const level = $derived(loadLevel(trainerId));
 
@@ -19,7 +19,15 @@
 
 <GameShell {accent}>
   <div class="landing">
-    {#if hero}<div class="hero" aria-hidden="true">{hero}</div>{/if}
+    {#if heroArt}
+      <div class="hero hero-art" aria-hidden="true">
+        <img src="/art/trainers/{trainerId}/hero-star.png" alt="" />
+        <span>{hero}</span>
+        <img src="/art/trainers/{trainerId}/hero-star.png" alt="" />
+      </div>
+    {:else if hero}
+      <div class="hero" aria-hidden="true">{hero}</div>
+    {/if}
     <h1 class="title">{titleKey}</h1>
     <p class="tagline">{tagline}</p>
     <LevelBar
@@ -47,6 +55,16 @@
     letter-spacing: 10px;
     opacity: 0.9;
     animation: floaty 4s ease-in-out infinite;
+  }
+  .hero-art {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .hero-art img {
+    width: 26px;
+    height: 26px;
+    filter: drop-shadow(0 0 6px var(--accent-glow));
   }
   .title {
     font-size: 30px;

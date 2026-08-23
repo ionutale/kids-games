@@ -107,7 +107,7 @@
 
   {#if won}
     <WinOverlay title={$_('wellDone')} subtitle={`🔁 ${solved}/${goal}`}>
-      {#snippet badge()}<span class="win-badge">🏆</span>{/snippet}
+      {#snippet badge()}<img class="win-badge" src="/art/trainers/what-comes-next/win-badge.png" alt="" />{/snippet}
       <a
         class="big-btn primary"
         href={`/games/what-comes-next/play/${level + 1}`}
@@ -192,7 +192,7 @@
   .opt.wobbling { animation: fxWobble 0.3s ease-in-out; }
   .opt:disabled { opacity: 0.85; }
 
-  .win-badge { font-size: 52px; }
+  .win-badge { width: 64px; height: 64px; filter: drop-shadow(0 0 12px var(--glow-gold)); }
   .big-btn {
     display: inline-flex; align-items: center; justify-content: center; gap: 8px;
     min-height: var(--touch-min); padding: 12px 32px;

@@ -5,6 +5,7 @@
 
 <TrainerLanding
   trainerId="speed-match"
+  heroArt="true"
   title={`🃏 ${$_('speedMatch')}`}
   tagline={`${$_('samePair')} · ${$_('diffPair')}`}
   hero="🃏 🍎🍎 🃏 🐶🐺 🃏"

@@ -5,6 +5,7 @@
 
 <TrainerLanding
   trainerId="quick-count"
+  heroArt="true"
   title={`🔢 ${$_('quickCount')}`}
   tagline={$_('howMany')}
   hero="🔢 🍓 🌟 🔢 ⭐ 🍋"

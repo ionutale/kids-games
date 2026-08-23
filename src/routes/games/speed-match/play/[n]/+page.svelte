@@ -146,7 +146,7 @@
 
   {#if won}
     <WinOverlay title={$_('wellDone')} subtitle={`🃏 ${deck.length}/${deck.length}`}>
-      {#snippet badge()}<span class="win-badge">🏆</span>{/snippet}
+      {#snippet badge()}<img class="win-badge" src="/art/trainers/speed-match/win-badge.png" alt="" />{/snippet}
       <a
         class="big-btn primary"
         href={`/games/speed-match/play/${level + 1}`}
@@ -223,7 +223,7 @@
   .answer:active { transform: scale(0.94); }
   .answer.wobbling { animation: fxWobble 0.3s ease-in-out; }
 
-  .win-badge { font-size: 52px; }
+  .win-badge { width: 64px; height: 64px; filter: drop-shadow(0 0 12px var(--glow-gold)); }
   .big-btn {
     display: inline-flex; align-items: center; justify-content: center; gap: 8px;
     min-height: var(--touch-min); padding: 12px 32px;
