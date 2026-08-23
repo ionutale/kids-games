@@ -37,6 +37,11 @@ export function categoryOfEmoji(emoji) {
   return categoryOf.get(emoji) ?? null;
 }
 
+export function lookalikePartner(emoji) {
+  const partners = lookalikePartners.get(emoji);
+  return partners && partners.length > 0 ? partners[0] : null;
+}
+
 function asRng(rng) {
   if (typeof rng === 'function') return rng;
   return makeRng(typeof rng === 'number' ? rng : 1);
