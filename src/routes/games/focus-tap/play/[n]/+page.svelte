@@ -57,7 +57,7 @@
     setTimeout(() => (touchLock = false), 60);
     if (item.isTarget) {
       item.popping = true;
-      playPop();
+      playPop(0.94 + (caught % 4) * 0.04); // slight variation per catch
       caught += 1;
       setTimeout(() => removeItem(item.id), 180);
       if (caught >= round.config.goal) {

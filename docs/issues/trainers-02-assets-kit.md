@@ -17,13 +17,15 @@ No game wiring here — this slice is verifiable via unit tests and the upgraded
 
 ## Acceptance criteria
 
-- [ ] All 6 synth exports fire without AudioContext errors and no-op safely server-side / pre-gesture
-- [ ] Music loader: loops seamlessly at ~0.2 volume; SoundToggle off ⇒ silent; navigation stops playback; same trainer's routes resume it
-- [ ] `fanfare.mp3` + 4 loops present in `static/sounds/`, each ≤ 400 KB, provenance recorded in docs/free-assets.md
-- [ ] `kids-cheer.mp3` resolves at runtime from the served public path
-- [ ] fx.css classes render wobble/pop/confetti/drain in isolation (demo in WinOverlay)
-- [ ] Existing games using WinOverlay unchanged behaviorally; new badge + confetti visible when configured
-- [ ] Vitest unit tests for sounds/loader guards + e2e check that win overlay renders confetti without console asset errors
+- [x] All 6 synth exports fire without AudioContext errors and no-op safely server-side / pre-gesture
+- [x] Music loader: loops seamlessly at ~0.2 volume; SoundToggle off ⇒ silent; navigation stops playback; same trainer's routes resume it
+- [ ] `fanfare.mp3` + 4 loops present in `static/sounds/`, each ≤ 400 KB, provenance recorded in docs/free-assets.md — **code + fallbacks shipped; binaries pending manual CC0 sourcing** (kenney.nl / pixabay downloads are interactive)
+- [x] `kids-cheer.mp3` resolves at runtime from the served public path
+- [x] fx.css classes render wobble/pop/confetti/drain in isolation (demo in WinOverlay)
+- [x] Existing games using WinOverlay unchanged behaviorally; new badge + confetti visible when configured
+- [x] Vitest unit tests for sounds/loader guards + e2e check that win overlay renders confetti without console asset errors
+
+> **Status (2026-08-23):** all code shipped with graceful fallbacks (`fanfare()` falls back to synth `playWin()`; music loader no-ops on 404). Remaining work is sourcing the CC0 binary assets — see docs/free-assets.md "Planned" table.
 
 ## Blocked by
 

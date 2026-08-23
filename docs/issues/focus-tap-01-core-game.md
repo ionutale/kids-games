@@ -16,15 +16,15 @@ The complete Focus Tap trainer end-to-end: a Stream of emojis floats up the scre
 
 ## Acceptance criteria
 
-- [ ] Landing shows current saved level on LevelBar; Play opens `/play/{level}`
-- [ ] `/play` without level redirects to the saved level
-- [ ] Playing round *n* persists *n* as current level (visible after reload)
-- [ ] Stream density and rise speed follow `levelConfig` at L1, L5, L15 (unit-tested boundaries incl. caps)
-- [ ] Tapping a distractor wobbles it silently and never changes the counter
-- [ ] Tapping targets to goal triggers WinOverlay; Next Level ▶ navigates to n+1 and starts a fresh round
-- [ ] Distractor tier matches level band (unit-tested with seeded rng)
-- [ ] Tab blur stops spawning; no leaked intervals after navigation
-- [ ] Vitest unit tests for formulas/tiers + one seeded Playwright happy-path e2e
+- [x] Landing shows current saved level on LevelBar; Play opens `/play/{level}`
+- [x] `/play` without level redirects to the saved level
+- [x] Playing round *n* persists *n* as current level (visible after reload)
+- [x] Stream density and rise speed follow `levelConfig` at L1, L5, L15 (unit-tested boundaries incl. caps)
+- [x] Tapping a distractor wobbles it silently and never changes the counter
+- [x] Tapping targets to goal triggers WinOverlay; Next Level ▶ navigates to n+1 and starts a fresh round
+- [x] Distractor tier matches level band (unit-tested with seeded rng)
+- [x] Tab blur stops spawning; no leaked intervals after navigation
+- [x] Vitest unit tests for formulas/tiers + one seeded Playwright happy-path e2e
 
 ## Blocked by
 

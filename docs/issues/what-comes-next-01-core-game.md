@@ -15,14 +15,14 @@ The complete What Comes Next trainer end-to-end: complete a Prompt Strip whose e
 
 ## Acceptance criteria
 
-- [ ] Landing/redirect/persistence behave per the shared route contract
-- [ ] `patternTier` maps levels to bands correctly at boundaries (L1/L3/L5/L7/L30) — unit-tested
-- [ ] Every generated prompt is internally consistent: visible prefix matches its unit and the marked correct option continues it (property test over levels 1–30, seeded)
-- [ ] Growing-tier strips expand blocks correctly and always ask for a deterministic next element
-- [ ] Exactly 3 shuffled options; distractor category rules respected per level band
-- [ ] Wrong tap wobbles silently; no advance, no penalty
-- [ ] Reaching goal triggers WinOverlay; Next Level ▶ starts round n+1 fresh
-- [ ] Vitest unit tests + one seeded Playwright happy-path e2e
+- [x] Landing/redirect/persistence behave per the shared route contract
+- [x] `patternTier` maps levels to bands correctly at boundaries (L1/L3/L5/L7/L30) — unit-tested
+- [x] Every generated prompt is internally consistent: visible prefix matches its unit and the marked correct option continues it (property test over levels 1–30, seeded)
+- [x] Growing-tier strips expand blocks correctly and always ask for a deterministic next element
+- [x] Exactly 3 shuffled options; distractor category rules respected per level band
+- [x] Wrong tap wobbles silently; no advance, no penalty
+- [x] Reaching goal triggers WinOverlay; Next Level ▶ starts round n+1 fresh
+- [x] Vitest unit tests + one seeded Playwright happy-path e2e
 
 ## Blocked by
 

@@ -30,9 +30,9 @@ export function playTap() {
   playTone(600, 0.08, 'sine', 0.2);
 }
 
-export function playPop() {
-  playTone(400, 0.1, 'sine', 0.25);
-  setTimeout(() => playTone(600, 0.1, 'sine', 0.2), 60);
+export function playPop(pitch = 1) {
+  playTone(400 * pitch, 0.1, 'sine', 0.25);
+  setTimeout(() => playTone(600 * pitch, 0.1, 'sine', 0.2), 60);
 }
 
 export function playMatch() {

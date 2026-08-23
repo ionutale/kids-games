@@ -16,15 +16,15 @@ The complete Speed Match trainer end-to-end: race a Deck of Pair Cards judging "
 
 ## Acceptance criteria
 
-- [ ] Landing/redirect/persistence behave per the shared route contract
-- [ ] Deck constraints hold across seeds at multiple levels (ratio, ≤3 answer streak, lookalikes only at L8+) — unit-tested
-- [ ] Window duration follows formula with 1500 ms floor; drain bar visually tracks it
-- [ ] Wrong tap wobbles silently and never advances the deck by itself
-- [ ] Window expiry advances silently — no sound, no shake, no counter change
-- [ ] Correct answers advance immediately and increment progress toward deck completion
-- [ ] Hidden tab never expires a window; remaining time resumes intact on focus
-- [ ] Finishing the deck triggers WinOverlay; Next Level ▶ starts round n+1 fresh
-- [ ] Vitest unit tests + seeded Playwright happy-path e2e using a long-window seed (never timing-dependent)
+- [x] Landing/redirect/persistence behave per the shared route contract
+- [x] Deck constraints hold across seeds at multiple levels (ratio, ≤3 answer streak, lookalikes only at L8+) — unit-tested
+- [x] Window duration follows formula with 1500 ms floor; drain bar visually tracks it
+- [x] Wrong tap wobbles silently and never advances the deck by itself
+- [x] Window expiry advances silently — no sound, no shake, no counter change
+- [x] Correct answers advance immediately and increment progress toward deck completion
+- [x] Hidden tab never expires a window; remaining time resumes intact on focus
+- [x] Finishing the deck triggers WinOverlay; Next Level ▶ starts round n+1 fresh
+- [x] Vitest unit tests + seeded Playwright happy-path e2e using a long-window seed (never timing-dependent)
 
 ## Blocked by
 

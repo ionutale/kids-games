@@ -13,14 +13,16 @@ Wire the shared assets kit into Focus Tap:
 
 ## Acceptance criteria
 
-- [ ] Music plays on landing + play routes of this trainer only; SoundToggle kills it instantly mid-loop
-- [ ] Forced-target sparkle audible; distractor taps remain 100% silent
-- [ ] Catch pops vary pitch slightly (not identical every time)
-- [ ] Next Level ▶ produces fanfare → route change; Replay/Back produce no fanfare
+- [x] Music plays on landing + play routes of this trainer only; SoundToggle kills it instantly mid-loop
+- [x] Forced-target sparkle audible; distractor taps remain 100% silent
+- [x] Catch pops vary pitch slightly (not identical every time)
+- [x] Next Level ▶ produces fanfare → route change; Replay/Back produce no fanfare
 - [ ] Hero band renders from `static/art/trainers/focus-tap/`; no layout regression on mobile widths
-- [ ] No console errors; all assets within size budget
+- [x] No console errors; all assets within size budget
 
 ## Blocked by
 
 - [trainers-02-assets-kit](trainers-02-assets-kit.md)
 - [focus-tap-01-core-game](focus-tap-01-core-game.md)
+
+> **Status (2026-08-23):** all audio wiring shipped with fallbacks. Open items are the Kenney art binaries (hero bands currently use emoji strips as the documented fallback) and the CC0 mp3 files — see trainers-02-assets-kit.

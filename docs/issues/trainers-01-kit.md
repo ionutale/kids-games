@@ -14,12 +14,12 @@ No UI, no routes — this slice is verifiable purely through unit tests, which i
 
 ## Acceptance criteria
 
-- [ ] `loadLevel` returns saved value, defaults to 1 when absent, clamps garbage/negative input
-- [ ] `saveLevel` persists and round-trips; SSR-safe (no localStorage access on server)
-- [ ] Catalog exposes all six categories with ≥ 8 emojis each; no duplicates across lookalike table and category pools that would break tier logic
-- [ ] `pickDistractors` never includes the target; respects tier exclusivity (cross-category excludes target's category; lookalike tier draws only from the target's lookalike partner set)
-- [ ] Same seed ⇒ same picks for every generator; different seeds diverge
-- [ ] Vitest unit tests cover all of the above
+- [x] `loadLevel` returns saved value, defaults to 1 when absent, clamps garbage/negative input
+- [x] `saveLevel` persists and round-trips; SSR-safe (no localStorage access on server)
+- [x] Catalog exposes all six categories with ≥ 8 emojis each; no duplicates across lookalike table and category pools that would break tier logic
+- [x] `pickDistractors` never includes the target; respects tier exclusivity (cross-category excludes target's category; lookalike tier draws only from the target's lookalike partner set)
+- [x] Same seed ⇒ same picks for every generator; different seeds diverge
+- [x] Vitest unit tests cover all of the above
 
 ## Blocked by
 

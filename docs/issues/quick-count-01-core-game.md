@@ -16,14 +16,14 @@ The complete Quick Count trainer end-to-end: a scattered Glimpse Set flashes bri
 
 ## Acceptance criteria
 
-- [ ] Landing/redirect/persistence behave per the shared route contract
-- [ ] Flash duration and count range follow formulas at L1/L5/L15 with caps verified by unit tests
-- [ ] Glimpse Sets never overlap and stay inside the panel across many seeds (property-style unit test)
-- [ ] Exactly 3 unique pills; correct answer always present; clamping rule holds at extremes
-- [ ] Wrong pill wobbles silently and does not advance or penalize
-- [ ] Tab blur mid-flash restarts that flash; the prompt is never counted as answered
-- [ ] Reaching goal triggers WinOverlay; Next Level ▶ starts round n+1 fresh
-- [ ] Vitest unit tests + one seeded Playwright happy-path e2e
+- [x] Landing/redirect/persistence behave per the shared route contract
+- [x] Flash duration and count range follow formulas at L1/L5/L15 with caps verified by unit tests
+- [x] Glimpse Sets never overlap and stay inside the panel across many seeds (property-style unit test)
+- [x] Exactly 3 unique pills; correct answer always present; clamping rule holds at extremes
+- [x] Wrong pill wobbles silently and does not advance or penalize
+- [x] Tab blur mid-flash restarts that flash; the prompt is never counted as answered
+- [x] Reaching goal triggers WinOverlay; Next Level ▶ starts round n+1 fresh
+- [x] Vitest unit tests + one seeded Playwright happy-path e2e
 
 ## Blocked by
 
