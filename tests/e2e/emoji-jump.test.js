@@ -23,8 +23,11 @@ test.describe('Emoji Jump E2E', () => {
   test('falling ends the game with a game-over overlay', async ({ page }) => {
     await page.goto('/games/emoji-jump');
     await page.locator('.big-btn.primary').click();
-    // never steer — the player falls past the first platforms
-    await expect(page.getByTestId('gameover-overlay')).toBeVisible({ timeout: 20000 });
+    // hold RIGHT: the player rides the starter platform a few bounces, drifts past
+    // its right edge (movement clamps at the wall), then falls past everything
+    await page.locator('button[aria-label="right"]').dispatchEvent('pointerdown');
+    await expect(page.getByTestId('gameover-overlay')).toBeVisible({ timeout: 30000 });
+    await page.locator('button[aria-label="right"]').dispatchEvent('pointerup');
   });
 
   test('best height persists across reloads', async ({ page }) => {

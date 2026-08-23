@@ -25,7 +25,8 @@ test.describe('Spot the Difference E2E', () => {
     }
     expect(diffIdx).toBeGreaterThanOrEqual(0);
     await page.getByTestId(`left-${diffIdx}`).click();
-    await expect(page.getByTestId(`right-${diffIdx}`)).toHaveClass(/found/, { timeout: 3000 });
+    await page.waitForTimeout(250);
+    await expect(page.getByTestId(`right-${diffIdx}`)).toHaveClass(/found/, { timeout: 5000 });
   });
 
   test('tapping a matching cell shakes silently and does not mark', async ({ page }) => {

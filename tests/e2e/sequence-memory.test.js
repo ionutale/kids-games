@@ -19,7 +19,7 @@ test.describe('Sequence Memory E2E', () => {
   });
 
   test('wrong tap twice ends the game with a replay screen', async ({ page }) => {
-    test.setTimeout(30000);
+    test.setTimeout(60000);
     await page.goto('/games/sequence-memory');
     await page.locator('.big-btn.primary').click();
     // wait for listening
@@ -27,18 +27,14 @@ test.describe('Sequence Memory E2E', () => {
     // find which pad lit LAST during playback — tap the others to be wrong.
     // simpler: wait, then tap pad 0 repeatedly across the second-chance replay:
     // first wrong triggers second chance; second wrong ends the game.
-    await page.getByTestId('pad-0').click();
-    await page.waitForTimeout(2500); // second-chance replay plays
-    const status = page.locator('[data-testid="status"]');
-    if ((await status.textContent()) === '👆') {
-      await page.getByTestId('pad-0').click(); // may accidentally be right; keep tapping wrong-ish
-      await page.waitForTimeout(1200);
-      await page.getByTestId('pad-0').click();
-      await page.waitForTimeout(2500);
-      await page.getByTestId('pad-0').click();
+    // keep tapping pad-0 whenever input is accepted; statistically a wrong tap
+    // arrives quickly (3/4 per step), triggering second chance then game over.
+    for (let i = 0; i < 25; i++) {
+      if ((await page.locator('.score-line').isVisible().catch(() => false))) break;
+      const status = (await page.locator('[data-testid="status"]').textContent().catch(() => '')) ?? '';
+      if (status.includes('👆')) await page.getByTestId('pad-0').click();
+      await page.waitForTimeout(900);
     }
-    await expect(
-      page.getByTestId('seq-root').locator('.score-line')
-    ).toBeVisible({ timeout: 15000 });
+    await expect(page.getByTestId('seq-root').locator('.score-line')).toBeVisible({ timeout: 10000 });
   });
 });

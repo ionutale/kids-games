@@ -11,7 +11,7 @@
   import { makePuzzle, isDifference } from '$lib/spot-difference/game.js';
 
   let puzzle = $state(null);
-  let found = $state(new Set());
+  let found = $state([]);
   let wrongCell = $state(-1);
   let sideShake = $state('');
   let solvedCount = $state(0);
@@ -23,7 +23,7 @@
     for (const t of timers) clearTimeout(t);
     timers = [];
     puzzle = makePuzzle($settings.ageLevel, seedOffset);
-    found = new Set();
+    found = [];
     wrongCell = -1;
     complete = false;
   }
@@ -31,10 +31,10 @@
   function tap(index, side) {
     if (!puzzle || complete) return;
     if (isDifference(puzzle, index)) {
-      if (found.has(index)) return;
-      found.add(index);
+      if (found.includes(index)) return;
+      found = [...found, index]; // reassigned ⇒ reliably reactive
       playTap();
-      if (found.size === puzzle.diffCells.size) {
+      if (found.length === puzzle.diffCells.size) {
         complete = true;
         solvedCount += 1;
         playMatch();
@@ -53,7 +53,7 @@
   });
 
   function cellState(index, side) {
-    const isFound = found.has(index);
+    const isFound = found.includes(index);
     const isWrong = wrongCell === index && sideShake === side;
     return { isFound, isWrong };
   }
@@ -70,7 +70,7 @@
       <p class="prompt">🔍 {$_('findDiffs')}</p>
       <div class="boards" data-testid="boards">
         {#each ['left', 'right'] as side}
-          <div class="grid" data-testid="grid-{side}">
+          <div class="grid" style:--size="{puzzle.size}" data-testid="grid-{side}">
             {#each Array(puzzle.size * puzzle.size) as _, i}
               {@const emoji = side === 'left' ? puzzle.left[i] : puzzle.right[i]}
               {@const st = cellState(i, side)}
@@ -125,6 +125,7 @@
   }
   .grid {
     display: grid;
+    grid-template-columns: repeat(var(--size), 1fr);
     gap: 5px;
     background: var(--panel-glass);
     border: 2px solid var(--panel-border);

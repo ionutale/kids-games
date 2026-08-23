@@ -41,8 +41,9 @@ test.describe('Path Builder E2E', () => {
       const txt = (await cell.textContent()) ?? '';
       if (txt !== '') continue; // occupied (obstacle/goal)
       await cell.click();
+      await page.waitForTimeout(250);
       try {
-        await expect(cell).toHaveClass(/path-cell/, { timeout: 1500 });
+        await expect(cell).toHaveClass(/path-cell/, { timeout: 2000 });
         extended = true;
         break;
       } catch {

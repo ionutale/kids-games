@@ -140,7 +140,6 @@
         <button
           class="draggable"
           class:dragging
-          bind:this={dragGhost}
           style:left="{dragging ? dragX : 50}%"
           style:top="{dragging ? dragY : 60}%"
           onpointerdown={beginDrag}

@@ -16,6 +16,7 @@ test.describe('Category Sort E2E', () => {
     await page.goto('/games/category-sort');
     // read which bin is correct from the round data via DOM: try each bin until accepted
     const hud = page.locator('.top-bar .hud-item').first();
+    await expect(hud).toBeVisible({ timeout: 8000 });
     const before = parseInt((await hud.textContent()).replace(/\D/g, ''), 10) || 0;
     const item = page.getByTestId('item');
     const ib = await item.boundingBox();
