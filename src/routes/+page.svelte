@@ -26,6 +26,7 @@
     { id: 'emoji-jump', icon: '🦘', key: 'emojiJump', accent: '#6EE7B7' },
     { id: 'angry-emoji', icon: '😡', key: 'angryEmoji', accent: '#F87171' },
     { id: 'sequence-memory', icon: '🎵', key: 'sequenceMemory', accent: '#BA68C8' },
+    { id: 'emoji-math', icon: '➕', key: 'emojiMath', accent: '#81C784' },
   ];
 
   let showSettings = $state(false);
