@@ -25,12 +25,12 @@
 
 ## Glossary Puzzle (Jigsaw) Game
 
-- **Gallery Page** (`/games/glossary-puzzle`): the landing view — Level Bar, categories, difficulty selector, image grid. Full app chrome via GameShell (back link + sound toggle).
-- **Level**: 1–10 predefined puzzle (image + grid difficulty); unlocked sequentially; persisted in localStorage (`glossary-puzzle-level-unlocked`).
-- **Level Page**: `/games/glossary-puzzle/play/{n}` — each Level has its own URL/entry point.
-- **Free-Play Page**: `/games/glossary-puzzle/play?image={id}&diff={key}` — opened from gallery image cards; resumed via `?resume=1` from saved Progress State.
-- **PuzzleBoard**: shared solving component (board, Tray, drag ghost, Snap, Idle Nudge, win overlay) used by both play routes; Back/Next are real links.
-- **Link-based Back**: exiting an active puzzle or leaving the gallery uses ordinary `<a href>` navigation — no parental gate.
+- **Gallery Page** (`/games/glossary-puzzle`): the landing view — Level Bar, categories, image grid. Full app chrome via GameShell (back link + sound toggle). Accepts `?level={n}` to preselect the difficulty step.
+- **Level**: 1–10 shown in the Level Bar, but the **Level = Difficulty Step** and the ladder is unbounded: Level *N* ⇒ grid `cols = 2 + ⌊N/2⌋`, `rows = 2 + ⌊(N−1)/2⌋`, snap radius `max(10, 38 − 2.5N)`. Any image can be played at any level.
+- **Level Page**: `/games/glossary-puzzle/play/{n}?image={id}` — every solving session is its own URL; without `?image=` the image rotates by level.
+- **Free-Play Page**: `/games/glossary-puzzle/play?image={id}&level={n}` — opened from gallery image cards; also serves `?resume=1` for saved Progress State (placed pieces handed off via sessionStorage).
+- **PuzzleBoard**: shared solving component (board, Tray, drag ghost, Snap, Idle Nudge, win overlay) used by both play routes; remounted per URL via `{#key}` so navigation always yields a fresh board.
+- **Link-based Back / Next**: exiting an active puzzle uses an ordinary `<a href>` to the gallery; the win dialog offers **Play Again** (same image + level), **Next Level ▶** (same image, level + 1 — always available), and **Back** (gallery link). No parental gate, no unlock gating.
 
 ## TODO — New Game Ideas
 

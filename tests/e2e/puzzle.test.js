@@ -9,6 +9,7 @@ test.describe('Puzzle E2E', () => {
 
   test('tray shows pieces matching current level', async ({ page }) => {
     await page.goto('/games/puzzle');
+    await expect(page.locator('.tray-piece').first()).toBeVisible();
     const trayCount = await page.locator('.tray-piece').count();
     expect(trayCount).toBeGreaterThanOrEqual(4);
   });
