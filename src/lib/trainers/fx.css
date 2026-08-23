@@ -1,0 +1,22 @@
+.fx-pop {
+  animation: fxPop 0.25s ease-out;
+}
+@keyframes fxPop {
+  0% { transform: scale(1); }
+  45% { transform: scale(1.35); }
+  100% { transform: scale(1); }
+}
+
+.fx-wobble {
+  animation: fxWobble 0.3s ease-in-out;
+}
+@keyframes fxWobble {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-4px); }
+  50% { transform: translateX(4px); }
+  75% { transform: translateX(-2px); }
+}
+
+.fx-drain {
+  transition: width linear;
+}
