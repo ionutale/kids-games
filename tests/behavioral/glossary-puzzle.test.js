@@ -1,10 +1,10 @@
 import { describe, it, expect } from 'vitest';
-import { DIFFICULTIES } from '$lib/glossary-puzzle/images.js';
+import { levelConfig } from '$lib/glossary-puzzle/images.js';
 import { generatePieces } from '$lib/glossary-puzzle/pieces.js';
 
 describe('Glossary Puzzle behavior', () => {
   it('pieces are shuffled', () => {
-    const r = generatePieces(DIFFICULTIES.medium);
+    const r = generatePieces(levelConfig(3));
     const firstRow = r.pieces[0].correctRow;
     const firstCol = r.pieces[0].correctCol;
     const allSame = r.pieces.every(p => p.correctRow === firstRow && p.correctCol === firstCol);
@@ -46,13 +46,13 @@ describe('Glossary Puzzle behavior', () => {
     expect(tray.length).toBe(4);
   });
 
-  it('snap radius is forgiving on easy', () => {
+  it('snap radius is forgiving on level 1', () => {
     const dist = 30;
-    expect(dist <= DIFFICULTIES.easy.snapRadius).toBe(true);
+    expect(dist <= levelConfig(1).snapRadius).toBe(true);
   });
 
-  it('snap radius is tight on hard', () => {
+  it('snap radius is tight on level 9', () => {
     const dist = 15;
-    expect(dist > DIFFICULTIES.hard.snapRadius).toBe(false);
+    expect(dist > levelConfig(9).snapRadius).toBe(false);
   });
 });

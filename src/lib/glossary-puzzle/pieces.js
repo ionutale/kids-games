@@ -56,8 +56,8 @@ function invert(e) {
   return e === 'tab' ? 'blank' : 'tab';
 }
 
-export function generatePieces(difficulty) {
-  const { cols, rows } = difficulty;
+export function generatePieces(config) {
+  const { cols, rows, snapRadius } = config;
   const pieces = [];
 
   const edges = [];
@@ -109,5 +109,5 @@ export function generatePieces(difficulty) {
     });
   });
 
-  return { pieces, rows, cols };
+  return { pieces, rows, cols, snapRadius };
 }

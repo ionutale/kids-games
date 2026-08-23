@@ -7,13 +7,12 @@
   import BigButton from '$lib/components/ui/BigButton.svelte';
   import WinOverlay from '$lib/components/ui/WinOverlay.svelte';
   import Starfield from '$lib/components/ui/Starfield.svelte';
-  import { DIFFICULTIES } from '$lib/glossary-puzzle/images.js';
+  import { levelConfig } from '$lib/glossary-puzzle/images.js';
   import { generatePieces, VIRTUAL_W, VIRTUAL_H } from '$lib/glossary-puzzle/pieces.js';
 
-  const SNAP_RADIUS = 50;
   const STORAGE_KEY = 'glossary-puzzle-save';
 
-  let { image, difficulty, backHref = '/games/glossary-puzzle', nextHref = null, initialPlaced = null, onWin = () => {} } = $props();
+  let { image, level = 1, backHref = '/games/glossary-puzzle', initialPlaced = null, onWin = () => {} } = $props();
 
   let pieces = $state([]);
   let placed = $state(new Set());
@@ -32,11 +31,14 @@
   let boardEl = $state(null);
   let ghostStyle = $state({ left: 0, top: 0, width: 0, height: 0 });
 
+  let snapRadius = $state(36);
+
   function init() {
-    const result = generatePieces(DIFFICULTIES[difficulty]);
+    const result = generatePieces(levelConfig(level));
     pieces = result.pieces;
     rows = result.rows;
     cols = result.cols;
+    snapRadius = result.snapRadius;
     if (initialPlaced) {
       placed = new Set(initialPlaced.filter(id => pieces.some(p => p.id === id)));
     } else {
@@ -109,7 +111,7 @@
     const ty = piece.targetY + piece.h / 2;
     const dist = Math.hypot(cx - tx, cy - ty);
 
-    if (dist <= SNAP_RADIUS && !placed.has(piece.id)) {
+    if (dist <= snapRadius && !placed.has(piece.id)) {
       placed = new Set([...placed, piece.id]);
       if (soundsLoaded) playSnap();
       if (placed.size === pieces.length) {
@@ -265,13 +267,9 @@
 
   {#if showDone}
     <WinOverlay title="🎉 {$_('puzzleDone')}">
-      {#if nextHref}
-        <BigButton variant="primary" class="gp-celebration-btn" href={nextHref}> {$_('nextLevel')} ▶</BigButton>
-        <BigButton variant="ghost" class="gp-celebration-btn" href={backHref}>◀ {$_('back')}</BigButton>
-      {:else}
-        <BigButton variant="primary" class="gp-celebration-btn" onclick={() => init()}>🔄 {$_('playAgain')}</BigButton>
-        <BigButton variant="ghost" class="gp-celebration-btn" href={backHref}>◀ {$_('back')}</BigButton>
-      {/if}
+      <BigButton variant="primary" class="gp-celebration-btn" onclick={() => init()}>🔄 {$_('playAgain')}</BigButton>
+      <BigButton variant="primary" class="gp-celebration-btn" href="/games/glossary-puzzle/play/{level + 1}?image={image.id}">⚡ {$_('nextLevel')} ▶</BigButton>
+      <BigButton variant="ghost" class="gp-celebration-btn" href={backHref}>◀ {$_('back')}</BigButton>
     </WinOverlay>
   {/if}
 </div>

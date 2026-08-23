@@ -77,21 +77,12 @@ export function getCategories() {
   return Object.entries(cats).map(([key, val]) => ({ key, ...val }));
 }
 
-export const DIFFICULTIES = {
-  easy: { label: 'Easy', cols: 2, rows: 2, snapRadius: 35 },
-  medium: { label: 'Medium', cols: 3, rows: 3, snapRadius: 25 },
-  hard: { label: 'Hard', cols: 4, rows: 4, snapRadius: 18 },
-};
-
-export const LEVELS = [
-  { imageId: 'garden', difficulty: 'easy' },
-  { imageId: 'ocean', difficulty: 'easy' },
-  { imageId: 'space', difficulty: 'medium' },
-  { imageId: 'farm', difficulty: 'medium' },
-  { imageId: 'jungle', difficulty: 'medium' },
-  { imageId: 'food', difficulty: 'hard' },
-  { imageId: 'pets', difficulty: 'hard' },
-  { imageId: 'transport', difficulty: 'hard' },
-  { imageId: 'food', difficulty: 'hard' },
-  { imageId: 'transport', difficulty: 'hard' },
-];
+// Level = difficulty step (unbounded): grid grows and snap tightens with N.
+// L1 2×2 · L2 3×2 · L3 3×3 · L4 4×3 · L5 4×4 · L6 5×4 · L7 5×5 · L8 6×5 · L9 6×6 · L10 7×6 …
+export function levelConfig(n) {
+  const level = Math.max(1, Math.floor(n) || 1);
+  const cols = 2 + Math.floor(level / 2);
+  const rows = 2 + Math.floor((level - 1) / 2);
+  const snapRadius = Math.max(10, Math.round(38 - level * 2.5));
+  return { level, cols, rows, snapRadius };
+}

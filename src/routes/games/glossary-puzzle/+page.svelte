@@ -1,53 +1,63 @@
 <script>
   import { onMount } from 'svelte';
+  import { goto } from '$app/navigation';
+  import { page } from '$app/stores';
   import { _ } from '$lib/stores/locale';
   import GameShell from '$lib/components/ui/GameShell.svelte';
   import LevelBar from '$lib/components/ui/LevelBar.svelte';
-  import { PUZZLE_IMAGES, getCategories, DIFFICULTIES } from '$lib/glossary-puzzle/images.js';
+  import { PUZZLE_IMAGES, getCategories } from '$lib/glossary-puzzle/images.js';
 
   const STORAGE_KEY = 'glossary-puzzle-save';
-  const LEVEL_STORAGE_KEY = 'glossary-puzzle-level-unlocked';
+  const HANDOFF_KEY = 'glossary-puzzle-handoff';
 
   let selectedCategory = $state(null);
-  let diffKey = $state('easy');
   let hasSaved = $state(false);
+  let savedLevel = $state(1);
 
   const categories = getCategories();
   let filteredImages = $derived(
     selectedCategory ? PUZZLE_IMAGES.filter(i => i.category === selectedCategory) : PUZZLE_IMAGES
   );
 
-  function readUnlocked() {
-    if (typeof localStorage === 'undefined') return 1;
-    const stored = parseInt(localStorage.getItem(LEVEL_STORAGE_KEY));
-    return stored >= 1 && stored <= 10 ? stored : 1;
-  }
+  let levelFromUrl = $derived.by(() => {
+    const n = parseInt($page.url.searchParams.get('level'), 10);
+    return Number.isFinite(n) && n >= 1 ? n : 1;
+  });
 
-  let unlockedLevel = readUnlocked();
-
-  function refreshSaved() {
-    if (typeof localStorage === 'undefined') return;
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) { hasSaved = false; return; }
+  function readSaved() {
+    if (typeof localStorage === 'undefined') return null;
     try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) return null;
       const data = JSON.parse(raw);
-      hasSaved = data && PUZZLE_IMAGES.some(i => i.id === data.imageId) && DIFFICULTIES[data.difficulty];
+      return data && PUZZLE_IMAGES.some(i => i.id === data.imageId) && Number.isFinite(parseInt(data.level, 10)) ? data : null;
     } catch {
-      hasSaved = false;
+      return null;
     }
   }
 
-  onMount(refreshSaved);
+  function startResume() {
+    const data = readSaved();
+    if (!data) return;
+    try {
+      sessionStorage.setItem(HANDOFF_KEY, JSON.stringify(data.placedIds || []));
+    } catch {}
+    goto(`/games/glossary-puzzle/play/${Math.max(1, parseInt(data.level, 10) || 1)}?image=${data.imageId}&resume=1`);
+  }
+
+  onMount(() => {
+    hasSaved = !!readSaved();
+  });
 </script>
 
 <GameShell accent="#5EEAD4">
   <div class="gp-gallery" style="--accent: #5EEAD4;">
     <h2 class="gp-gallery-title">🧩 {$_('puzzle')}</h2>
 
-    <LevelBar current={unlockedLevel} hrefFor={(n) => `/games/glossary-puzzle/play/${n}`} maxUnlocked={unlockedLevel} />
+    <LevelBar current={levelFromUrl} hrefFor={(n) => `/games/glossary-puzzle/play/${n}`} />
 
     {#if hasSaved}
-      <a class="gp-resume-btn" href="/games/glossary-puzzle/play?resume=1">▶ {$_('replay')}</a>
+      <button class="gp-resume-btn" onclick={startResume}>▶ {$_('replay')}</button>
     {/if}
 
     <div class="gp-categories">
@@ -59,17 +69,11 @@
       {/each}
     </div>
 
-    <div class="gp-diff-select">
-      {#each Object.entries(DIFFICULTIES) as [key, d]}
-        <button class="gp-diff-btn" class:active={diffKey === key} onclick={() => diffKey = key}>{d.label}</button>
-      {/each}
-    </div>
-
     <div class="gp-image-grid">
       {#each filteredImages as img}
-        <a class="gp-image-card" href="/games/glossary-puzzle/play?image={img.id}&diff={diffKey}">
+        <a class="gp-image-card" href="/games/glossary-puzzle/play/{levelFromUrl}?image={img.id}">
           <div class="gp-thumb" style:background-image="url({img.file})"></div>
-          <span class="gp-thumb-name">{img.name}</span>
+          <span class="gp-thumb-name">{img.name} · {$_('level')} {levelFromUrl}</span>
         </a>
       {/each}
     </div>
@@ -86,9 +90,6 @@
   .gp-cat-btn.active { background: rgba(94,234,212,0.25); border-color: var(--accent); }
   .gp-cat-icon { font-size: 28px; }
   .gp-cat-name { font-size: 12px; font-weight: 600; color: var(--text-lo); }
-  .gp-diff-select { display: flex; gap: 6px; position: relative; z-index: 1; }
-  .gp-diff-btn { padding: 6px 18px; border-radius: 12px; font-size: 13px; font-weight: 600; background: var(--panel-glass); border: 1px solid var(--panel-border); color: var(--text-hi); }
-  .gp-diff-btn.active { background: rgba(94,234,212,0.25); border-color: var(--accent); }
   .gp-image-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; width: 100%; max-width: 360px; position: relative; z-index: 1; }
   .gp-image-card { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 10px; background: var(--panel-glass); border: 1px solid var(--panel-border); border-radius: 14px; color: var(--text-hi); overflow: hidden; text-decoration: none; }
   .gp-thumb { width: 100%; aspect-ratio: 1; background-size: cover; background-position: center; border-radius: 8px; }

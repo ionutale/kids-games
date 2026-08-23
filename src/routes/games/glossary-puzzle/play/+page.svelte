@@ -2,7 +2,7 @@
   import { page } from '$app/stores';
   import { goto } from '$app/navigation';
   import PuzzleBoard from '$lib/glossary-puzzle/PuzzleBoard.svelte';
-  import { PUZZLE_IMAGES, DIFFICULTIES } from '$lib/glossary-puzzle/images.js';
+  import { PUZZLE_IMAGES } from '$lib/glossary-puzzle/images.js';
 
   const STORAGE_KEY = 'glossary-puzzle-save';
 
@@ -17,17 +17,16 @@
     } catch {
       saved = null;
     }
+    try { localStorage.removeItem(STORAGE_KEY); } catch {}
   }
 
   const savedImage = saved && PUZZLE_IMAGES.find(i => i.id === saved.imageId);
   const image = savedImage || PUZZLE_IMAGES.find(i => i.id === params.get('image')) || null;
-  const difficulty = (saved && DIFFICULTIES[saved.difficulty]) ||
-    (DIFFICULTIES[params.get('diff')] ? params.get('diff') : 'easy');
-  const initialPlaced = saved?.placedIds || null;
-
-  if (resume && typeof localStorage !== 'undefined') {
-    try { localStorage.removeItem(STORAGE_KEY); } catch {}
-  }
+  const levelParam = saved && Number.isFinite(parseInt(saved.level, 10))
+    ? String(parseInt(saved.level, 10))
+    : params.get('level');
+  const level = Math.max(1, parseInt(levelParam, 10) || 1);
+  const initialPlaced = (saved && Array.isArray(saved.placedIds)) ? saved.placedIds : null;
 
   if (!image) {
     goto('/games/glossary-puzzle');
@@ -37,7 +36,7 @@
 {#if image}
   <PuzzleBoard
     {image}
-    {difficulty}
+    {level}
     {initialPlaced}
     backHref="/games/glossary-puzzle"
   />
