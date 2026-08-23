@@ -27,14 +27,15 @@ test.describe('Focus Tap E2E', () => {
     for (let i = 0; i < 10 && !distractorTapped; i++) {
       const d = page.locator('[data-testid="distractor"]').first();
       if (await d.isVisible().catch(() => false)) {
+        const before = await page.locator('.hud-item').nth(1).textContent();
         await d.click({ force: true, trial: false }).catch(() => {});
+        await page.waitForTimeout(400);
+        const after = await page.locator('.hud-item').nth(1).textContent();
+        expect(after).toBe(before); // silent wobble never scores
         distractorTapped = true;
         break;
       }
       await page.waitForTimeout(700);
-    }
-    if (distractorTapped) {
-      await expect(page.locator('.hud-item').nth(1)).toHaveText(/^\d+\/\d+$/);
     }
 
     // tap targets until the win overlay appears (forced-target rule guarantees supply)
