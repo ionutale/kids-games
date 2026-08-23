@@ -20,6 +20,9 @@ const translations = {
     waveInProgress: 'Wave in progress...', upgrade: 'Upgrade', sell: 'Sell',
     youWin: 'You Win!', gameOver: 'Game Over!', tryAgain: 'Try Again',
     animalQuiz: 'Animal Quiz', allDone: 'All done!', correct: 'Correct!',
+    focusTap: 'Focus Tap', quickCount: 'Quick Count', speedMatch: 'Speed Match', whatComesNext: 'What Comes Next',
+    play: 'Play', catchTarget: 'Catch {e}!', howMany: 'How many?', getReady: 'Get ready…',
+    samePair: 'Same', diffPair: 'Different', whatsNext: 'What comes next?', wellDone: 'Well done!',
   },
   it: {
     title: 'Giochi Bambini', paint: 'Disegna', stickers: 'Adesivi', memory: 'Memoria',
@@ -38,6 +41,9 @@ const translations = {
     waveInProgress: 'Onda in corso...', upgrade: 'Migliora', sell: 'Vendi',
     youWin: 'Hai Vinto!', gameOver: 'Game Over!', tryAgain: 'Riprova',
     animalQuiz: 'Quiz Animali', allDone: 'Tutto fatto!', correct: 'Giusto!',
+    focusTap: 'Focus Tap', quickCount: 'Conta Rapida', speedMatch: 'Abbinamento Rapido', whatComesNext: 'Cosa viene dopo',
+    play: 'Gioca', catchTarget: 'Prendi {e}!', howMany: 'Quanti sono?', getReady: 'Preparati…',
+    samePair: 'Uguale', diffPair: 'Diverso', whatsNext: 'Cosa viene dopo?', wellDone: 'Bravo!',
   },
   ro: {
     title: 'Jocuri Copii', paint: 'Desenează', stickers: 'Abțibilduri', memory: 'Memorie',
@@ -56,6 +62,9 @@ const translations = {
     waveInProgress: 'Val în desfășurare...', upgrade: 'Îmbunătățește', sell: 'Vinde',
     youWin: 'Ai Câștigat!', gameOver: 'Game Over!', tryAgain: 'Încearcă din nou',
     animalQuiz: 'Test Animale', allDone: 'Gata!', correct: 'Corect!',
+    focusTap: 'Focus Tap', quickCount: 'Numără Repede', speedMatch: 'Potrivire Rapidă', whatComesNext: 'Ce urmează',
+    play: 'Joacă', catchTarget: 'Prinde {e}!', howMany: 'Câte sunt?', getReady: 'Pregătește-te…',
+    samePair: 'La fel', diffPair: 'Diferit', whatsNext: 'Ce urmează?', wellDone: 'Foarte bine!',
   },
   de: {
     title: 'Kinderspiele', paint: 'Malen', stickers: 'Sticker', memory: 'Memory',
@@ -74,6 +83,9 @@ const translations = {
     waveInProgress: 'Welle läuft...', upgrade: 'Aufrüsten', sell: 'Verkaufen',
     youWin: 'Du hast gewonnen!', gameOver: 'Spiel vorbei!', tryAgain: 'Versuch es nochmal',
     animalQuiz: 'Tier-Quiz', allDone: 'Alles fertig!', correct: 'Richtig!',
+    focusTap: 'Focus Tap', quickCount: 'Schnelles Zählen', speedMatch: 'Blitz-Paare', whatComesNext: 'Was kommt als Nächstes',
+    play: 'Spielen', catchTarget: 'Fange {e}!', howMany: 'Wie viele?', getReady: 'Achtung…',
+    samePair: 'Gleich', diffPair: 'Verschieden', whatsNext: 'Was kommt als Nächstes?', wellDone: 'Gut gemacht!',
   },
   fr: {
     title: "Jeux d'enfants", paint: 'Dessiner', stickers: 'Stickers', memory: 'Mémoire',
@@ -92,6 +104,9 @@ const translations = {
     waveInProgress: 'Vague en cours...', upgrade: 'Améliorer', sell: 'Vendre',
     youWin: 'Tu as gagné !', gameOver: 'Partie terminée !', tryAgain: 'Réessaie',
     animalQuiz: 'Quiz des animaux', allDone: 'Tout est fini !', correct: 'Correct !',
+    focusTap: 'Focus Tap', quickCount: 'Compte Rapide', speedMatch: 'Paires Express', whatComesNext: 'Le motif suivant',
+    play: 'Jouer', catchTarget: 'Attrape {e} !', howMany: 'Combien ?', getReady: 'Prêt ?',
+    samePair: 'Pareil', diffPair: 'Différent', whatsNext: 'Que vient ensuite ?', wellDone: 'Bravo !',
   },
   zh: {
     title: '儿童游戏', paint: '绘画', stickers: '贴纸', memory: '记忆',
@@ -110,6 +125,9 @@ const translations = {
     waveInProgress: '一波进行中...', upgrade: '升级', sell: '出售',
     youWin: '你赢了！', gameOver: '游戏结束！', tryAgain: '再试一次',
     animalQuiz: '动物问答', allDone: '全部完成！', correct: '正确！',
+    focusTap: '专注点', quickCount: '快速数数', speedMatch: '极速配对', whatComesNext: '接下来是什么',
+    play: '开始', catchTarget: '接住 {e}！', howMany: '有多少？', getReady: '准备…',
+    samePair: '相同', diffPair: '不同', whatsNext: '接下来是什么？', wellDone: '太棒了！',
   }
 };
 

@@ -18,6 +18,7 @@
     { id: 'tower-defense', icon: '🛡️', key: 'towerDefense', accent: '#F87171' },
     { id: 'animal-quiz', icon: '🐾', key: 'animalQuiz', accent: '#FDBA74' },
     { id: 'glossary-puzzle', icon: '🧩', key: 'puzzle', accent: '#5EEAD4' },
+    { id: 'focus-tap', icon: '🎯', key: 'focusTap', accent: '#F87171' },
   ];
 
   let showSettings = $state(false);
