@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { PUZZLE_IMAGES, getCategories, levelConfig } from '$lib/glossary-puzzle/images.js';
 import { generatePieces, piecePath } from '$lib/glossary-puzzle/pieces.js';
+import { buildSaveData } from '$lib/glossary-puzzle/save.js';
 
 describe('Puzzle images', () => {
   it('has 8 images', () => expect(PUZZLE_IMAGES.length).toBe(8));
@@ -12,6 +13,12 @@ describe('Puzzle images', () => {
     });
   });
   it('has 4 categories', () => expect(getCategories().length).toBe(4));
+  it('category names are capitalized and have icons', () => {
+    getCategories().forEach(c => {
+      expect(c.name[0]).toBe(c.name[0].toUpperCase());
+      expect(c.icon).toBeTruthy();
+    });
+  });
 });
 
 describe('Levels are difficulty steps', () => {
@@ -107,5 +114,26 @@ describe('Jigsaw pieces', () => {
         if (bottom) expect(p.edges.bottom).not.toBe(bottom.edges.top);
       }
     }
+  });
+});
+
+describe('Save data', () => {
+  it('builds payload with coerced level and array ids', () => {
+    expect(buildSaveData('ocean', '7', new Set(['1-1', '0-0'])))
+      .toEqual({ imageId: 'ocean', level: 7, placedIds: ['1-1', '0-0'] });
+  });
+
+  it('clamps bad levels to 1 and floors decimals', () => {
+    expect(buildSaveData('x', NaN, []).level).toBe(1);
+    expect(buildSaveData('x', -4, []).level).toBe(1);
+    expect(buildSaveData('x', 0, []).level).toBe(1);
+    expect(buildSaveData('x', 3.9, []).level).toBe(3);
+  });
+
+  it('copies placedIds so later mutations do not leak in', () => {
+    const set = new Set(['a']);
+    const d = buildSaveData('x', 1, set);
+    set.add('b');
+    expect(d.placedIds).toEqual(['a']);
   });
 });

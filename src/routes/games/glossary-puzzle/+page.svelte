@@ -6,9 +6,7 @@
   import GameShell from '$lib/components/ui/GameShell.svelte';
   import LevelBar from '$lib/components/ui/LevelBar.svelte';
   import { PUZZLE_IMAGES, getCategories } from '$lib/glossary-puzzle/images.js';
-
-  const STORAGE_KEY = 'glossary-puzzle-save';
-  const HANDOFF_KEY = 'glossary-puzzle-handoff';
+  import { readSave, stashHandoff } from '$lib/glossary-puzzle/save.js';
 
   let selectedCategory = $state(null);
   let hasSaved = $state(false);
@@ -25,28 +23,21 @@
   });
 
   function readSaved() {
-    if (typeof localStorage === 'undefined') return null;
-    try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      if (!raw) return null;
-      const data = JSON.parse(raw);
-      return data && PUZZLE_IMAGES.some(i => i.id === data.imageId) && Number.isFinite(parseInt(data.level, 10)) ? data : null;
-    } catch {
-      return null;
-    }
+    const data = readSave();
+    return data && PUZZLE_IMAGES.some(i => i.id === data.imageId) ? data : null;
   }
 
   function startResume() {
     const data = readSaved();
     if (!data) return;
-    try {
-      sessionStorage.setItem(HANDOFF_KEY, JSON.stringify(data.placedIds || []));
-    } catch {}
-    goto(`/games/glossary-puzzle/play/${Math.max(1, parseInt(data.level, 10) || 1)}?image=${data.imageId}&resume=1`);
+    stashHandoff(data.placedIds || []);
+    goto(`/games/glossary-puzzle/play/${data.level}?image=${data.imageId}&resume=1`);
   }
 
   onMount(() => {
-    hasSaved = !!readSaved();
+    const data = readSaved();
+    hasSaved = !!data;
+    if (data) savedLevel = data.level;
   });
 </script>
 

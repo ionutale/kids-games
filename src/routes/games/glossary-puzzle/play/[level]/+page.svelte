@@ -3,9 +3,7 @@
   import { goto } from '$app/navigation';
   import PuzzleBoard from '$lib/glossary-puzzle/PuzzleBoard.svelte';
   import { PUZZLE_IMAGES } from '$lib/glossary-puzzle/images.js';
-
-  const STORAGE_KEY = 'glossary-puzzle-save';
-  const HANDOFF_KEY = 'glossary-puzzle-handoff';
+  import { clearSave, takeHandoff } from '$lib/glossary-puzzle/save.js';
 
   let level = $derived(Math.max(1, parseInt($page.params.level, 10) || 1));
   let requestedId = $derived($page.url.searchParams.get('image'));
@@ -17,16 +15,9 @@
   // Resume handoff is consumed once, when this component first mounts
   // (resume links always arrive from the gallery, which mounts us fresh).
   let initialPlaced = $state(null);
-  if ($page.url.searchParams.get('resume') === '1' && typeof sessionStorage !== 'undefined') {
-    try {
-      initialPlaced = JSON.parse(sessionStorage.getItem(HANDOFF_KEY));
-    } catch {
-      initialPlaced = null;
-    }
-    sessionStorage.removeItem(HANDOFF_KEY);
-    if (typeof localStorage !== 'undefined') {
-      try { localStorage.removeItem(STORAGE_KEY); } catch {}
-    }
+  if ($page.url.searchParams.get('resume') === '1') {
+    initialPlaced = takeHandoff();
+    clearSave();
   }
 
   // Handoff applies only to the first mounted board; clear it so
@@ -37,6 +28,10 @@
     if (!image) goto('/games/glossary-puzzle');
   });
 </script>
+
+<svelte:head>
+  {#if image}<link rel="preload" as="image" href={image.file} />{/if}
+</svelte:head>
 
 {#if image}
   {#key $page.url.href}

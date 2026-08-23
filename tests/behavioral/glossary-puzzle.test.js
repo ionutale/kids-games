@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { levelConfig } from '$lib/glossary-puzzle/images.js';
-import { generatePieces } from '$lib/glossary-puzzle/pieces.js';
+import { generatePieces, computeVisibleTray, TRAY_CAPACITY } from '$lib/glossary-puzzle/pieces.js';
 
 describe('Glossary Puzzle behavior', () => {
   it('pieces are shuffled', () => {
@@ -32,18 +32,31 @@ describe('Glossary Puzzle behavior', () => {
   });
 
   it('tray holds limited pieces', () => {
-    const trayCapacity = 4;
-    const unplaced = Array(9).fill(0).map((_, i) => ({ id: `${i}` }));
-    const trayPieces = unplaced.slice(0, trayCapacity);
-    expect(trayPieces.length).toBe(4);
+    const queue = Array(9).fill(0).map((_, i) => `${i}`);
+    const visible = computeVisibleTray(queue, new Set());
+    expect(TRAY_CAPACITY).toBe(4);
+    expect(visible.length).toBe(4);
   });
 
   it('tray auto-refills when piece is placed', () => {
-    const all = Array(9).fill(0).map((_, i) => ({ id: `${i}` }));
-    let trayIndex = 0;
-    const traySize = 4;
-    let tray = all.slice(trayIndex, trayIndex + traySize);
-    expect(tray.length).toBe(4);
+    const queue = Array(9).fill(0).map((_, i) => `${i}`);
+    let visible = computeVisibleTray(queue, new Set());
+    expect(visible[0]).toBe('0');
+    visible = computeVisibleTray(queue, new Set(['0']));
+    expect(visible.length).toBe(4);
+    expect(visible[0]).toBe('1');
+    expect(visible).not.toContain('0');
+  });
+
+  it('dragged piece leaves the tray', () => {
+    const queue = ['a', 'b', 'c', 'd', 'e'];
+    expect(computeVisibleTray(queue, new Set(), 'b')).toEqual(['a', 'c', 'd', 'e']);
+  });
+
+  it('missed piece returns to the front of the tray', () => {
+    const queue = ['a', 'b', 'c'];
+    const returnedToFront = ['e', ...queue.filter(id => id !== 'e')];
+    expect(returnedToFront[0]).toBe('e');
   });
 
   it('snap radius is forgiving on level 1', () => {

@@ -111,3 +111,10 @@ export function generatePieces(config) {
 
   return { pieces, rows, cols, snapRadius };
 }
+
+export const TRAY_CAPACITY = 4;
+
+export function computeVisibleTray(queueIds, placedIds, draggingId = null, capacity = TRAY_CAPACITY) {
+  const placedSet = placedIds instanceof Set ? placedIds : new Set(placedIds);
+  return queueIds.filter(id => !placedSet.has(id) && id !== draggingId).slice(0, capacity);
+}

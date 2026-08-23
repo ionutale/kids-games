@@ -68,10 +68,24 @@ export const PUZZLE_IMAGES = [
   },
 ];
 
+const CATEGORY_META = {
+  nature: { icon: '🌿' },
+  adventure: { icon: '🧭' },
+  food: { icon: '🍎' },
+  animals: { icon: '🐾' },
+};
+
 export function getCategories() {
   const cats = {};
   PUZZLE_IMAGES.forEach(img => {
-    if (!cats[img.category]) cats[img.category] = { icon: img.icon, name: img.category, images: [] };
+    if (!cats[img.category]) {
+      const meta = CATEGORY_META[img.category] || { icon: img.icon };
+      cats[img.category] = {
+        icon: meta.icon,
+        name: img.category.charAt(0).toUpperCase() + img.category.slice(1),
+        images: [],
+      };
+    }
     cats[img.category].images.push(img);
   });
   return Object.entries(cats).map(([key, val]) => ({ key, ...val }));

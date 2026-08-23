@@ -5,10 +5,10 @@
   import { playWinCheer } from '$lib/sounds/audioManager';
   import Starfield from './Starfield.svelte';
 
-  let { title, subtitle = '', children } = $props();
+  let { title, subtitle = '', sound = true, children } = $props();
 
   onMount(() => {
-    if ($settings.soundEnabled) playWinCheer();
+    if (sound && $settings.soundEnabled) playWinCheer();
   });
 </script>
 

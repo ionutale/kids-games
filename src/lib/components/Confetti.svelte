@@ -1,7 +1,10 @@
 <script>
   import { onMount } from 'svelte';
 
+  let { emoji = false } = $props();
+
   let pieces = $state([]);
+  let emojis = $state([]);
 
   onMount(() => {
     const count = 30;
@@ -18,6 +21,21 @@
       });
     }
     pieces = items;
+    if (emoji) {
+      const glyphs = ['🎉', '⭐', '✨', '🎊'];
+      const eItems = [];
+      for (let i = 0; i < 10; i++) {
+        eItems.push({
+          id: i,
+          x: 8 + Math.random() * 84,
+          delay: Math.random() * 0.6,
+          duration: 1.4 + Math.random() * 1.2,
+          glyph: glyphs[i % glyphs.length],
+          size: 20 + Math.random() * 16
+        });
+      }
+      emojis = eItems;
+    }
   });
 </script>
 
@@ -32,6 +50,15 @@
       style:--rotation="{p.rotation}deg"
       style:--size="{p.size}px"
     ></div>
+  {/each}
+  {#each emojis as em (em.id)}
+    <span
+      class="emoji-piece"
+      style:left="{em.x}%"
+      style:font-size="{em.size}px"
+      style:animation-delay="{em.delay}s"
+      style:animation-duration="{em.duration}s"
+    >{em.glyph}</span>
   {/each}
 </div>
 
@@ -58,5 +85,15 @@
   @keyframes fall {
     0% { transform: translateY(0) rotate(0deg); opacity: 1; }
     100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
+  }
+  .emoji-piece {
+    position: absolute;
+    top: -30px;
+    animation: emojiFall linear forwards;
+    opacity: 0;
+  }
+  @keyframes emojiFall {
+    0% { transform: translateY(0) rotate(-12deg); opacity: 1; }
+    100% { transform: translateY(105vh) rotate(14deg); opacity: 0.9; }
   }
 </style>

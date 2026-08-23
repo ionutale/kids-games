@@ -115,3 +115,8 @@ The following games have been proposed but not yet designed or implemented. Each
 - **Tier**: 4 tiers × 5 Levels; sequential unlock; tier 1 no stone → tier 4 multi-tower + moving blocks.
 - **Ammo**: 1–3 shots per Level, tuned per layout; exhaustion ends the Level with a replay prompt.
 - **Star**: 1★ ≥1 target, 2★ ≥60% max score, 3★ ≥90% max score; best stars persisted per Level.
+
+## Assets
+
+- **Free Assets Guide** (`docs/free-assets.md`): complete inventory of all sounds in the repo (mp3 files + synthesized Web Audio tones, with code pointers and known gaps) plus curated free-license source sites for audio, music, images, icons, sprites, and 3D meshes.
+- **Game Design Resources** (`docs/game-design-resources.md`): curated free sites explaining best practices for 2D game design, game feel/juice, menus/touch UX, sound design, graphics, and kids-specific UX.

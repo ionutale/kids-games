@@ -1,16 +1,23 @@
 <script>
   import { onMount, onDestroy } from 'svelte';
+  import { fly } from 'svelte/transition';
+  import { cubicOut } from 'svelte/easing';
   import { _ } from '$lib/stores/locale';
-  import { loadPuzzleSounds, playPickup, playSnap, playVictory, playNudge } from '$lib/sounds/puzzleSounds.js';
+  import { loadPuzzleSounds, playPickup, playSnap, playVictory, playNudge, startDragLoop, stopDragLoop } from '$lib/sounds/puzzleSounds.js';
+  import { vibrate } from '$lib/sounds/audioManager.js';
   import Confetti from '$lib/components/Confetti.svelte';
   import HudPill from '$lib/components/ui/HudPill.svelte';
   import BigButton from '$lib/components/ui/BigButton.svelte';
   import WinOverlay from '$lib/components/ui/WinOverlay.svelte';
   import Starfield from '$lib/components/ui/Starfield.svelte';
   import { levelConfig } from '$lib/glossary-puzzle/images.js';
-  import { generatePieces, VIRTUAL_W, VIRTUAL_H } from '$lib/glossary-puzzle/pieces.js';
+  import { generatePieces, computeVisibleTray, TRAY_CAPACITY, VIRTUAL_W, VIRTUAL_H } from '$lib/glossary-puzzle/pieces.js';
+  import { buildSaveData, writeSave } from '$lib/glossary-puzzle/save.js';
+  import { pieceSvgHtml, boardLinesSvgHtml } from '$lib/glossary-puzzle/rendering.js';
 
-  const STORAGE_KEY = 'glossary-puzzle-save';
+  const GHOST_LIFT_PX = 26;
+  const IDLE_MS = 8000;
+  const NUDGE_MS = 3000;
 
   let { image, level = 1, backHref = '/games/glossary-puzzle', initialPlaced = null, onWin = () => {} } = $props();
 
@@ -18,27 +25,47 @@
   let placed = $state(new Set());
   let rows = $state(2);
   let cols = $state(2);
+  let trayQueue = $state([]);
   let dragging = $state(null);
   let dragPos = $state({ x: 0, y: 0 });
   let celebrating = $state(false);
   let showDone = $state(false);
   let missHintId = $state(null);
-  let idleTimer = $state(null);
+  let missTimer = null;
+  let idleTimer = null;
+  let nudgeTimer = null;
+  let popTimer = null;
   let nudgeTarget = $state(null);
   let showNudge = $state(false);
+  let proximityId = $state(null);
+  let justPlacedId = $state(null);
   let soundsLoaded = $state(false);
   let activePointer = $state(null);
   let boardEl = $state(null);
   let ghostStyle = $state({ left: 0, top: 0, width: 0, height: 0 });
 
   let snapRadius = $state(36);
+  let boardLinesHtml = $state('');
+
+  let trayPieces = $derived(
+    computeVisibleTray(trayQueue, placed, dragging)
+      .map(id => pieces.find(p => p.id === id))
+      .filter(Boolean)
+  );
+  let progress = $derived(pieces.length ? placed.size / pieces.length : 0);
 
   function init() {
     const result = generatePieces(levelConfig(level));
+    result.pieces.forEach(p => {
+      p.html = pieceSvgHtml(p, image.file);
+      p.dragHtml = pieceSvgHtml(p, image.file, { isDragging: true });
+    });
     pieces = result.pieces;
     rows = result.rows;
     cols = result.cols;
     snapRadius = result.snapRadius;
+    boardLinesHtml = boardLinesSvgHtml(result.pieces);
+    trayQueue = result.pieces.map(p => p.id);
     if (initialPlaced) {
       placed = new Set(initialPlaced.filter(id => pieces.some(p => p.id === id)));
     } else {
@@ -47,8 +74,11 @@
     celebrating = false;
     showDone = false;
     missHintId = null;
+    proximityId = null;
+    justPlacedId = null;
     activePointer = null;
-    startIdleTimer();
+    resetIdleTimers();
+    scheduleIdleNudge();
   }
 
   function getVirtualCoords(clientX, clientY) {
@@ -67,7 +97,7 @@
     const r = boardEl.getBoundingClientRect();
     ghostStyle = {
       left: (dragPos.x - dp.w / 2 - dp.padding) / VIRTUAL_W * r.width + r.left,
-      top: (dragPos.y - dp.h / 2 - dp.padding) / VIRTUAL_H * r.height + r.top,
+      top: (dragPos.y - dp.h / 2 - dp.padding) / VIRTUAL_H * r.height + r.top - GHOST_LIFT_PX,
       width: dp.boxW / VIRTUAL_W * r.width,
       height: dp.boxH / VIRTUAL_H * r.height,
     };
@@ -88,21 +118,32 @@
     const v = getVirtualCoords(e.clientX, e.clientY);
     dragPos = { x: v.x, y: v.y };
     updateGhostStyle();
-    resetIdleTimer();
-    if (soundsLoaded) playPickup();
+    resetIdleTimers();
+    scheduleIdleNudge();
+    if (soundsLoaded) {
+      playPickup();
+      startDragLoop();
+    }
   }
 
   function handlePointerMove(e) {
     if (dragging === null || e.pointerId !== activePointer) return;
+    const dp = pieces.find(p => p.id === dragging);
+    if (!dp) return;
     const v = getVirtualCoords(e.clientX, e.clientY);
     dragPos = { x: v.x, y: v.y };
     updateGhostStyle();
+    const tx = dp.targetX + dp.w / 2;
+    const ty = dp.targetY + dp.h / 2;
+    proximityId = Math.hypot(v.x - tx, v.y - ty) <= snapRadius * 2 ? dp.id : null;
   }
 
   function handlePointerUp(e) {
     if (dragging === null || e.pointerId !== activePointer) return;
 
+    if (soundsLoaded) stopDragLoop();
     const piece = pieces.find(p => p.id === dragging);
+    proximityId = null;
     if (!piece) { dragging = null; activePointer = null; return; }
 
     const cx = dragPos.x;
@@ -113,7 +154,11 @@
 
     if (dist <= snapRadius && !placed.has(piece.id)) {
       placed = new Set([...placed, piece.id]);
+      justPlacedId = piece.id;
+      clearTimeout(popTimer);
+      popTimer = setTimeout(() => { justPlacedId = null; }, 500);
       if (soundsLoaded) playSnap();
+      vibrate(30);
       if (placed.size === pieces.length) {
         celebrating = true;
         if (soundsLoaded) playVictory();
@@ -121,73 +166,48 @@
         setTimeout(() => { showDone = true; celebrating = false; }, 2000);
       }
     } else {
+      trayQueue = [piece.id, ...trayQueue.filter(id => id !== piece.id)];
       missHintId = piece.id;
-      setTimeout(() => { missHintId = null; }, 1500);
+      clearTimeout(missTimer);
+      missTimer = setTimeout(() => { missHintId = null; }, 1500);
     }
 
     dragging = null;
     activePointer = null;
     nudgeTarget = null;
     showNudge = false;
-    startIdleTimer();
+    resetIdleTimers();
+    scheduleIdleNudge();
   }
 
-  function renderPieceSVG(piece, opts = {}) {
-    const { isDragging = false } = opts;
-    const clipId = `cp-${piece.id}`;
-    const shId = `sh-${piece.id}`;
-    return `<svg viewBox="0 0 ${piece.boxW} ${piece.boxH}" style="width:100%;height:100%;overflow:visible">
-      <defs>
-        <clipPath id="${clipId}">
-          <path d="${piece.path}" transform="translate(${piece.padding}, ${piece.padding})" />
-        </clipPath>
-        <filter id="${shId}" x="-20%" y="-20%" width="140%" height="140%">
-          <feDropShadow dx="2" dy="5" stdDeviation="4" floodOpacity="0.4" />
-        </filter>
-      </defs>
-      <g filter="${isDragging ? `url(#${shId})` : 'none'}">
-        <image href="${image.file}"
-          x="${piece.padding - piece.targetX}" y="${piece.padding - piece.targetY}"
-          width="${VIRTUAL_W}" height="${VIRTUAL_H}" preserveAspectRatio="xMidYMid slice"
-          clip-path="url(#${clipId})" style="pointer-events:none;touch-action:none" />
-        <path d="${piece.path}" transform="translate(${piece.padding}, ${piece.padding})"
-          fill="none" stroke="${isDragging ? 'rgba(0,0,0,0.5)' : 'rgba(0,0,0,0.15)'}" stroke-width="${isDragging ? 3 : 1.5}"
-          style="pointer-events:none;touch-action:none" />
-      </g>
-    </svg>`;
+  function scheduleIdleNudge() {
+    clearTimeout(idleTimer);
+    if (placed.size >= pieces.length) return;
+    idleTimer = setTimeout(fireIdleNudge, IDLE_MS);
   }
 
-  function renderBoardLinesSVG() {
-    const paths = pieces.map(p =>
-      `<path d="${p.path}" transform="translate(${p.targetX}, ${p.targetY})" style="fill:none;stroke:rgba(0,0,0,0.18);stroke-width:1.5;stroke-linejoin:round" />`
-    ).join('');
-    return `<svg viewBox="0 0 ${VIRTUAL_W} ${VIRTUAL_H}" preserveAspectRatio="xMidYMid meet" style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none">${paths}</svg>`;
+  function fireIdleNudge() {
+    if (placed.size >= pieces.length || dragging !== null) { scheduleIdleNudge(); return; }
+    const unplaced = pieces.filter(p => !placed.has(p.id));
+    if (unplaced.length === 0) return;
+    nudgeTarget = unplaced[Math.floor(Math.random() * unplaced.length)].id;
+    showNudge = true;
+    if (soundsLoaded) playNudge();
+    clearTimeout(nudgeTimer);
+    nudgeTimer = setTimeout(() => { showNudge = false; nudgeTarget = null; }, NUDGE_MS);
+    idleTimer = setTimeout(fireIdleNudge, IDLE_MS + NUDGE_MS);
   }
 
-  function startIdleTimer() {
-    resetIdleTimer();
-    idleTimer = setTimeout(() => {
-      if (placed.size === pieces.length) return;
-      const unplaced = pieces.filter(p => !placed.has(p.id));
-      if (unplaced.length === 0) return;
-      const random = unplaced[Math.floor(Math.random() * unplaced.length)];
-      nudgeTarget = random.id;
-      showNudge = true;
-      if (soundsLoaded) playNudge();
-      setTimeout(() => { showNudge = false; }, 3000);
-    }, 8000);
-  }
-
-  function resetIdleTimer() {
-    if (idleTimer) clearTimeout(idleTimer);
+  function resetIdleTimers() {
+    clearTimeout(idleTimer);
+    clearTimeout(nudgeTimer);
     nudgeTarget = null;
     showNudge = false;
   }
 
   function saveProgress() {
-    const data = { imageId: image.id, difficulty, placedIds: [...placed] };
-    if (typeof localStorage !== 'undefined') {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+    if (placed.size > 0 && placed.size < pieces.length) {
+      writeSave(buildSaveData(image.id, level, placed));
     }
   }
 
@@ -199,8 +219,11 @@
   });
 
   onDestroy(() => {
-    resetIdleTimer();
-    if (placed.size > 0 && placed.size < pieces.length) saveProgress();
+    resetIdleTimers();
+    clearTimeout(missTimer);
+    clearTimeout(popTimer);
+    stopDragLoop();
+    saveProgress();
   });
 </script>
 
@@ -217,41 +240,65 @@
     <HudPill icon="🧩" label="{placed.size}/{pieces.length}" />
   </div>
 
+  <div class="gp-progress" aria-hidden="true">
+    <div class="gp-progress-fill" style="width:{progress * 100}%"></div>
+  </div>
+
   <div class="gp-board-wrap">
     <div class="gp-board" bind:this={boardEl}>
 
       <div class="gp-board-bg" style:background-image="url({image.file})"></div>
-      {@html renderBoardLinesSVG()}
+      {@html boardLinesHtml}
 
       {#each pieces as piece (piece.id)}
         {@const isPlaced = placed.has(piece.id)}
         {@const isDragged = dragging === piece.id}
 
         {#if isPlaced && !isDragged}
-          <div class="gp-board-piece" style="left:{(piece.targetX - piece.padding) / VIRTUAL_W * 100}%;top:{(piece.targetY - piece.padding) / VIRTUAL_H * 100}%;width:{piece.boxW / VIRTUAL_W * 100}%;height:{piece.boxH / VIRTUAL_H * 100}%">
-            {@html renderPieceSVG(piece)}
+          <div class="gp-board-piece" class:gp-pop={justPlacedId === piece.id}
+            style="left:{(piece.targetX - piece.padding) / VIRTUAL_W * 100}%;top:{(piece.targetY - piece.padding) / VIRTUAL_H * 100}%;width:{piece.boxW / VIRTUAL_W * 100}%;height:{piece.boxH / VIRTUAL_H * 100}%">
+            {@html piece.html}
           </div>
         {/if}
       {/each}
 
-      {#if missHintId}
-        {@const mp = pieces.find(p => p.id === missHintId)}
-        {#if mp}
-          <div class="gp-miss-hint" style="left:{mp.targetX / VIRTUAL_W * 100}%;top:{mp.targetY / VIRTUAL_H * 100}%;width:{mp.w / VIRTUAL_W * 100}%;height:{mp.h / VIRTUAL_H * 100}%"></div>
+      {#if proximityId !== null}
+        {@const pp = pieces.find(p => p.id === proximityId)}
+        {#if pp}
+          <div class="gp-cell-highlight gp-proximity-glow"
+            style="left:{pp.targetX / VIRTUAL_W * 100}%;top:{pp.targetY / VIRTUAL_H * 100}%;width:{pp.w / VIRTUAL_W * 100}%;height:{pp.h / VIRTUAL_H * 100}%"></div>
         {/if}
       {/if}
 
-      {#if celebrating}<Confetti />{/if}
+      {#if showNudge && nudgeTarget !== null}
+        {@const np = pieces.find(p => p.id === nudgeTarget)}
+        {#if np}
+          <div class="gp-cell-highlight gp-nudge-target"
+            style="left:{np.targetX / VIRTUAL_W * 100}%;top:{np.targetY / VIRTUAL_H * 100}%;width:{np.w / VIRTUAL_W * 100}%;height:{np.h / VIRTUAL_H * 100}%"></div>
+        {/if}
+      {/if}
+
+      {#if missHintId}
+        {@const mp = pieces.find(p => p.id === missHintId)}
+        {#if mp}
+          <div class="gp-cell-highlight gp-miss-hint"
+            style="left:{mp.targetX / VIRTUAL_W * 100}%;top:{mp.targetY / VIRTUAL_H * 100}%;width:{mp.w / VIRTUAL_W * 100}%;height:{mp.h / VIRTUAL_H * 100}%"></div>
+        {/if}
+      {/if}
+
+      {#if celebrating}<Confetti emoji />{/if}
     </div>
   </div>
 
   <div class="gp-tray">
-    {#each pieces.filter(p => !placed.has(p.id) && dragging !== p.id) as piece (piece.id)}
+    {#each trayPieces as piece, i (piece.id)}
       {@const isNudged = showNudge && nudgeTarget === piece.id}
       <div class="gp-tray-piece" class:gp-nudge-shake={isNudged}
+        role="button" tabindex="-1" aria-label="{$_('puzzle')} {i + 1}"
         style="width:{piece.boxW / piece.boxH * 70}px;height:70px;flex-shrink:0"
-        onpointerdown={(e) => handlePointerDown(e, piece.id)}>
-        {@html renderPieceSVG(piece)}
+        onpointerdown={(e) => handlePointerDown(e, piece.id)}
+        in:fly={{ x: 80, duration: 260, easing: cubicOut }}>
+        {@html piece.html}
       </div>
     {/each}
   </div>
@@ -260,13 +307,13 @@
     {@const dp = pieces.find(p => p.id === dragging)}
     {#if dp}
       <div class="gp-drag-ghost" style="left:{ghostStyle.left}px;top:{ghostStyle.top}px;width:{ghostStyle.width}px;height:{ghostStyle.height}px">
-        {@html renderPieceSVG(dp, { isDragging: true })}
+        {@html dp.dragHtml}
       </div>
     {/if}
   {/if}
 
   {#if showDone}
-    <WinOverlay title="🎉 {$_('puzzleDone')}">
+    <WinOverlay title="🎉 {$_('puzzleDone')}" sound={false}>
       <BigButton variant="primary" class="gp-celebration-btn" onclick={() => init()}>🔄 {$_('playAgain')}</BigButton>
       <BigButton variant="primary" class="gp-celebration-btn" href="/games/glossary-puzzle/play/{level + 1}?image={image.id}">⚡ {$_('nextLevel')} ▶</BigButton>
       <BigButton variant="ghost" class="gp-celebration-btn" href={backHref}>◀ {$_('back')}</BigButton>
@@ -279,14 +326,26 @@
   .gp-top-bar { display: flex; justify-content: space-between; align-items: center; width: 100%; padding: 6px 12px; flex-shrink: 0; background: var(--panel-glass); backdrop-filter: blur(6px); position: relative; z-index: 1; }
   .gp-exit-btn { font-size: 14px; font-weight: 600; color: var(--text-hi); background: var(--panel-glass); border: 1px solid var(--panel-border); border-radius: 12px; padding: 4px 8px; text-decoration: none; display: inline-flex; align-items: center; }
   .gp-exit-btn:active { background: rgba(94,234,212,0.25); border-color: var(--accent); }
-  .gp-board-wrap { flex: 1; display: flex; align-items: center; justify-content: center; width: 100%; padding: 8px; position: relative; z-index: 1; }
-  .gp-board { position: relative; width: min(100%, calc(100vh - 180px)); aspect-ratio: 4/3; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 12px rgba(0,0,0,0.15); background: #f0f0f0; }
+  .gp-progress { width: calc(100% - 24px); height: 5px; margin: 0 auto; background: rgba(255,255,255,0.09); border-radius: 3px; overflow: hidden; position: relative; z-index: 1; flex-shrink: 0; }
+  .gp-progress-fill { height: 100%; background: linear-gradient(90deg, var(--accent), var(--gold)); border-radius: 3px; transition: width 0.35s ease; }
+  .gp-board-wrap { flex: 1; display: flex; align-items: center; justify-content: center; width: 100%; padding: 8px; position: relative; z-index: 1; min-height: 0; }
+  .gp-board { position: relative; width: min(100%, calc(100vh - 200px)); aspect-ratio: 4/3; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 12px rgba(0,0,0,0.15); background: #f0f0f0; }
   .gp-board-bg { position: absolute; inset: 0; background-size: cover; background-position: center; opacity: 0.12; filter: grayscale(1); }
   .gp-board-piece { position: absolute; }
-  .gp-miss-hint { position: absolute; border-radius: 4px; background: rgba(255,215,0,0.15); border: 2px dashed rgba(255,215,0,0.5); animation: gpMissPulse 0.6s ease-in-out 3; pointer-events: none; }
+  .gp-cell-highlight { position: absolute; pointer-events: none; }
+  .gp-miss-hint { border-radius: 4px; background: rgba(255,215,0,0.15); border: 2px dashed rgba(255,215,0,0.5); animation: gpMissPulse 0.6s ease-in-out 3; }
   @keyframes gpMissPulse { 0%,100% { opacity: 1; } 50% { opacity: 0.3; } }
-  .gp-drag-ghost { position: fixed; z-index: 100; filter: drop-shadow(0 4px 12px rgba(0,0,0,0.3)); transform: scale(1.08); transform-origin: center center; pointer-events: none; }
-  .gp-tray { display: flex; gap: 6px; padding: 8px; padding-bottom: calc(8px + var(--safe-bottom)); flex-shrink: 0; min-height: 86px; overflow-x: auto; align-items: center; background: var(--panel-glass); backdrop-filter: blur(6px); border-top: 1px solid var(--panel-border); position: relative; z-index: 1; }
+  .gp-nudge-target { border-radius: 4px; background: rgba(94,234,212,0.10); border: 2px dashed rgba(94,234,212,0.6); animation: gpMissPulse 0.7s ease-in-out 4; }
+  .gp-proximity-glow { border-radius: 8px; background: rgba(94,234,212,0.08); box-shadow: inset 0 0 18px rgba(94,234,212,0.45); animation: gpGlow 1s ease-in-out infinite; }
+  @keyframes gpGlow { 0%,100% { opacity: 0.55; } 50% { opacity: 1; } }
+  .gp-pop { animation: gpPop 0.45s ease-out; }
+  @keyframes gpPop {
+    0% { transform: scale(0.9); filter: drop-shadow(0 0 0 rgba(94,234,212,0)); }
+    40% { transform: scale(1.08); filter: drop-shadow(0 0 14px rgba(94,234,212,0.9)); }
+    100% { transform: scale(1); filter: drop-shadow(0 0 0 rgba(94,234,212,0)); }
+  }
+  .gp-drag-ghost { position: fixed; z-index: 100; filter: drop-shadow(0 4px 12px rgba(0,0,0,0.3)); transform: scale(1.12); transform-origin: center center; pointer-events: none; }
+  .gp-tray { display: flex; gap: 6px; padding: 8px; padding-bottom: calc(8px + var(--safe-bottom)); flex-shrink: 0; min-height: 86px; align-items: center; justify-content: center; background: var(--panel-glass); backdrop-filter: blur(6px); border-top: 1px solid var(--panel-border); position: relative; z-index: 1; }
   .gp-tray-piece { cursor: grab; touch-action: none; flex-shrink: 0; }
   .gp-tray-piece:active { cursor: grabbing; }
   .gp-nudge-shake { animation: gpShake 0.4s ease-in-out 3; }
