@@ -9,7 +9,8 @@ beforeEach(() => {
     clear: vi.fn(() => { for (const key in store) delete store[key]; })
   });
   vi.stubGlobal('Audio', class {
-    constructor() {
+    constructor(src) {
+      this.src = src ?? '';
       this.volume = 1;
       this.loop = false;
       this.playbackRate = 1;

@@ -15,7 +15,7 @@
 
   let { data } = $props();
   const level = data.level;
-  const state = makeRoundState(level, data.seed);
+  const round = makeRoundState(level, data.seed);
   const FANFARE_PITCH = 1.0;
 
   saveLevel('focus-tap', level);
@@ -32,15 +32,15 @@
   }
 
   function spawn() {
-    if (won || items.length >= state.config.maxItems) return;
+    if (won || items.length >= round.config.maxItems) return;
     const forced = targetsOnScreen() === 0;
-    const pick = chooseSpawnItem(state, targetsOnScreen(), idSeq);
+    const pick = chooseSpawnItem(round, targetsOnScreen(), idSeq);
     if (forced && pick.isTarget) playSparkle();
     items.push({
       id: idSeq++,
       emoji: pick.emoji,
       isTarget: pick.isTarget,
-      x: 6 + state.rng() * 84,
+      x: 6 + round.rng() * 84,
       wobbling: false,
       popping: false
     });
@@ -60,7 +60,7 @@
       playPop();
       caught += 1;
       setTimeout(() => removeItem(item.id), 180);
-      if (caught >= state.config.goal) {
+      if (caught >= round.config.goal) {
         won = true;
         stopSpawning();
       }
@@ -72,7 +72,7 @@
 
   function startSpawning() {
     stopSpawning();
-    spawnTimer = setInterval(spawn, state.config.spawnMs);
+    spawnTimer = setInterval(spawn, round.config.spawnMs);
   }
 
   function stopSpawning() {
@@ -105,19 +105,19 @@
 
 <GameShell accent="#F87171">
   {#snippet hudLeft()}
-    <HudPill icon="🎯" label={state.target} />
-    <HudPill icon="✅" label={`${caught}/${state.config.goal}`} />
+    <HudPill icon="🎯" label={round.target} />
+    <HudPill icon="✅" label={`${caught}/${round.config.goal}`} />
   {/snippet}
 
   <div class="stream" data-testid="stream">
-    <p class="hint">{$_('catchTarget', { e: state.target })}</p>
+    <p class="hint">{$_('catchTarget', { e: round.target })}</p>
     {#each items as item (item.id)}
       <button
         class="emoji"
         class:wobbling={item.wobbling}
         class:popping={item.popping}
         style:left="{item.x}%"
-        style:animation-duration="{state.config.riseSec}s"
+        style:animation-duration="{round.config.riseSec}s"
         data-testid={item.isTarget ? 'target' : 'distractor'}
         onpointerdown={() => tap(item)}
         oncontextmenu={(e) => e.preventDefault()}
@@ -128,7 +128,7 @@
   </div>
 
   {#if won}
-    <WinOverlay title={$_('wellDone')} subtitle={`🎯 ${caught}/${state.config.goal}`}>
+    <WinOverlay title={$_('wellDone')} subtitle={`🎯 ${caught}/${round.config.goal}`}>
       {#snippet badge()}<span class="win-badge">🏆</span>{/snippet}
       <a
         class="big-btn primary"
