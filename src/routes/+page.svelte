@@ -22,6 +22,7 @@
     { id: 'quick-count', icon: '🔢', key: 'quickCount', accent: '#FDBA74' },
     { id: 'speed-match', icon: '🃏', key: 'speedMatch', accent: '#93C5FD' },
     { id: 'what-comes-next', icon: '🔁', key: 'whatComesNext', accent: '#6EE7B7' },
+    { id: 'tetris', icon: '🧱', key: 'tetris', accent: '#FFB74D' },
   ];
 
   let showSettings = $state(false);
