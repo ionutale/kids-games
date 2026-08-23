@@ -1,8 +1,8 @@
 <script>
   import { goto } from '$app/navigation';
-  import { onMount } from 'svelte';
   import { _, locale } from '$lib/stores/locale';
   import SoundToggle from '$lib/components/SoundToggle.svelte';
+  import FullscreenToggle from '$lib/components/FullscreenToggle.svelte';
   import AgeSelector from '$lib/components/AgeSelector.svelte';
   import Starfield from '$lib/components/ui/Starfield.svelte';
 
@@ -31,12 +31,6 @@
   function goToGame(id) {
     goto(`/games/${id}`);
   }
-
-  onMount(async () => {
-    try {
-      await document.documentElement.requestFullscreen();
-    } catch {}
-  });
 </script>
 
 <div class="hub night-bg">
@@ -60,6 +54,7 @@
   {#if showSettings}
     <div class="settings-bar">
       <SoundToggle />
+      <FullscreenToggle />
       <AgeSelector />
       <button class="lang-btn en" class:active={lang === 'en'} onclick={() => setLang('en')}>EN</button>
       <button class="lang-btn it" class:active={lang === 'it'} onclick={() => setLang('it')}>IT</button>

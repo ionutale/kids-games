@@ -90,6 +90,12 @@
     };
   }
 
+  function virtualLiftY() {
+    if (!boardEl) return 0;
+    const r = boardEl.getBoundingClientRect();
+    return r.height ? GHOST_LIFT_PX * (VIRTUAL_H / r.height) : 0;
+  }
+
   function updateGhostStyle() {
     if (!boardEl) return;
     const dp = pieces.find(p => p.id === dragging);
@@ -135,7 +141,7 @@
     updateGhostStyle();
     const tx = dp.targetX + dp.w / 2;
     const ty = dp.targetY + dp.h / 2;
-    proximityId = Math.hypot(v.x - tx, v.y - ty) <= snapRadius * 2 ? dp.id : null;
+    proximityId = Math.hypot(v.x - tx, v.y - virtualLiftY() - ty) <= snapRadius * 2 ? dp.id : null;
   }
 
   function handlePointerUp(e) {
@@ -150,9 +156,14 @@
     const cy = dragPos.y;
     const tx = piece.targetX + piece.w / 2;
     const ty = piece.targetY + piece.h / 2;
-    const dist = Math.hypot(cx - tx, cy - ty);
 
-    if (dist <= snapRadius && !placed.has(piece.id)) {
+    // Accept if either the lifted ghost's visual center or the raw thumb
+    // lands within the snap radius — kids align what they see (above finger).
+    const lift = virtualLiftY();
+    const distVisual = Math.hypot(cx - tx, cy - lift - ty);
+    const distThumb = Math.hypot(cx - tx, cy - ty);
+
+    if (Math.min(distVisual, distThumb) <= snapRadius && !placed.has(piece.id)) {
       placed = new Set([...placed, piece.id]);
       justPlacedId = piece.id;
       clearTimeout(popTimer);
