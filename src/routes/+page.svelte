@@ -27,6 +27,7 @@
     { id: 'angry-emoji', icon: '😡', key: 'angryEmoji', accent: '#F87171' },
     { id: 'sequence-memory', icon: '🎵', key: 'sequenceMemory', accent: '#BA68C8' },
     { id: 'emoji-math', icon: '➕', key: 'emojiMath', accent: '#81C784' },
+    { id: 'spot-the-difference', icon: '🔍', key: 'spotDiff', accent: '#7FD8FF' },
   ];
 
   let showSettings = $state(false);
