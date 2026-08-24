@@ -41,26 +41,50 @@
     if ($settings.soundEnabled) playTap();
   }
 
-  function startDrag(e, id) {
-    const rect = e.target.closest('.scene-area').getBoundingClientRect();
-    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+  // Pointer Events: unified mouse+touch input with pointer-id lock and
+  // window-level move/up so drags survive leaving the scene area.
+  let activePointer = null;
+  let sceneRect = null;
+
+  function attachDragListeners() {
+    window.addEventListener('pointermove', moveDrag);
+    window.addEventListener('pointerup', endDrag);
+    window.addEventListener('pointercancel', endDrag);
+  }
+  function detachDragListeners() {
+    window.removeEventListener('pointermove', moveDrag);
+    window.removeEventListener('pointerup', endDrag);
+    window.removeEventListener('pointercancel', endDrag);
+  }
+
+  function beginDrag(id, e) {
+    if (dragging !== null && activePointer !== null) return;
     dragging = id;
+    activePointer = e?.pointerId ?? null;
+    sceneRect = (document.querySelector('.scene-area') ?? e?.target?.closest?.('.scene-area'))?.getBoundingClientRect() ?? null;
     const sticker = placed.find(p => p.id === id);
-    if (sticker) {
+    if (sticker && sceneRect && e) {
       dragOffset = {
-        x: ((clientX - rect.left) / rect.width) * 100 - sticker.x,
-        y: ((clientY - rect.top) / rect.height) * 100 - sticker.y
+        x: ((e.clientX - sceneRect.left) / sceneRect.width) * 100 - sticker.x,
+        y: ((e.clientY - sceneRect.top) / sceneRect.height) * 100 - sticker.y
       };
     }
+    attachDragListeners();
+  }
+
+  function startDrag(e, id) {
+    e.preventDefault?.();
+    beginDrag(id, e);
   }
 
   function moveDrag(e) {
     if (dragging === null) return;
-    e.preventDefault();
-    const rect = document.querySelector('.scene-area').getBoundingClientRect();
-    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+    if (activePointer !== null && e.pointerId !== activePointer) return;
+    if (activePointer === null) activePointer = e.pointerId; // lock on first move
+    e.preventDefault?.();
+    const rect = sceneRect ?? document.querySelector('.scene-area').getBoundingClientRect();
+    const clientX = e.clientX;
+    const clientY = e.clientY;
     let newX = ((clientX - rect.left) / rect.width) * 100 - dragOffset.x;
     let newY = ((clientY - rect.top) / rect.height) * 100 - dragOffset.y;
     newX = Math.max(5, Math.min(95, newX));
@@ -68,15 +92,19 @@
     placed = placed.map(p => p.id === dragging ? { ...p, x: newX, y: newY } : p);
   }
 
-  function endDrag() {
+  function endDrag(e) {
+    if (activePointer !== null && e && e.pointerId !== undefined && e.pointerId !== activePointer) return;
     if (dragging !== null && $settings.soundEnabled) playTap();
     dragging = null;
+    activePointer = null;
+    sceneRect = null;
+    detachDragListeners();
   }
 
   function trayTap(emoji) {
     const id = nextId++;
     placed = [...placed, { id, emoji, x: 50, y: 50 }];
-    dragging = id;
+    beginDrag(id, null); // lifted for immediate dragging
     if ($settings.soundEnabled) playPop();
   }
 
@@ -95,12 +123,7 @@
       {/each}
     </div>
 
-    <div class="scene-area" style="background: linear-gradient(135deg, #e8f5e9 0%, #fff3e0 100%);"
-      ontouchmove={moveDrag}
-      ontouchend={endDrag}
-      onmousemove={moveDrag}
-      onmouseup={endDrag}
-      onmouseleave={endDrag}>
+    <div class="scene-area" style="background: linear-gradient(135deg, #e8f5e9 0%, #fff3e0 100%);">
       {#each placed as p (p.id)}
         <span
           class="placed-sticker"
@@ -108,8 +131,7 @@
           style:left="{p.x}%"
           style:top="{p.y}%"
           style:font-size="{$settings.ageLevel <= 2 ? '48px' : '36px'}"
-          ontouchstart={(e) => startDrag(e, p.id)}
-          onmousedown={(e) => startDrag(e, p.id)}
+          onpointerdown={(e) => startDrag(e, p.id)}
         >
           {p.emoji}
         </span>
@@ -159,6 +181,9 @@
   }
   .scene-btn.active { transform: scale(1.15); background: rgba(240,171,252,0.25); border-color: var(--accent); box-shadow: 0 2px 8px rgba(0,0,0,0.15); }
   .scene-area {
+    touch-action: none;
+    user-select: none;
+    -webkit-touch-callout: none;
     flex: 1;
     position: relative;
     margin: 8px;
@@ -167,6 +192,7 @@
     touch-action: none;
   }
   .placed-sticker {
+    touch-action: none;
     position: absolute;
     transform: translate(-50%, -50%);
     transition: left 0.05s, top 0.05s;

@@ -52,3 +52,43 @@ test.describe('Stickers E2E', () => {
     expect(placedCount).toBeGreaterThanOrEqual(1);
   });
 });
+
+test.describe('Stickers — touch input (legacy migration)', () => {
+  test('touch-drag a placed sticker moves it to the drop point', async ({ page }) => {
+    await page.goto('/games/stickers');
+    await page.waitForTimeout(500);
+    // place a sticker from the tray (tap)
+    await page.touchscreen.tap(
+      (await page.locator('.tray .sticker-btn, .tray button').first().boundingBox()).x +
+        (await page.locator('.tray .sticker-btn, .tray button').first().boundingBox()).width / 2,
+      (await page.locator('.tray .sticker-btn, .tray button').first().boundingBox()).y +
+        (await page.locator('.tray .sticker-btn, .tray button').first().boundingBox()).height / 2
+    );
+    await page.waitForTimeout(150);
+    const st = page.locator('.placed-sticker').first();
+    await expect(st).toBeVisible();
+
+    // touch-drag it to the right side of the scene
+    const area = page.locator('.scene-area');
+    const ab = await area.boundingBox();
+    const from = await st.boundingBox();
+    const fx = from.x + from.width / 2;
+    const fy = from.y + from.height / 2;
+    const tx = ab.x + ab.width * 0.85;
+    const ty = ab.y + ab.height * 0.3;
+
+    await st.dispatchEvent('pointerdown', { pointerId: 11, pointerType: 'touch', isPrimary: true, clientX: fx, clientY: fy, buttons: 1, bubbles: true, cancelable: true });
+    for (let i = 1; i <= 8; i++) {
+      const cx = fx + ((tx - fx) * i) / 8;
+      const cy = fy + ((ty - fy) * i) / 8;
+      await page.dispatchEvent(':root', 'pointermove', { pointerId: 11, pointerType: 'touch', isPrimary: true, clientX: cx, clientY: cy, buttons: 1, bubbles: true, cancelable: true });
+      await page.waitForTimeout(25);
+    }
+    await page.dispatchEvent(':root', 'pointerup', { pointerId: 11, pointerType: 'touch', isPrimary: true, clientX: tx, clientY: ty, buttons: 1, bubbles: true, cancelable: true });
+    await page.waitForTimeout(200);
+
+    const moved = await st.boundingBox();
+    const movedCenterX = moved.x + moved.width / 2;
+    expect(Math.abs(movedCenterX - tx)).toBeLessThan(20);
+  });
+});
