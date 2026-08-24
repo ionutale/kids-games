@@ -31,7 +31,7 @@
   function newPuzzle(seedOffset = Date.now() % 100000) {
     clearTimers();
     puzzle = generatePuzzle(level, seedOffset + puzzleNum * 977);
-    path = [];
+    path = [{ r: puzzle.start.r, c: puzzle.start.c }]; // path always begins at Start
     hint = null;
     complete = false;
     levelDone = false;

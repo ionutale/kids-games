@@ -18,6 +18,17 @@
     window.addEventListener('appinstalled', () => {
       showInstall = false;
     });
+
+    // When a new service worker takes over (post-deploy), reload once so the
+    // app shell always matches the routes — prevents stale-shell dead buttons.
+    if ('serviceWorker' in navigator) {
+      let refreshing = false;
+      navigator.serviceWorker.addEventListener('controllerchange', () => {
+        if (refreshing) return;
+        refreshing = true;
+        location.reload();
+      });
+    }
   });
 
   async function installApp() {

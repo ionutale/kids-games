@@ -14,7 +14,9 @@ export default defineConfig({
     trace: 'on-first-retry',
     headless: !process.env.HEADED,
     viewport: { width: 390, height: 844 },
-    actionTimeout: 5000
+    actionTimeout: 5000,
+    // deterministic tests: never let the PWA service worker swap shells mid-run
+    serviceWorkers: 'block'
   },
   webServer: {
     command: 'pnpm build && pnpm preview',
