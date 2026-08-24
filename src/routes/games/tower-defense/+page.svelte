@@ -33,11 +33,26 @@
     eng.start();
   }
 
+  // Pointer Events: unified mouse+touch. Tower placement drag runs at window
+  // level so the finger can leave the map and come back mid-drag.
+  let mapRect = null;
+
+  function attachPlaceDrag() {
+    window.addEventListener('pointermove', onMapPointerMove);
+    window.addEventListener('pointerup', onMapPointerUp);
+    window.addEventListener('pointercancel', onMapPointerUp);
+  }
+  function detachPlaceDrag() {
+    window.removeEventListener('pointermove', onMapPointerMove);
+    window.removeEventListener('pointerup', onMapPointerUp);
+    window.removeEventListener('pointercancel', onMapPointerUp);
+  }
+
   function onMapPointerMove(e) {
     if (!dragTowerId || !gameState) return;
-    const rect = e.currentTarget.getBoundingClientRect();
-    const x = e.touches ? e.touches[0].clientX : e.clientX;
-    const y = e.touches ? e.touches[0].clientY : e.clientY;
+    const rect = mapRect ?? document.querySelector('.td-map').getBoundingClientRect();
+    const x = e.clientX;
+    const y = e.clientY;
     const col = Math.floor(((x - rect.left) / rect.width) * gridSize);
     const row = Math.floor(((y - rect.top) / rect.height) * gridSize);
     if (row >= 0 && row < gridSize && col >= 0 && col < gridSize) {
@@ -51,6 +66,7 @@
     if (!dragTowerId || !engine || !dragHover) {
       dragTowerId = null;
       dragHover = null;
+      detachPlaceDrag();
       return;
     }
     const tower = TOWERS.find(t => t.id === dragTowerId);
@@ -59,12 +75,15 @@
     }
     dragTowerId = null;
     dragHover = null;
+    detachPlaceDrag();
   }
 
   function startDrag(towerId) {
     if (gameState?.phase !== 'setup') return;
     dragTowerId = towerId;
     selectedTower = null;
+    mapRect = document.querySelector('.td-map')?.getBoundingClientRect() ?? null;
+    attachPlaceDrag();
   }
 
   function selectTower(row, col) {
@@ -159,11 +178,6 @@
       <div
         class="td-map"
         style:grid-template-columns="repeat({gridSize}, 1fr)"
-        ontouchmove={onMapPointerMove}
-        ontouchend={onMapPointerUp}
-        onmousemove={onMapPointerMove}
-        onmouseup={onMapPointerUp}
-        onmouseleave={() => { if (dragTowerId) { dragTowerId = null; dragHover = null; } }}
       >
         {#each Array(gridSize) as _, r}
           {#each Array(gridSize) as _, c}
@@ -181,8 +195,7 @@
               class:selected={isSelected}
               class:drag-valid={dragTowerId && isHover && canPlaceTower(r, c) && !tower}
               class:drag-invalid={dragTowerId && isHover && (!canPlaceTower(r, c) || !!tower)}
-              onmousedown={() => !dragTowerId && selectTower(r, c)}
-              ontouchstart={() => !dragTowerId && selectTower(r, c)}
+              onpointerdown={() => !dragTowerId && selectTower(r, c)}
             >
               {#if isSelected}
                 {@const mult = 1 + selectedTower.level * 0.5}
@@ -282,7 +295,10 @@
   .level-name { font-size: 13px; color: var(--text-lo); }
   .lock-icon { font-size: 16px; }
   .td-hud { display: flex; gap: 20px; margin-bottom: 6px; }
-  .td-map { display: grid; gap: 2px; width: 100%; max-width: 340px; aspect-ratio: 1; position: relative; }
+  .td-map {
+    touch-action: none;
+    user-select: none;
+    -webkit-touch-callout: none; display: grid; gap: 2px; width: 100%; max-width: 340px; aspect-ratio: 1; position: relative; }
   .td-cell { aspect-ratio: 1; display: flex; align-items: center; justify-content: center; border-radius: 4px; font-size: 18px; background: rgba(10,17,40,0.55); border: 1px solid var(--panel-border); position: relative; }
   .td-cell.path { background: rgba(255,224,130,0.12); border-color: rgba(255,224,130,0.35); }
   .td-cell.tower-spot { background: rgba(127,216,255,0.08); border-color: rgba(127,216,255,0.3); border-style: dashed; }

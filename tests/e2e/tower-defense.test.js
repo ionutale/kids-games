@@ -82,3 +82,40 @@ test.describe('Tower Defense E2E', () => {
     expect(true).toBe(true);
   });
 });
+
+test.describe('Tower Defense — touch input (legacy migration)', () => {
+  test('touch-tap on a tower cell selects it exactly once (no double-toggle)', async ({ page }) => {
+    await page.goto('/games/tower-defense');
+    await page.waitForTimeout(400);
+    await page.locator('.td-level-btn').first().click();
+    await page.waitForTimeout(500);
+
+    // 1) pick a tower from the tray (tap → startDrag)
+    const trayBtn = page.locator('.td-tower-btn').first();
+    const tb = await trayBtn.boundingBox();
+    await page.touchscreen.tap(tb.x + tb.width / 2, tb.y + tb.height / 2);
+    await page.waitForTimeout(200);
+
+    // 2) drag it onto the first free build cell (window-level move + up)
+    const spot = page.locator('.td-cell.tower-spot').first();
+    await expect(spot).toBeVisible({ timeout: 5000 });
+    const sb = await spot.boundingBox();
+    const cx = sb.x + sb.width / 2;
+    const cy = sb.y + sb.height / 2;
+    await page.dispatchEvent(':root', 'pointermove', { pointerId: 21, pointerType: 'touch', isPrimary: true, clientX: cx, clientY: cy, buttons: 1, bubbles: true, cancelable: true });
+    await page.waitForTimeout(80);
+    await page.dispatchEvent(':root', 'pointerup', { pointerId: 21, pointerType: 'touch', isPrimary: true, clientX: cx, clientY: cy, buttons: 1, bubbles: true, cancelable: true });
+    await page.waitForTimeout(300);
+
+    // 3) tower now placed on that cell
+    const towerCell = page.locator('.td-cell.has-tower').first();
+    await expect(towerCell).toBeVisible({ timeout: 4000 });
+
+    // 4) tap the placed tower cell ONCE → must end up SELECTED (single toggle)
+    const tcb = await towerCell.boundingBox();
+    await page.touchscreen.tap(tcb.x + tcb.width / 2, tcb.y + tcb.height / 2);
+    await page.waitForTimeout(250);
+    await expect(towerCell).toHaveClass(/selected/, { timeout: 3000 });
+    await expect(page.locator('.td-tower-info')).toBeVisible();
+  });
+});
