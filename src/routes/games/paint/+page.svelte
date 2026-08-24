@@ -38,17 +38,37 @@
     return () => removeEventListener('resize', resize);
   });
 
+  // Pointer Events: unified mouse+touch input, pointer-id locked, rect cached
+  // per stroke, window-level move/up so strokes survive leaving the canvas.
+  let activePointer = null;
+  let strokeRect = null;
+
   function getPos(e) {
     if (!canvasEl) return { x: 0, y: 0 };
-    const rect = canvasEl.getBoundingClientRect();
-    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+    const rect = strokeRect ?? canvasEl.getBoundingClientRect();
+    const clientX = e.clientX;
+    const clientY = e.clientY;
     return { x: clientX - rect.left, y: clientY - rect.top };
+  }
+
+  function attachStroke() {
+    window.addEventListener('pointermove', keepDrawing);
+    window.addEventListener('pointerup', endDraw);
+    window.addEventListener('pointercancel', endDraw);
+  }
+  function detachStroke() {
+    window.removeEventListener('pointermove', keepDrawing);
+    window.removeEventListener('pointerup', endDraw);
+    window.removeEventListener('pointercancel', endDraw);
   }
 
   function startDraw(e) {
     e.preventDefault();
+    if (activePointer !== null) return; // one finger at a time
     if (!ctx) return;
+    activePointer = e.pointerId;
+    strokeRect = canvasEl.getBoundingClientRect(); // cache once per stroke
+    attachStroke();
     isDrawing = true;
     const pos = getPos(e);
     if (mode === 'stamp') {
@@ -71,13 +91,18 @@
 
   function keepDrawing(e) {
     e.preventDefault();
+    if (e.pointerId !== activePointer) return; // ignore other fingers
     if (!isDrawing || mode === 'stamp' || !ctx) return;
     const pos = getPos(e);
     ctx.lineTo(pos.x, pos.y);
     ctx.stroke();
   }
 
-  function endDraw() {
+  function endDraw(e) {
+    if (e && e.pointerId !== undefined && e.pointerId !== activePointer) return;
+    activePointer = null;
+    strokeRect = null;
+    detachStroke();
     if (isDrawing && $settings.soundEnabled) playTap();
     isDrawing = false;
   }
@@ -102,13 +127,7 @@
       <canvas
         bind:this={canvasEl}
         class="draw-canvas"
-        ontouchstart={startDraw}
-        ontouchmove={keepDrawing}
-        ontouchend={endDraw}
-        onmousedown={startDraw}
-        onmousemove={keepDrawing}
-        onmouseup={endDraw}
-        onmouseleave={endDraw}
+        onpointerdown={startDraw}
       ></canvas>
     </div>
 
@@ -158,6 +177,8 @@
     box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);
   }
   .draw-canvas {
+    user-select: none;
+    -webkit-touch-callout: none;
     display: block;
     width: 100%;
     height: 100%;
