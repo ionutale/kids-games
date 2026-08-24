@@ -1,5 +1,6 @@
 <script>
   import { onMount, onDestroy } from 'svelte';
+  import { makeRng } from '$lib/trainers/rng.js';
   import { _ } from '$lib/stores/locale';
   import GameShell from '$lib/components/ui/GameShell.svelte';
   import HudPill from '$lib/components/ui/HudPill.svelte';
@@ -17,6 +18,7 @@
     scoreFor
   } from '$lib/sequence-memory/game.js';
 
+  let { data } = $props();
   let screen = $state('idle'); // idle | playing | listening | replay | correct | gameOver
   let round = $state(1);
   let seq = $state([]);
@@ -48,7 +50,8 @@
   }
 
   function playRound(halfSpeed = false) {
-    seq = generateSequence(round);
+    const rng = data?.seed != null ? makeRng(data.seed + round) : Math.random;
+    seq = generateSequence(round, rng);
     inputPos = 0;
     const speed = halfSpeed ? flashMs(round) * 2 : flashMs(round);
     const gap = halfSpeed ? gapMs() * 2 : gapMs();

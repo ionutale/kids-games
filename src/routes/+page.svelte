@@ -53,6 +53,7 @@
     {#each games as game, i (game.id)}
       <button
         class="game-btn glass"
+        data-game={game.id}
         style:--accent={game.accent}
         style:animation-delay="{i * 0.07}s"
         onclick={() => goToGame(game.id)}
