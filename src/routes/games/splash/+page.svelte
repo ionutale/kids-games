@@ -8,9 +8,9 @@
   let splashes = $state([]);
 
   function createSplash(e) {
-    const rect = e.currentTarget.getBoundingClientRect();
-    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+    const rect = surfaceRect ?? e.currentTarget.getBoundingClientRect();
+    const clientX = e.clientX;
+    const clientY = e.clientY;
     const x = ((clientX - rect.left) / rect.width) * 100;
     const y = ((clientY - rect.top) / rect.height) * 100;
 
@@ -38,11 +38,33 @@
     }, 3500);
   }
 
-  function handleMove(e) {
-    e.preventDefault();
-    if (e.buttons || (e.touches && e.touches.length > 0)) {
-      createSplash(e);
-    }
+  // Pointer Events: single unified input path (mouse + touch), pointer-id locked,
+  // window-level move/up so drags survive leaving the surface.
+  let activePointer = null;
+  let surfaceRect = null;
+
+  function down(e) {
+    if (activePointer !== null) return;
+    activePointer = e.pointerId;
+    surfaceRect = e.currentTarget.getBoundingClientRect(); // cache: window moves lack currentTarget
+    e.preventDefault?.();
+    createSplash(e);
+    window.addEventListener('pointermove', move);
+    window.addEventListener('pointerup', up);
+    window.addEventListener('pointercancel', up);
+  }
+
+  function move(e) {
+    if (e.pointerId !== activePointer) return;
+    createSplash(e);
+  }
+
+  function up(e) {
+    if (e.pointerId !== undefined && e.pointerId !== activePointer) return;
+    activePointer = null;
+    window.removeEventListener('pointermove', move);
+    window.removeEventListener('pointerup', up);
+    window.removeEventListener('pointercancel', up);
   }
 </script>
 
@@ -51,10 +73,7 @@
   <div
     class="splash-game"
     role="application"
-    ontouchstart={createSplash}
-    ontouchmove={handleMove}
-    onmousedown={createSplash}
-    onmousemove={handleMove}
+    onpointerdown={down}
   >
     {#each splashes as s (s.id)}
       <span
@@ -77,6 +96,10 @@
     position: relative;
     overflow: hidden;
     cursor: crosshair;
+    touch-action: none;
+    user-select: none;
+    -webkit-touch-callout: none;
+    padding-bottom: calc(8px + var(--safe-bottom));
   }
   .splash {
     position: absolute;
