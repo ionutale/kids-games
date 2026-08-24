@@ -118,3 +118,38 @@ test.describe('Soccer E2E', () => {
     expect(s).toContain('0');
   });
 });
+
+test.describe('Soccer — touch input (legacy migration)', () => {
+  test('touch swipe-kick launches the ball; up outside the field still fires', async ({ page }) => {
+    await page.goto('/games/soccer');
+    await page.waitForTimeout(500);
+    const field = page.locator('.field');
+    const ball = page.locator('.ball');
+    const box = await field.boundingBox();
+    const x0 = box.x + box.width * 0.5;
+    const y0 = box.y + box.height * 0.75;
+    const x1 = box.x + box.width * 0.5;
+    const y1 = box.y + box.height * 0.25;
+
+    // before: ball at rest (kicking class absent)
+    await expect(ball).not.toHaveClass(/kicking/);
+
+    await field.dispatchEvent('pointerdown', { pointerId: 13, pointerType: 'touch', isPrimary: true, clientX: x0, clientY: y0, buttons: 1, bubbles: true, cancelable: true });
+    for (let i = 1; i <= 8; i++) {
+      const cx = x0 + ((x1 - x0) * i) / 8;
+      const cy = y0 + ((y1 - y0) * i) / 8;
+      await page.dispatchEvent(':root', 'pointermove', { pointerId: 13, pointerType: 'touch', isPrimary: true, clientX: cx, clientY: cy, buttons: 1, bubbles: true, cancelable: true });
+      await page.waitForTimeout(25);
+    }
+    // mid-swipe: power meter filled + arrow preview visible
+    await expect(page.locator('.arrow-line')).toBeVisible({ timeout: 2000 });
+    const pw = await page.locator('.power-fill').evaluate((el) => parseFloat(el.style.width) || 0);
+    expect(pw).toBeGreaterThan(15);
+
+    // release OUTSIDE the field (above it)
+    await page.dispatchEvent(':root', 'pointerup', { pointerId: 13, pointerType: 'touch', isPrimary: true, clientX: x1, clientY: y1 - 60, buttons: 1, bubbles: true, cancelable: true });
+    await page.waitForTimeout(150);
+    // ball enters flight (kicking class) even though the finger lifted off-field
+    await expect(ball).toHaveClass(/kicking/, { timeout: 3000 });
+  });
+});

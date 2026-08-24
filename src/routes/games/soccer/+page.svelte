@@ -30,33 +30,58 @@
     return { targetScore: Math.min(2 + l, 8), goalSize: Math.max(10, 24 - l) };
   }
 
+  // Pointer Events: unified mouse+touch, pointer-id locked, window-level
+  // move/up so a swipe that leaves the field still kicks on release.
+  let activePointer = null;
+  let fieldRect = null;
+
+  function attachFieldDrag() {
+    window.addEventListener('pointermove', onFieldMove);
+    window.addEventListener('pointerup', onFieldUp);
+    window.addEventListener('pointercancel', onFieldUp);
+  }
+  function detachFieldDrag() {
+    window.removeEventListener('pointermove', onFieldMove);
+    window.removeEventListener('pointerup', onFieldUp);
+    window.removeEventListener('pointercancel', onFieldUp);
+  }
+
   function onFieldDown(e) {
     if (ballMoving || gameOver) return;
-    const rect = e.currentTarget.querySelector('.field').getBoundingClientRect();
-    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+    if (activePointer !== null) return;
+    e.preventDefault?.();
+    activePointer = e.pointerId;
+    fieldRect = e.currentTarget.querySelector('.field').getBoundingClientRect();
+    const clientX = e.clientX;
+    const clientY = e.clientY;
     isDragging = true;
     dragPower = 0;
-    dragStart = { x: ((clientX - rect.left) / rect.width) * 100, y: ((clientY - rect.top) / rect.height) * 100 };
+    dragStart = { x: ((clientX - fieldRect.left) / fieldRect.width) * 100, y: ((clientY - fieldRect.top) / fieldRect.height) * 100 };
+    attachFieldDrag();
   }
 
   function onFieldMove(e) {
     if (!isDragging || ballMoving || !dragStart) return;
+    if (e.pointerId !== activePointer) return;
     e.preventDefault();
-    const rect = document.querySelector('.field').getBoundingClientRect();
-    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+    const rect = fieldRect ?? document.querySelector('.field').getBoundingClientRect();
+    const clientX = e.clientX;
+    const clientY = e.clientY;
     dragEnd = { x: ((clientX - rect.left) / rect.width) * 100, y: ((clientY - rect.top) / rect.height) * 100 };
     const dist = Math.hypot(dragEnd.x - dragStart.x, dragEnd.y - dragStart.y);
     dragPower = Math.max(0.15, Math.min(1, dist / 45));
   }
 
   function onFieldUp(e) {
+    if (e.pointerId !== undefined && e.pointerId !== activePointer) return;
+    detachFieldDrag();
+    activePointer = null;
+    fieldRect = null;
     if (!isDragging || ballMoving || !dragStart) return;
     isDragging = false;
-    const rect = document.querySelector('.field').getBoundingClientRect();
-    const clientX = e.changedTouches ? e.changedTouches[0].clientX : e.clientX;
-    const clientY = e.changedTouches ? e.changedTouches[0].clientY : e.clientY;
+    const rect = fieldRect ?? document.querySelector('.field').getBoundingClientRect();
+    const clientX = e.clientX;
+    const clientY = e.clientY;
     const endX = ((clientX - rect.left) / rect.width) * 100;
     const endY = ((clientY - rect.top) / rect.height) * 100;
 
@@ -154,12 +179,7 @@
   <div
     class="soccer-game"
     role="application"
-    ontouchstart={onFieldDown}
-    ontouchmove={onFieldMove}
-    ontouchend={onFieldUp}
-    onmousedown={onFieldDown}
-    onmousemove={onFieldMove}
-    onmouseup={onFieldUp}
+    onpointerdown={onFieldDown}
     onmouseleave={() => { if (isDragging && dragStart) { isDragging = false; dragStart = null; dragEnd = null; } }}
   >
     <div class="field">
@@ -197,7 +217,8 @@
 </GameShell>
 
 <style>
-  .soccer-game { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 8px; position: relative; }
+  .soccer-game {
+    padding-bottom: calc(8px + var(--safe-bottom)); flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 8px; position: relative; }
   .field { position: relative; width: 100%; max-width: 350px; aspect-ratio: 3/4; background: linear-gradient(180deg, #81C784 0%, #66BB6A 50%, #4CAF50 100%); border-radius: 24px; border: 1px solid var(--panel-border); box-shadow: 0 8px 30px rgba(0,0,0,0.4); overflow: hidden; cursor: crosshair; touch-action: none; }
   .goal-area { position: absolute; top: 2%; left: 30%; width: 40%; height: 22%; border: 3px solid white; border-radius: 0 0 12px 12px; background: rgba(255,255,255,0.08); }
   .goal-text { position: absolute; top: 7%; left: 50%; transform: translateX(-50%); font-size: 20px; opacity: 0.4; }
