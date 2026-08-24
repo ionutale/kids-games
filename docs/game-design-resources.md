@@ -20,7 +20,8 @@ Directly relevant to snap/nudge/celebration polish in this repo's games:
 
 ## Menus / UI / Touch UX
 
-Critical since these games are touch-first for kids:
+Critical since these games are touch-first for kids. Repo-specific rules live in
+[mobile-games-best-practices.md](mobile-games-best-practices.md):
 
 - **[Game UI Database](https://www.gameuidatabase.com)** — 30k+ searchable screenshots of real game menus/HUDs; the go-to reference.
 - **Apple Human Interface Guidelines** ([developer.apple.com/design](https://developer.apple.com/design/human-interface-guidelines)) — touch target sizes, safe areas, gesture conventions.
