@@ -5,15 +5,32 @@
   import HudPill from '$lib/components/ui/HudPill.svelte';
   import BigButton from '$lib/components/ui/BigButton.svelte';
   import Confetti from '$lib/components/Confetti.svelte';
-  import { playPop, playMatch } from '$lib/sounds/audioManager.js';
-  import { playFlashWhoosh, fanfare } from '$lib/sounds/trainerSounds.js';
-  import { createWorld, addBody, step as physStep, cull, MATERIALS } from '$lib/angry-emoji/phys.js';
+  import { playMatch } from '$lib/sounds/audioManager.js';
+  import {
+    playFlashWhoosh,
+    playStretch,
+    playBoom,
+    playThud,
+    playMaterialBreak,
+    fanfare
+  } from '$lib/sounds/trainerSounds.js';
+  import {
+    createWorld,
+    addBody,
+    removeBody,
+    step as physStep,
+    cull,
+    explode,
+    MATERIALS
+  } from '$lib/angry-emoji/phys.js';
   import { getLevel, WORLD_W, WORLD_H, GROUND_Y, SLING } from '$lib/angry-emoji/levels.js';
   import { levelMaxScore, starsFor, POINTS } from '$lib/angry-emoji/score.js';
+  import { computeTrajectory } from '$lib/angry-emoji/aim.js';
+  import { birdForShot } from '$lib/angry-emoji/birds.js';
 
   const BIRD_EMOJI = { bird: '😡', birdFire: '🐦‍🔥', ball: '🧱' };
   const TARGET_EMOJI = { targetBasic: '😠', targetTough: '🤬', targetBoss: '👿' };
-  const BLOCK_EMOJI = { wood: '🪵', ice: '🧊', stone: '🪨' };
+  const BLOCK_EMOJI = { wood: '🪵', ice: '🧊', stone: '🪨', tnt: '🧨' };
 
   let screen = $state('select'); // select | playing | levelEnd
   let levelN = $state(1);
@@ -39,10 +56,76 @@
   const worldOffsetY = $derived((stageHeight - WORLD_H * worldScale) / 2);
   let settling = false;
   let settleFrames = 0;
-  let dragging = null; // {x,y}
+  let dragging = $state(null); // {x,y} pouch position while aiming
   let aimPoint = null;
+  let traj = $state(null); // {points, firstBounce} while aiming
+  let loadedBird = $state(null); // bird kind waiting in the pouch
+  // raw: holds a live engine body — must NOT be deep-proxied, or identity
+  // checks against world.bodies break ($state wraps objects in Proxies)
+  let activeBird = $state.raw(null); // projectile currently in flight (ability window)
+  let lastGhost = $state(null); // dots of the previous shot's path
+  let popups = $state([]); // floating score popups
+  let popupId = 0;
+  let particles = $state([]); // silent emoji debris bursts
+  let particleId = 0;
+
+  const PARTICLE_EMOJI = { wood: '🪵', ice: '❄️', stone: '🪨', tnt: '💥' };
+  const MAX_PARTICLES = 40;
+  const PARTICLE_LIFE = 0.6; // seconds
+  const PARTICLE_GRAVITY = 900;
+  let targetBrokenCount = 0; // alternate 💥/⭐ on target kills
+
+  /** Spawn a small silent burst of emoji debris. Purely visual. */
+  function burst(x, y, emojis, count, power = 1) {
+    for (let i = 0; i < count; i++) {
+      if (particles.length >= MAX_PARTICLES) particles.shift();
+      particles.push({
+        id: ++particleId,
+        x,
+        y,
+        vx: (Math.random() * 2 - 1) * 140 * power,
+        vy: (-60 - Math.random() * 200) * power,
+        rot: Math.random() * 360,
+        vr: (Math.random() * 2 - 1) * 240,
+        size: 10 + Math.random() * 7,
+        life: PARTICLE_LIFE,
+        emoji: emojis[Math.floor(Math.random() * emojis.length)]
+      });
+    }
+  }
+
+  function advanceParticles(dt) {
+    if (!particles.length) return;
+    let expired = false;
+    for (const p of particles) {
+      p.life -= dt;
+      p.vy += PARTICLE_GRAVITY * dt;
+      p.x += p.vx * dt;
+      p.y += p.vy * dt;
+      p.rot += p.vr * dt;
+      if (p.life <= 0) expired = true;
+    }
+    if (expired) particles = particles.filter((p) => p.life > 0);
+  }
 
   const def = $derived(getLevel(levelN));
+
+  // the bird perched in the sling while idle + the lineup behind it
+  const waitingKind = $derived(
+    screen === 'playing' && !dragging && !activeBird && shotsLeft > 0
+      ? birdForShot(def.tier, shotsLeft)
+      : null
+  );
+  const upcomingKinds = $derived.by(() => {
+    if (screen !== 'playing' || shotsLeft <= 0) return [];
+    const out = [];
+    for (let k = shotsLeft - 1; k >= 1; k--) out.push(birdForShot(def.tier, k));
+    return out;
+  });
+
+  function removePopup(id) {
+    popups = popups.filter((p) => p.id !== id);
+  }
 
   function loadStars() {
     try {
@@ -59,8 +142,8 @@
     localStorage.setItem('angry-emoji-levels', JSON.stringify(bestStars));
   }
 
-  function tierUnlocked(tier) {
-    return tier === 1 || (bestStars[(tier - 1) * 5] ?? 0) > 0;
+  function levelUnlocked(n) {
+    return n === 1 || (bestStars[n - 1] ?? 0) > 0;
   }
 
   function startLevel(n) {
@@ -84,6 +167,12 @@
     settling = false;
     dragging = null;
     aimPoint = null;
+    traj = null;
+    loadedBird = null;
+    activeBird = null;
+    lastGhost = null;
+    popups = [];
+    particles = [];
     screen = 'playing';
     lastTs = 0;
     raf = requestAnimationFrame(frame);
@@ -96,53 +185,110 @@
     (p.x < WORLD_W * 0.5 && p.y > WORLD_H * 0.45); // forgiving lower-left quadrant
 
   function down(e) {
-    if (screen !== 'playing' || paused || shotsLeft <= 0) return;
+    if (screen !== 'playing' || paused) return;
+    // a tap while a bird is airborne triggers its ability (AB-style)
+    if (activeBird) {
+      activateAbility(activeBird);
+      e.preventDefault();
+      return;
+    }
+    if (shotsLeft <= 0) return;
     if (activePointerId !== null) return; // single-touch lock
     const p = toWorld(e);
     if (inGrabZone(p)) {
       activePointerId = e.pointerId;
       dragging = p;
       aimPoint = p;
+      loadedBird = nextBirdKind();
+      playStretch();
       e.preventDefault();
     }
   }
+
+  /** Launch vector from a drag point — identical math for preview and release. */
+  function launchParams(from) {
+    const dx = SLING.x - from.x;
+    const dy = SLING.y - from.y;
+    const len = Math.max(1e-6, Math.hypot(dx, dy));
+    const speed = Math.min(1750, len * 9);
+    return {
+      x: SLING.x + 26,
+      y: SLING.y - 26,
+      vx: (dx / len) * speed,
+      vy: (dy / len) * speed
+    };
+  }
+
   function move(e) {
     if (!dragging || e.pointerId !== activePointerId) return;
     aimPoint = toWorld(e);
+    if (loadedBird) {
+      const lp = launchParams(aimPoint);
+      traj = computeTrajectory({
+        ...lp,
+        halfH: 13,
+        restitution: MATERIALS[loadedBird].restitution,
+        maxX: WORLD_W + 60
+      });
+    }
     e.preventDefault();
   }
   function up(e) {
     if (!dragging || (e.pointerId !== undefined && e.pointerId !== activePointerId)) return;
     activePointerId = null;
     if (!dragging) return;
-    const dx = SLING.x - aimPoint.x;
-    const dy = SLING.y - aimPoint.y;
-    const len = Math.hypot(dx, dy);
+    const lp = launchParams(aimPoint);
+    const len = Math.hypot(SLING.x - aimPoint.x, SLING.y - aimPoint.y);
     dragging = null;
     aimPoint = null;
-    if (len < 30) return;
-    const speed = Math.min(1750, len * 9);
-    const kind = nextBirdKind();
-    addBody(world, {
-      x: SLING.x + 26,
-      y: SLING.y - 26,
+    traj = null;
+    loadedBird = null;
+    // tiny drags are accidental taps; a release aimed BEHIND the sling
+    // (launch velocity pointing left, away from the towers) is cancelled too —
+    // both silently keep the shot, mirroring AB blocking behind-the-sling aim
+    if (len < 30 || lp.vx < 0) return;
+    const kind = nextBirdKind(); // uses pre-decrement shotsLeft
+    activeBird = addBody(world, {
+      x: lp.x,
+      y: lp.y,
       w: 26,
       h: 26,
       type: kind,
-      vx: (dx / len) * speed,
-      vy: (dy / len) * speed
+      vx: lp.vx,
+      vy: lp.vy
     });
+    // ghost trail of this shot stays visible until the next launch
+    lastGhost = computeTrajectory({
+      ...lp,
+      halfH: 13,
+      restitution: MATERIALS[kind].restitution,
+      maxX: WORLD_W + 60
+    }).points;
     playFlashWhoosh();
     shotsLeft -= 1;
     settling = true;
     settleFrames = 0;
   }
 
+  /** Tap-activated bird powers: fire bird detonates, ball slams down. */
+  function activateAbility(bird) {
+    if (!bird || bird.usedAbility) return;
+    bird.usedAbility = true;
+    if (bird.type === 'birdFire') {
+      explode(world, { x: bird.x, y: bird.y });
+      removeBody(world, bird);
+      if (activeBird === bird) activeBird = null;
+      playBoom();
+    } else if (bird.type === 'ball') {
+      bird.vx *= 0.25;
+      bird.vy = Math.max(bird.vy, 1800); // slam straight down
+      playThud(1);
+    }
+    // plain bird: no ability (Red-style) — silent
+  }
+
   function nextBirdKind() {
-    const d = getLevel(levelN);
-    if (d.tier === 4 && shotsLeft === 3) return 'birdFire'; // open T4 levels with fire
-    if (d.tier === 4) return 'ball';
-    return 'bird';
+    return birdForShot(getLevel(levelN).tier, shotsLeft);
   }
 
   function toWorld(e) {
@@ -156,6 +302,7 @@
 
   // ---- game loop ----
   let lastTs = 0;
+  let lastThudAt = 0;
   function frame(ts) {
     if (screen !== 'playing') return;
     if (!lastTs) lastTs = ts;
@@ -164,18 +311,37 @@
     if (!paused) {
       physStep(world, dt);
       cull(world, { maxX: WORLD_W + 450, maxY: WORLD_H + 600 });
+      if (activeBird && !world.bodies.includes(activeBird)) activeBird = null;
 
       // scoring from this step's break log (targets 10 / blocks 5 — B1)
       for (const b of world.brokenLog.splice(0)) {
+        const px = Math.max(40, Math.min(WORLD_W - 40, b.x));
+        const py = Math.max(20, b.y - 30);
         if (b.type.startsWith('target')) {
           score += POINTS.target;
           targetsBroken += 1;
           playMatch();
+          popups.push({ id: ++popupId, x: px, y: py, text: `+${POINTS.target}` });
+          burst(b.x, b.y, targetBrokenCount++ % 2 ? ['⭐', '💥'] : ['💥', '⭐'], 6);
         } else {
           score += POINTS.block;
-          playPop();
+          playMaterialBreak(b.type); // wood crack / ice shimmer / stone thud / TNT boom
+          popups.push({ id: ++popupId, x: px, y: py, text: `+${POINTS.block}` });
+          burst(b.x, b.y, [PARTICLE_EMOJI[b.type] ?? '💨', PARTICLE_EMOJI[b.type] ?? '💨', '💨'], 5);
         }
       }
+
+      // heavy non-breaking impacts → thud + dust puff (throttled)
+      for (const imp of world.impactLog.splice(0)) {
+        burst(imp.x, imp.y, ['💨'], 2, 0.5);
+        const now = performance.now();
+        if (now - lastThudAt > 150) {
+          playThud(imp.speed / 1750);
+          lastThudAt = now;
+        }
+      }
+
+      advanceParticles(dt);
 
       if (settling) {
         const moving = world.bodies.some(
@@ -192,13 +358,16 @@
       h: b.h,
       type: b.type,
       hpRatio: b.hp === Infinity ? 1 : Math.max(0, b.hp / b.maxHp),
-      isTarget: b.type.startsWith('target')
+      isTarget: b.type.startsWith('target'),
+      // thin shapes (planks/columns) render as pure grain — no emoji fits them
+      thin: Math.min(b.w, b.h) < 32 ? (b.w >= b.h ? 'h' : 'v') : null
     }));
     raf = requestAnimationFrame(frame);
   }
 
   function evaluateEnd() {
     settling = false;
+    activeBird = null; // flight over — ability window closes
     const remainingTargets = world.bodies.filter((b) => b.type.startsWith('target')).length;
     if (remainingTargets === 0) {
       score += shotsLeft * POINTS.unusedShot; // bonus per unused shot
@@ -236,16 +405,17 @@
       <h1 class="title">😡 {$_('angryEmoji')}</h1>
       <div class="tiers">
         {#each [1, 2, 3, 4] as tier}
-          {@const unlocked = tierUnlocked(tier)}
-          <div class="tier" class:locked={!unlocked}>
-            <p class="tier-name">{unlocked ? '🔓' : '🔒'} {$_('tierLabel', { n: tier })}</p>
+          {@const tierOpen = levelUnlocked((tier - 1) * 5 + 1)}
+          <div class="tier" class:locked={!tierOpen}>
+            <p class="tier-name">{tierOpen ? '🔓' : '🔒'} {$_('tierLabel', { n: tier })}</p>
             <div class="lvl-grid">
               {#each Array(5) as _, i}
                 {@const n = (tier - 1) * 5 + i + 1}
+                {@const unlocked = levelUnlocked(n)}
                 {@const stars = bestStars[n] ?? 0}
                 <button class="lvl-btn" disabled={!unlocked} onclick={() => startLevel(n)} data-testid="level-{n}">
                   <span>{n}</span>
-                  <span class="mini-stars">{'★'.repeat(stars)}{'☆'.repeat(3 - stars)}</span>
+                  <span class="mini-stars">{unlocked ? '★'.repeat(stars) + '☆'.repeat(3 - stars) : '🔒'}</span>
                 </button>
               {/each}
             </div>
@@ -276,6 +446,8 @@
             <div
               class="body {b.type}"
               class:cracked
+              class:thin-h={b.thin === 'h'}
+              class:thin-v={b.thin === 'v'}
               style:left="{b.x - b.w / 2}px"
               style:top="{b.y - b.h / 2}px"
               style:width="{b.w}px"
@@ -284,11 +456,18 @@
             >
               {#if b.isTarget}
                 <span class="face">{TARGET_EMOJI[b.type]}</span>
-                {#if b.hpRatio < 1}<span class="hpbar"><i style:width="{b.hpRatio * 100}%"></i></span>{/if}
+                {#if b.hpRatio < 1}
+                  <span class="crack">💥</span>
+                  <span class="stars-orbit"><i>⭐</i><i>⭐</i></span>
+                {/if}
               {:else if BIRD_EMOJI[b.type]}
                 <span class="face">{BIRD_EMOJI[b.type]}</span>
+              {:else if b.thin}
+                <span class="mat grain" style:--c={MATERIALS[b.type]?.color ?? '#ccc'}></span>
+                {#if cracked}<span class="crack">💥</span>{/if}
               {:else}
                 <span class="mat" style:--c={MATERIALS[b.type]?.color ?? '#ccc'}></span>
+                <span class="block-face">{BLOCK_EMOJI[b.type] ?? ''}</span>
                 {#if cracked}<span class="crack">💥</span>{/if}
               {/if}
             </div>
@@ -300,10 +479,59 @@
         {/if}
 
         <div class="sling" style:left="{SLING.x}px" style:top="{SLING.y}px"></div>
-        {#if aimPoint}
+
+        <!-- ghost trail of the previous shot -->
+        {#if lastGhost}
           <svg class="aimline" viewBox="0 0 {WORLD_W} {WORLD_H}">
-            <line x1={SLING.x} y1={SLING.y} x2={2 * SLING.x - aimPoint.x} y2={2 * SLING.y - aimPoint.y} stroke="#FFD54F" stroke-width="3" stroke-dasharray="6 8" opacity="0.8" />
+            {#each lastGhost as p, i (i)}
+              <circle cx={p.x} cy={p.y} r="2.5" fill="#FFD54F" opacity="0.22" />
+            {/each}
           </svg>
+        {/if}
+
+        <!-- score popups -->
+        {#each popups as p (p.id)}
+          <div class="popup" style:left="{p.x}px" style:top="{p.y}px" onanimationend={() => removePopup(p.id)}>
+            {p.text}
+          </div>
+        {/each}
+
+        <!-- silent emoji debris -->
+        {#each particles as p (p.id)}
+          <span
+            class="particle"
+            style:left="{p.x}px"
+            style:top="{p.y}px"
+            style:font-size="{p.size}px"
+            style:opacity="{Math.max(0, p.life / 0.6)}"
+            style:transform="translate(-50%, -50%) rotate({p.rot}deg)"
+          >{p.emoji}</span>
+        {/each}
+
+        <!-- next bird perched in the sling + the queue behind it -->
+        {#if waitingKind}
+          <div class="waiting-bird" style:left="{SLING.x}px" style:top="{SLING.y - 30}px">{BIRD_EMOJI[waitingKind]}</div>
+        {/if}
+        {#each upcomingKinds as kind, i (i)}
+          <div class="queue-bird" style:left="{SLING.x - 70 - i * 34}px" style:top="{GROUND_Y - 16}px">{BIRD_EMOJI[kind]}</div>
+        {/each}
+
+        {#if dragging && loadedBird}
+          <svg class="aimline" viewBox="0 0 {WORLD_W} {WORLD_H}">
+            {#each traj?.points ?? [] as p, i (i)}
+              <circle
+                cx={p.x}
+                cy={p.y}
+                r={i === traj.firstBounce ? 7 : 3.5}
+                fill="#FFD54F"
+                opacity={i === traj.firstBounce ? 0.95 : 0.6}
+              />
+            {/each}
+            <!-- rubber bands: rear + front, stretched to the pouch -->
+            <line x1={SLING.x - 9} y1={SLING.y - 42} x2={dragging.x} y2={dragging.y} stroke="#5a3620" stroke-width="7" stroke-linecap="round" />
+            <line x1={SLING.x + 9} y1={SLING.y - 42} x2={dragging.x} y2={dragging.y} stroke="#7a4a28" stroke-width="7" stroke-linecap="round" />
+          </svg>
+          <div class="pouch-bird" style:left="{dragging.x}px" style:top="{dragging.y}px">{BIRD_EMOJI[loadedBird]}</div>
         {/if}
         </div>
 
@@ -320,15 +548,18 @@
             {#if outcome === 'failed'}
               <p class="ov-title">😅</p>
               <p class="score-line">{targetsBroken}/{targetsTotal} 🎯</p>
-              <p class="hint-line">{$_('shotsRetry', { n: shotsLeft })}</p>
+              <p class="hint-line">{$_('shotsEmpty')}</p>
             {:else}
               {#if outcome.stars >= 2 || newBestStars}<Confetti />{/if}
               <p class="ov-title">{'⭐'.repeat(outcome.stars)}{'☆'.repeat(3 - outcome.stars)}</p>
               <p class="score-line">⭐ {outcome.score}</p>
+              {#if levelN >= 20}
+                <p class="all-done" data-testid="campaign-complete">🎉 {$_('allDone')}</p>
+              {/if}
             {/if}
             <BigButton onclick={() => startLevel(levelN)}>{$_('replay')}</BigButton>
-            {#if outcome !== 'failed'}
-              <BigButton variant="ghost" onclick={() => startLevel(Math.min(20, levelN + 1))}>
+            {#if outcome !== 'failed' && levelN < 20}
+              <BigButton variant="ghost" onclick={() => startLevel(levelN + 1)}>
                 {$_('nextLevel')} ▶
               </BigButton>
             {/if}
@@ -397,10 +628,100 @@
   .body { position: absolute; border-radius: 6px; display: flex; align-items: center; justify-content: center; }
   .body .face { font-size: 36px; line-height: 1; z-index: 1; }
   .body.wood .mat, .body.ice .mat, .body.stone .mat { position: absolute; inset: 2px; border-radius: 4px; background: var(--c); opacity: 0.9; }
+  /* thin planks/columns: pure material color with grain shading along the long axis */
+  .mat.grain { position: absolute; inset: 1px; border-radius: 3px; opacity: 0.95; }
+  .thin-h .mat.grain {
+    background:
+      repeating-linear-gradient(180deg, rgba(0, 0, 0, 0.10) 0 2px, transparent 2px 6px),
+      linear-gradient(180deg, rgba(255, 255, 255, 0.18), rgba(0, 0, 0, 0.12)),
+      var(--c);
+  }
+  .thin-v .mat.grain {
+    background:
+      repeating-linear-gradient(90deg, rgba(0, 0, 0, 0.10) 0 2px, transparent 2px 6px),
+      linear-gradient(90deg, rgba(255, 255, 255, 0.18), rgba(0, 0, 0, 0.12)),
+      var(--c);
+  }
+  .block-face { position: relative; z-index: 1; font-size: 26px; line-height: 1; }
   .body.cracked .mat { clip-path: polygon(0 0, 60% 0, 45% 40%, 100% 35%, 100% 100%, 0 100%); }
-  .crack { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 16px; }
-  .hpbar { position: absolute; bottom: 2px; left: 4px; right: 4px; height: 3px; background: rgba(0,0,0,.4); border-radius: 2px; overflow: hidden; }
-  .hpbar i { display: block; height: 100%; background: #7ee787; }
+  .crack { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 16px; z-index: 2; pointer-events: none; }
+  .stars-orbit {
+    position: absolute;
+    inset: -8px;
+    z-index: 3;
+    animation: orbit-spin 1.6s linear infinite;
+    pointer-events: none;
+  }
+  .stars-orbit i { position: absolute; font-size: 13px; font-style: normal; }
+  .stars-orbit i:nth-child(1) { top: -4px; left: 50%; }
+  .stars-orbit i:nth-child(2) { bottom: -4px; right: 18%; }
+  @keyframes orbit-spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+  }
+  .pouch-bird {
+    position: absolute;
+    width: 34px;
+    height: 34px;
+    margin: -17px 0 0 -17px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 28px;
+    line-height: 1;
+    pointer-events: none;
+    z-index: 2;
+  }
+  .waiting-bird {
+    position: absolute;
+    margin: -34px 0 0 -13px;
+    font-size: 26px;
+    line-height: 1;
+    pointer-events: none;
+    z-index: 1;
+    animation: perch-bob 2.2s ease-in-out infinite;
+  }
+  .queue-bird {
+    position: absolute;
+    margin: -10px 0 0 -10px;
+    font-size: 18px;
+    line-height: 1;
+    opacity: 0.85;
+    pointer-events: none;
+    z-index: 1;
+  }
+  .popup {
+    position: absolute;
+    transform: translate(-50%, -50%);
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--gold, #FFD54F);
+    text-shadow: 0 0 8px rgba(255, 213, 79, 0.6);
+    pointer-events: none;
+    z-index: 4;
+    animation: popup-rise 0.9s ease-out forwards;
+  }
+  @keyframes popup-rise {
+    from { opacity: 1; translate: 0 0; }
+    to { opacity: 0; translate: 0 -44px; }
+  }
+  .particle {
+    position: absolute;
+    line-height: 1;
+    pointer-events: none;
+    z-index: 3;
+  }
+  .all-done {
+    margin: 0;
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--gold);
+    text-shadow: 0 0 10px rgba(255, 213, 79, 0.6);
+  }
+  @keyframes perch-bob {
+    0%, 100% { rotate: 0deg; }
+    50% { rotate: -6deg; }
+  }
   .sling { position: absolute; width: 18px; height: 44px; margin: -44px 0 0 -9px; border-radius: 8px; background: linear-gradient(180deg, #a06a3a, #7a4a28); box-shadow: 0 0 12px rgba(255,213,79,.5); }
   .aimline { position: absolute; inset: 0; width: 900px; height: 620px; pointer-events: none; }
   .overlay {

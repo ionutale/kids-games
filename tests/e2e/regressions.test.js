@@ -263,26 +263,20 @@ test.describe('R7 — Angry Emoji mobile best practices', () => {
     await startLevel1(page);
     const stage = page.getByTestId('stage');
     const box = await stage.boundingBox();
+    const scale = box.width / 900; // screen px per world px
     const sx = box.x + (150 / 900) * box.width;
     const sy = box.y + (500 / 620) * box.height;
-    const d = { blocks: 4 }; // L1 has a 4-block tower
-    // aim straight into the tower base
-    const tx = box.x + (574 / 900) * box.width;
-    const ty = box.y + (534 / 620) * box.height;
-    const dx = tx - sx;
-    const dy = ty - sy;
-    const len = Math.hypot(dx, dy);
+    // flat, near-full-power shot (world-space offset) into the hut roofline:
+    // trajectory crosses the plank band (y 465–488) right at the house front
     await page.mouse.move(sx, sy);
     await page.mouse.down();
-    await page.mouse.move(sx + (dx / len) * 160, sy + (dy / len) * 160, { steps: 8 });
+    await page.mouse.move(sx - 140 * scale, sy + 20 * scale, { steps: 8 });
     await page.mouse.up();
     await page.waitForTimeout(2500);
     const scoreTxt = await page.locator('.hud-row .hud-item').first().textContent();
     const n = parseInt(scoreTxt.replace(/\D/g, ''), 10) || 0;
-    // at least one block broke (5pts each) or a target (10) — must exceed 0 and
-    // be consistent with block payouts existing (score is not stuck at 0)
+    // the shot must break at least one block (5 pts each) or a target (10)
     expect(n).toBeGreaterThan(0);
-    void d;
   });
 
   test('R7f: failed level hides the Next Level button', async ({ page }) => {

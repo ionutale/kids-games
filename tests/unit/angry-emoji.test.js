@@ -4,6 +4,7 @@ import {
   addBody,
   removeBody,
   step,
+  cull,
   MATERIALS,
   DAMAGE_SPEED_THRESHOLD
 } from '$lib/angry-emoji/phys.js';
@@ -39,6 +40,13 @@ describe('physics stability', () => {
     for (let i = 0; i < 240; i++) step(world, 1 / 60);
     expect(block.vx).toBeLessThan(20);
   });
+
+  it('removeBody works', () => {
+    const world = createWorld();
+    const b = addBody(world, { x: 10, y: 10, w: 5, h: 5, type: 'wood' });
+    removeBody(world, b);
+    expect(world.bodies.length).toBe(0);
+  });
 });
 
 describe('tunneling guard', () => {
@@ -51,7 +59,6 @@ describe('tunneling guard', () => {
     let passed = false;
     for (let i = 0; i < 30; i++) {
       step(world, 1 / 60);
-      if (bird.x > 520 && bird.broken === false && bird.hp !== Infinity) { /* noop */ }
       if (bird.x > 700) passed = true;
     }
     // bird may break blocks but must never appear far beyond the wall unimpeded
@@ -88,6 +95,14 @@ describe('material damage thresholds', () => {
     expect(DAMAGE_SPEED_THRESHOLD).toBeGreaterThan(100);
   });
 
+  it('thin shapes take thickness-scaled damage headroom (hpScale halves plank HP)', () => {
+    const world = createWorld();
+    const cube = addBody(world, { x: 300, y: 300, w: 46, h: 46, type: 'wood' });
+    const column = addBody(world, { x: 600, y: 300, w: 23, h: 92, type: 'wood', hpScale: 23 / 46 });
+    expect(cube.maxHp).toBe(MATERIALS.wood.hp);
+    expect(column.maxHp).toBeCloseTo(MATERIALS.wood.hp * 0.5, 5);
+  });
+});
 
 describe('projectile behaviors', () => {
   it('plain bird cannot damage a shielded boss; fire bird can', () => {
@@ -127,10 +142,25 @@ describe('projectile behaviors', () => {
   });
 });
 
-  it('removeBody works', () => {
+describe('cull target accounting', () => {
+  it('a living target shoved off-world flows through brokenLog like a kill', () => {
     const world = createWorld();
-    const b = addBody(world, { x: 10, y: 10, w: 5, h: 5, type: 'wood' });
-    removeBody(world, b);
-    expect(world.bodies.length).toBe(0);
+    addBody(world, GROUND);
+    const target = addBody(world, { x: 1300, y: 500, w: 40, h: 48, type: 'targetBasic', vx: 1200 });
+    for (let i = 0; i < 3; i++) step(world, 1 / 60); // carries it past maxX before any cull runs
+    cull(world, { minX: -450, maxX: 1350, maxY: 1220 });
+    expect(world.bodies.includes(target)).toBe(false); // removed either way
+    expect(target.broken).toBe(true);
+    expect(world.brokenLog).toContain(target); // scored by the frame loop
+    expect(world.broken).toBe(1);
+  });
+
+  it('dead or non-target bodies are culled silently', () => {
+    const world = createWorld();
+    addBody(world, GROUND);
+    const debris = addBody(world, { x: 1400, y: 500, w: 46, h: 46, type: 'wood' });
+    cull(world, { minX: -450, maxX: 1350, maxY: 1220 });
+    expect(world.bodies.includes(debris)).toBe(false);
+    expect(world.brokenLog.length).toBe(0);
   });
 });

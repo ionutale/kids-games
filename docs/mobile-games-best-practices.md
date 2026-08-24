@@ -87,6 +87,11 @@ Sources: [Apple HIG](https://developer.apple.com/design/human-interface-guidelin
 - Positive-only feedback (repo-wide rule): wrong input = silent/gentle visual, never punitive sound.
 - Forgiving timing: generous windows, second chances, no fail-spirals.
 - Pre-reader friendly: emoji/icon-first labels; localized strings kept short.
+- **Offer a tap alternative to drags**: dragging is the hardest gesture for ages
+  2–3. Sort-type games should support *tap item → tap target* alongside drag —
+  it also makes the game usable with assistive tech that can't drag.
+- Re-grab tolerance: if a dropped item is animating back, a new touch should
+  cancel the animation and start a fresh grab — never swallow input.
 
 ## 8. Compliance checklist
 

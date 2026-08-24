@@ -59,6 +59,39 @@ export function playFlashWhoosh(pitch = 1) {
   noiseSweep(0.3, { from: 300, to: 2000, pitch });
 }
 
+/** Rubbery low wobble while drawing the slingshot band taut. */
+export function playStretch(pitch = 1) {
+  tone(160, 0.18, { type: 'sawtooth', gain: 0.06, pitch });
+  tone(210, 0.14, { type: 'sawtooth', gain: 0.05, pitch: pitch * 1.15, delay: 0.06 });
+}
+
+/** Big low blast — TNT crates and the fire-bird explosion. */
+export function playBoom() {
+  noiseSweep(0.5, { from: 500, to: 70, gain: 0.28 });
+  tone(70, 0.35, { type: 'sine', gain: 0.22 });
+}
+
+/** Heavy non-breaking impact thud. scale 0–1 sets the punch. */
+export function playThud(scale = 1) {
+  tone(75, 0.1, { type: 'sine', gain: 0.05 + 0.13 * Math.min(1, scale) });
+}
+
+/** Material-flavoured break sounds — "if it moves it should make a sound". */
+export function playMaterialBreak(type) {
+  if (type === 'tnt') return playBoom();
+  if (type === 'ice') {
+    tone(1568, 0.08, { type: 'triangle', gain: 0.1 });
+    tone(2093, 0.07, { type: 'triangle', gain: 0.08, delay: 0.04 });
+    return;
+  }
+  if (type === 'stone') {
+    tone(120, 0.12, { type: 'sawtooth', gain: 0.16 });
+    return;
+  }
+  // wood (and anything else): creak-crack
+  noiseSweep(0.12, { from: 500, to: 180, gain: 0.16 });
+}
+
 export function playReadyTick(pitch = 1) {
   tone(900, 0.06, { type: 'square', gain: 0.07, pitch });
   tone(900, 0.06, { type: 'square', gain: 0.07, pitch, delay: 0.14 });

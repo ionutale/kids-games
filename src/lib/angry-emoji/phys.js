@@ -8,12 +8,13 @@
  */
 
 export const MATERIALS = {
-  wood: { density: 1.0, hp: 60, restitution: 0.05, friction: 0.5 },
-  ice: { density: 0.8, hp: 25, restitution: 0.1, friction: 0.05 },
-  stone: { density: 1.6, hp: 240, restitution: 0.0, friction: 0.7 },
+  wood: { density: 1.0, hp: 60, restitution: 0.05, friction: 0.5, color: '#C08552' },
+  ice: { density: 0.8, hp: 25, restitution: 0.1, friction: 0.05, color: '#A8D8F0' },
+  stone: { density: 1.6, hp: 240, restitution: 0.0, friction: 0.7, color: '#9AA0A8' },
   bird: { density: 0.12, hp: Infinity, restitution: 0.1, friction: 0.05 },
   birdFire: { density: 0.14, hp: Infinity, restitution: 0.1, friction: 0.05, dmgMul: 3 },
   ball: { density: 0.5, hp: Infinity, restitution: 0.85, friction: 0.1 },
+  tnt: { density: 0.6, hp: 15, restitution: 0.05, friction: 0.4, color: '#E4572E' },
   ground: { density: 0, hp: Infinity, restitution: 0.0, friction: 0.9 },
   targetBasic: { density: 0.6, hp: 30, restitution: 0.05, friction: 0.4 },
   targetTough: { density: 0.8, hp: 90, restitution: 0.05, friction: 0.4 },
@@ -24,28 +25,72 @@ export const GRAVITY = 980;
 export const SUBSTEPS = 4;
 export const SLOP = 0.5; // penetration allowed before correction (px)
 export const DAMAGE_SPEED_THRESHOLD = 150; // px/s — slower contact never damages
+export const HEAVY_IMPACT_THRESHOLD = 350; // px/s — heavy non-breaking hit → thud
+export const EXPLOSION_IMPULSE = 900; // px/s shove at blast center
 
 export function createWorld() {
-  return { g: GRAVITY, bodies: [], broken: 0, nextId: 1, brokenLog: [] };
+  return { g: GRAVITY, bodies: [], broken: 0, nextId: 1, brokenLog: [], impactLog: [], time: 0 };
+}
+
+/**
+ * Radial explosion: linear damage falloff (bypasses bird/ball immunity —
+ * the blast is its own impactor type) plus an outward velocity shove.
+ * Victims flow through the normal broken/brokenLog path, so chained TNT
+ * detonates across subsequent steps.
+ */
+export function explode(world, { x, y, radius = 130, maxDamage = 320 }) {
+  for (const b of world.bodies) {
+    if (b.isStatic || b.broken) continue;
+    const dx = b.x - x;
+    const dy = b.y - y;
+    const d = Math.hypot(dx, dy);
+    if (d > radius) continue;
+    const falloff = 1 - d / radius;
+    if (b.hp !== Infinity) {
+      b.hp -= maxDamage * falloff;
+      if (b.hp <= 0 && !b.broken) {
+        b.broken = true;
+        world.broken++;
+        world.brokenLog.push(b);
+      }
+    }
+    const len = d || 1;
+    const power = falloff * EXPLOSION_IMPULSE;
+    b.vx += (dx / len) * power;
+    b.vy += (dy / len) * power;
+  }
 }
 
 /**
  * Removes dynamic bodies that escaped the play area (off-screen birds, sunken
  * debris). Static bodies are always kept. Bounds use body centers.
+ * A living target shoved off-world still counts as destroyed: it flows through
+ * the normal brokenLog path so it pays points, popup and sound like any kill.
  */
-export function cull(world, { maxX, maxY }) {
-  const minX = arguments[1]?.minX ?? -Infinity;
+export function cull(world, { maxX, maxY, minX = -Infinity }) {
+  const removed = [];
   world.bodies = world.bodies.filter((b) => {
     if (b.isStatic) return true;
-    if (b.x < minX || b.x > maxX) return false;
-    if (b.y > maxY) return false;
+    if (b.x < minX || b.x > maxX || b.y > maxY) {
+      removed.push(b);
+      return false;
+    }
     return true;
   });
+  for (const b of removed) {
+    if (!b.broken && b.hp > 0 && b.type.startsWith('target') && world.brokenLog) {
+      b.broken = true;
+      world.broken++;
+      world.brokenLog.push(b);
+    }
+  }
 }
 
-export function addBody(world, { x, y, w, h, type = 'wood', isStatic = false, vx = 0, vy = 0 }) {
+export function addBody(world, { x, y, w, h, type = 'wood', isStatic = false, vx = 0, vy = 0, patrol = null, hpScale = 1 }) {
   const m = MATERIALS[type];
   const id = world.nextId++;
+  // thin shapes (planks, columns) are flimsier: hp scales with thickness
+  const scaledHp = m.hp === Infinity ? Infinity : m.hp * hpScale;
   const body = {
     id,
     type,
@@ -58,12 +103,14 @@ export function addBody(world, { x, y, w, h, type = 'wood', isStatic = false, vx
     vy,
     mass: isStatic ? Infinity : (m.density * (w * h)) / 1600,
     restitution: m.restitution,
-    maxHp: m.hp,
-    hp: m.hp,
+    maxHp: scaledHp,
+    hp: scaledHp,
     friction: m.friction,
     dmgMul: m.dmgMul ?? 1,
     immuneTo: m.immuneTo ?? null,
-    broken: false
+    broken: false,
+    // self-driven horizontal patrol: overrides gravity & friction each substep
+    patrol: patrol ? { amp: patrol.amp ?? 0, speed: patrol.speed ?? 1, phase: patrol.phase ?? 0 } : null
   };
   world.bodies.push(body);
   return body;
@@ -157,6 +204,16 @@ function resolve(world, a, b, o) {
       if (world.brokenLog) world.brokenLog.push(victim);
     }
   }
+  // heavy non-breaking hit → thud (breaking hits already get their break sound)
+  if (
+    !victim.isStatic &&
+    !victim.broken &&
+    victim.hp !== Infinity &&
+    impactSpeed > HEAVY_IMPACT_THRESHOLD &&
+    world.impactLog
+  ) {
+    world.impactLog.push({ x: victim.x, y: victim.y, speed: impactSpeed });
+  }
 }
 
 function collideStep(world) {
@@ -183,9 +240,16 @@ function collideStep(world) {
 }
 
 function integrate(world, h) {
+  world.time += h;
   for (const b of world.bodies) {
     if (b.isStatic || b.broken) continue;
-    b.vy += world.g * h;
+    if (b.patrol) {
+      // x(t) = anchor + amp·sin(speed·t + phase) → velocity is its derivative
+      b.vx = Math.cos(world.time * b.patrol.speed + b.patrol.phase) * b.patrol.amp * b.patrol.speed;
+      b.vy = 0;
+    } else {
+      b.vy += world.g * h;
+    }
     b.x += b.vx * h;
     b.y += b.vy * h;
   }
@@ -196,5 +260,13 @@ export function step(world, dt) {
   for (let s = 0; s < SUBSTEPS; s++) {
     integrate(world, h);
     collideStep(world);
+  }
+  // TNT detonation pass — chained crates cascade within the safety cap
+  let guard = 0;
+  while (guard++ < 8) {
+    const tnt = world.brokenLog.find((b) => b.type === 'tnt' && !b.detonated);
+    if (!tnt) break;
+    tnt.detonated = true;
+    explode(world, { x: tnt.x, y: tnt.y });
   }
 }

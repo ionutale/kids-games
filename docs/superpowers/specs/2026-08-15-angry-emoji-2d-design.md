@@ -42,10 +42,28 @@ The physics core is the validated AABB-only engine from the destructible-towers 
 
 - Damage crack overlay at ≤40% HP
 
+### Shapes: cubes, planks, columns
+- Blocks are axis-aligned boxes in three shapes: **cube** (46×46), horizontal **plank**
+  (92×23), vertical **column** (23×92)
+- **Thickness-scaled HP**: a block's HP = material base × (min(w,h) ÷ 46) — planks and
+  columns are roughly half as tough as a cube of the same material ("thin breaks easy")
+- Mass stays area-based (`density × w × h ÷ 1600`), so planks hit as hard as cubes
+- Thin shapes render as pure material color with grain shading along the long axis
+  (no emoji fits them); cubes keep the emoji face
+
+### Destruction juice
+- Silent emoji particle bursts when blocks/targets break (wood splinters, ice shards,
+  stone chips, 💥⭐ on targets) and 💨 dust puffs on heavy non-breaking impacts
+- Purely visual: hard cap of ~40 live particles, ~0.6s lifetime, no sound added
+
 ### Launch & Aim
 - **Slingshot drag**: press the slingshot, drag back, release to launch (touch-native, one finger)
 - **Always-on dotted aim-line** showing the trajectory to the first bounce point
 - Max launch speed 1750px/s; power scales with drag distance
+- Releases shorter than ~30px are accidental taps and are cancelled silently
+- Releases aimed **behind the slingshot** (launch velocity pointing away from the towers)
+  are also cancelled silently — the bird returns to its perch and **no ammo is spent**
+  (mirrors AB blocking behind-the-sling aim)
 - Projectile spawns as a circle (rendered emoji), collides as an AABB
 
 ### Emoji Cast
@@ -62,37 +80,49 @@ The physics core is the validated AABB-only engine from the destructible-towers 
 
 ### Scoring & Stars
 - Points: **+10 per target destroyed, +5 per block knocked out, +25 per unused shot** at level end
+- A living target knocked off-world counts as destroyed and pays through the same
+  broken-accounting path (points, popup, sound) — it can never vanish silently
 - Star thresholds (vs. level max score = all targets + all blocks + all shots unused):
   - 1★: ≥1 target destroyed
   - 2★: ≥60% of max score
   - 3★: ≥90% of max score
 - Best stars per level persisted to localStorage (`angry-emoji-levels`)
+- Winning **level 20** shows an "all levels complete 🎉" badge instead of a Next Level
+  button (which would otherwise silently replay level 20)
 
 ### Ammo & Failure
-- Ammo varies per level (1–3 birds), tuned per layout
+- Ammo varies per level: tier 4 → 3; tiers 2–3 → 2; tier 1 → 1 on level 1, else 2
 - When ammo runs out: level ends, remaining targets shown, **replay prompt appears**
-- Unused shots drop out of the score calculation at end (only what was actually spent counts toward max)
+- Unused shots are paid out at end (+25 each) and are baked into the level's max score,
+  so finishing with birds in hand is what pushes a clear into the 2★/3★ bands
 
 ### Level Structure (20 levels, 4 tiers × 5)
 | Tier | Description | Birds | Materials |
 |---|---|---|---|
-| 1 | Single tower, gentle layouts | 1 | No stone |
-| 2 | Mixed materials | 2 | Wood + ice |
-| 3 | Stone + shields | 2–3 | Stone included |
-| 4 | Multi-tower + moving blocks | 3 | All materials |
+| 1 | Hand-crafted shelters (houses, pyramids, bridges) | 1 | No stone |
+| 2 | Mixed wood + ice forts | 2 | Wood + ice |
+| 3 | Stone bunkers, tough targets, one TNT crate | 2 | Stone included |
+| 4 | Multi-tower compounds, patrol blocks, two TNT crates, boss on 18–20 | 3 | All materials |
 
+- Every layout is hand-crafted (no procedural drift): each level has a distinct
+  silhouette and an intended solution shape (collapse the roof, snap the column,
+  chain the TNT)
 - Tiers unlock sequentially: completing a level unlocks the next; completing all 5 in a tier unlocks the next tier
-- Level data as static config arrays (`src/lib/angry-emoji/levels.js`)
+- Level data as static config arrays (`src/lib/angry-emoji/levels.js`); a unit test
+  builds every level and asserts nothing breaks or drifts at spawn
 
 ### Sounds (positive-only, WebAudio tones via `$lib/sounds/audioManager.js`)
 | Event | Sound |
 |---|---|
 | Launch | Whoosh |
-| Block break | Satisfying crack/pop |
+| Block break | Material crack/pop (wood/ice/stone/TNT flavours) |
+| Heavy non-breaking impact | Thud (throttled) |
 | Target destroyed | Happy pop |
-| Level complete | Ascending chime |
-| New best stars | Fanfare |
-| Miss / failed level | Silence (no punitive sounds) |
+| Level complete with ≥2 stars | Fanfare (any <2★ win gets the ascending chime) |
+| Miss / failed level / cancelled shot | Silence (no punitive sounds) |
+
+Note: the fanfare fires on any ≥2★ win (not strictly new-best stars); confetti still
+requires a ≥2★ win or a new personal best.
 
 ### Architecture
 - `src/lib/angry-emoji/phys.js` — the validated physics engine (lifted from the prototype)

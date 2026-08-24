@@ -57,6 +57,8 @@
 - **Bin**: A drop target area representing one Category.
 - **Category**: A labeled group of related Emojis (e.g., Animals, Food, Vehicles).
 - **Round**: A set of 8-10 Emojis the player must sort into the correct Bins.
+- **Tap-to-Place**: The dual interaction — drag the Emoji into a Bin, or tap the Emoji to lift it and tap the Bin to drop it.
+- **Hover-Correct**: A green glow + ✓ mark on the Bin matching the dragged Emoji; non-matching Bins dim softly.
 
 ## Path Builder Game
 
@@ -111,6 +113,8 @@ The following games have been proposed but not yet designed or implemented. Each
 - **Bin**: A drop target area representing one Category.
 - **Category**: A labeled group of related Emojis (e.g., Animals, Food, Vehicles).
 - **Round**: A set of 8-10 Emojis the player must sort into the correct Bins.
+- **Tap-to-Place**: The dual interaction — drag the Emoji into a Bin, or tap the Emoji to lift it and tap the Bin to drop it.
+- **Hover-Correct**: A green glow + ✓ mark on the Bin matching the dragged Emoji; non-matching Bins dim softly.
 
 ## Path Builder Game
 
@@ -147,12 +151,25 @@ The following games have been proposed but not yet designed or implemented. Each
 
 ## Angry Emoji 2D Game
 
-- **Slingshot**: Touch drag-to-aim, release-to-launch; dotted aim-line always on.
-- **Projectile**: 😡 default, 🐦🔥 heavy (breaks stone), 🧱 bouncy.
-- **Target**: 😠 basic, 🤬 tough (2 hits), 👿 boss (shielded); hit state = cracked face + circling stars.
-- **Block**: Wood/Ice/Stone destructible tower materials (validated AABB physics); crack overlay at ≤40% HP.
+- **Slingshot**: Touch drag-to-aim, release-to-launch; while dragging shows the rubber band, the loaded bird in the pouch, and a dotted **Trajectory Preview** (parabola + first-bounce marker) computed from the exact launch math; a low stretch sound plays on grab. Releases aimed behind the slingshot (or tiny accidental drags) are **cancelled silently** — the bird re-perches and no ammo is spent.
+- **Trajectory Preview**: Deterministic aim dots (`aim.js`) integrated with the engine's gravity and the loaded bird's restitution; simulates the ground plane only, continuing past the first bounce.
+- **Projectile**: 😡 default, 🐦🔥 heavy (breaks stone), 🧱 bouncy; tier-graduated loadout via `birdForShot` — tier 1 plain only, tier 2 opens bird/closes ball, tier 3 opens fire bird, tier 4 fire → ball → bird (keeps the boss breakable).
+- **Ability Tap**: Tapping the screen while a bird is airborne fires its one-shot power — 🐦🔥 **detonates** (`explode()` + self-remove), 🧱 **slams** straight down; 😡 has none (Red-style). New slingshot grabs are blocked until the flying bird settles.
+- **Explosion**: Engine primitive `explode(world, {x, y, radius, maxDamage})` — linear damage falloff plus outward shove; blasts bypass bird/ball immunity, so they hurt the shielded boss; chained TNT cascades under a per-step safety cap.
+- **Target**: 😠 basic, 🤬 tough (2 hits), 👿 boss (shielded); hit state = cracked face + circling stars. A living target shoved off-world still counts as destroyed and pays points/popup/sound through the broken log.
+- **Block**: Wood/Ice/Stone destructible tower materials (validated AABB physics) shown as emoji over per-material color; crack overlay at ≤40% HP.
+- **Plank**: Thin horizontal block (92×23) spanning supports; renders as pure material color with grain shading — no emoji fits it.
+- **Column**: Vertical counterpart of the Plank (23×92); the classic weak-point leg of shelters and gates.
+- **Thickness Rule**: thin shapes take scaled damage — block HP = material base × (min(w,h) ÷ 46), so planks/columns are roughly half as tough as a cube ("thin breaks easy"); mass stays area-based.
+- **Particle Burst**: Silent emoji debris spawned at break sites (wood splinters, ice shards, stone chips, 💥⭐ on targets) plus 💨 dust puffs on heavy impacts; purely visual, capped (~40 alive), never plays sound.
+- **TNT Crate**: 🧨 low-HP explosive block (tier 3: one between the towers; tier 4: two); detonates via the engine's auto-detonation pass when broken.
+- **Ghost Trail**: Faint dotted path of the previous shot, recomputed from its exact launch params; stays visible until the next launch replaces it.
+- **Score Popup**: Floating +5/+10 text spawned at each break site from the broken log, rising and fading (~0.9s).
+- **Waiting Bird and Queue**: While idle with ammo, the next bird perches in the sling and the remaining loadout lines up beside it — kids can plan shots like in AB.
+- **Sound Set**: Material-flavoured breaks (`playMaterialBreak`: wood creak / ice shimmer / stone thud / TNT boom), throttled impact thuds for heavy non-breaking hits (>350px/s, via `world.impactLog`), and a big boom for blasts.
+- **Patrol Block**: Standalone ground block that glides side-to-side (tier 4 only); self-driven sinusoidal velocity overrides gravity and friction each substep, but it still collides and takes damage like any dynamic block.
 - **Physics Core**: AABB-only, no rotation; 4 substeps (no tunneling); kinetic-energy damage with 150px/s threshold.
-- **Tier**: 4 tiers × 5 Levels; sequential unlock; tier 1 no stone → tier 4 multi-tower + moving blocks.
+- **Tier**: 4 tiers × 5 Levels; per-level sequential unlock — level *n* playable after level *n−1* earns ≥1★; tier 1 no stone → tier 4 multi-tower + patrol blocks.
 - **Ammo**: 1–3 shots per Level, tuned per layout; exhaustion ends the Level with a replay prompt.
 - **Star**: 1★ ≥1 target, 2★ ≥60% max score, 3★ ≥90% max score; best stars persisted per Level.
 
@@ -217,12 +234,25 @@ The following games have been proposed but not yet designed or implemented. Each
 
 ## Angry Emoji 2D Game
 
-- **Slingshot**: Touch drag-to-aim, release-to-launch; dotted aim-line always on.
-- **Projectile**: 😡 default, 🐦🔥 heavy (breaks stone), 🧱 bouncy.
-- **Target**: 😠 basic, 🤬 tough (2 hits), 👿 boss (shielded); hit state = cracked face + circling stars.
-- **Block**: Wood/Ice/Stone destructible tower materials (validated AABB physics); crack overlay at ≤40% HP.
+- **Slingshot**: Touch drag-to-aim, release-to-launch; while dragging shows the rubber band, the loaded bird in the pouch, and a dotted **Trajectory Preview** (parabola + first-bounce marker) computed from the exact launch math; a low stretch sound plays on grab. Releases aimed behind the slingshot (or tiny accidental drags) are **cancelled silently** — the bird re-perches and no ammo is spent.
+- **Trajectory Preview**: Deterministic aim dots (`aim.js`) integrated with the engine's gravity and the loaded bird's restitution; simulates the ground plane only, continuing past the first bounce.
+- **Projectile**: 😡 default, 🐦🔥 heavy (breaks stone), 🧱 bouncy; tier-graduated loadout via `birdForShot` — tier 1 plain only, tier 2 opens bird/closes ball, tier 3 opens fire bird, tier 4 fire → ball → bird (keeps the boss breakable).
+- **Ability Tap**: Tapping the screen while a bird is airborne fires its one-shot power — 🐦🔥 **detonates** (`explode()` + self-remove), 🧱 **slams** straight down; 😡 has none (Red-style). New slingshot grabs are blocked until the flying bird settles.
+- **Explosion**: Engine primitive `explode(world, {x, y, radius, maxDamage})` — linear damage falloff plus outward shove; blasts bypass bird/ball immunity, so they hurt the shielded boss; chained TNT cascades under a per-step safety cap.
+- **Target**: 😠 basic, 🤬 tough (2 hits), 👿 boss (shielded); hit state = cracked face + circling stars. A living target shoved off-world still counts as destroyed and pays points/popup/sound through the broken log.
+- **Block**: Wood/Ice/Stone destructible tower materials (validated AABB physics) shown as emoji over per-material color; crack overlay at ≤40% HP.
+- **Plank**: Thin horizontal block (92×23) spanning supports; renders as pure material color with grain shading — no emoji fits it.
+- **Column**: Vertical counterpart of the Plank (23×92); the classic weak-point leg of shelters and gates.
+- **Thickness Rule**: thin shapes take scaled damage — block HP = material base × (min(w,h) ÷ 46), so planks/columns are roughly half as tough as a cube ("thin breaks easy"); mass stays area-based.
+- **Particle Burst**: Silent emoji debris spawned at break sites (wood splinters, ice shards, stone chips, 💥⭐ on targets) plus 💨 dust puffs on heavy impacts; purely visual, capped (~40 alive), never plays sound.
+- **TNT Crate**: 🧨 low-HP explosive block (tier 3: one between the towers; tier 4: two); detonates via the engine's auto-detonation pass when broken.
+- **Ghost Trail**: Faint dotted path of the previous shot, recomputed from its exact launch params; stays visible until the next launch replaces it.
+- **Score Popup**: Floating +5/+10 text spawned at each break site from the broken log, rising and fading (~0.9s).
+- **Waiting Bird and Queue**: While idle with ammo, the next bird perches in the sling and the remaining loadout lines up beside it — kids can plan shots like in AB.
+- **Sound Set**: Material-flavoured breaks (`playMaterialBreak`: wood creak / ice shimmer / stone thud / TNT boom), throttled impact thuds for heavy non-breaking hits (>350px/s, via `world.impactLog`), and a big boom for blasts.
+- **Patrol Block**: Standalone ground block that glides side-to-side (tier 4 only); self-driven sinusoidal velocity overrides gravity and friction each substep, but it still collides and takes damage like any dynamic block.
 - **Physics Core**: AABB-only, no rotation; 4 substeps (no tunneling); kinetic-energy damage with 150px/s threshold.
-- **Tier**: 4 tiers × 5 Levels; sequential unlock; tier 1 no stone → tier 4 multi-tower + moving blocks.
+- **Tier**: 4 tiers × 5 Levels; per-level sequential unlock — level *n* playable after level *n−1* earns ≥1★; tier 1 no stone → tier 4 multi-tower + patrol blocks.
 - **Ammo**: 1–3 shots per Level, tuned per layout; exhaustion ends the Level with a replay prompt.
 - **Star**: 1★ ≥1 target, 2★ ≥60% max score, 3★ ≥90% max score; best stars persisted per Level.
 
