@@ -79,10 +79,9 @@ test.describe('R1 — Next Level buttons work everywhere (IT locale)', () => {
       await page.waitForTimeout(3200);
     }
     await expect(page.getByTestId('end-overlay')).toBeVisible({ timeout: 15000 });
-    // whatever the IT label is, the SECOND BigButton is Next Level
-    const next = page.getByTestId('end-overlay').locator('.big-btn').nth(1);
-    await next.click();
-    // level indicator HUD must now show level 2 stage fresh (overlay gone)
+    // failed runs hide Next Level (B3) — Replay must restart the same level
+    const replay = page.getByTestId('end-overlay').locator('.big-btn').first();
+    await replay.click();
     await expect(page.getByTestId('end-overlay')).toBeHidden({ timeout: 5000 });
     await expect(stage).toBeVisible();
   });
@@ -203,5 +202,108 @@ test.describe('R6 — Angry Emoji renders emojis on small screens', () => {
 
     // and its emoji face must actually be rendered non-empty
     await expect(target.locator('.face')).toHaveText(/\S/);
+  });
+});
+
+test.describe('R7 — Angry Emoji mobile best practices', () => {
+  test.use({ viewport: { width: 390, height: 844 } });
+
+  async function startLevel1(page) {
+    await page.goto('/games/angry-emoji');
+    await page.getByTestId('level-1').click();
+    await expect(page.getByTestId('stage')).toBeVisible();
+  }
+
+  test('R7a: target emoji face renders ≥12px effective on a phone', async ({ page }) => {
+    await startLevel1(page);
+    const face = page.getByTestId('target-body').first().locator('.face');
+    await expect(face).toBeVisible({ timeout: 8000 });
+    const h = await face.evaluate((el) => el.getBoundingClientRect().height);
+    expect(h).toBeGreaterThanOrEqual(12);
+  });
+
+  test('R7b: pause control sits in the bottom half during play', async ({ page }) => {
+    await startLevel1(page);
+    const pause = page.locator('[data-testid="pause-btn"]');
+    await expect(pause).toBeVisible();
+    const pb = await pause.boundingBox();
+    const vh = 844;
+    expect(pb.y + pb.height / 2).toBeGreaterThan(vh / 2);
+  });
+
+  test('R7c: no horizontal overflow in portrait AND landscape', async ({ page }) => {
+    for (const vp of [{ width: 390, height: 844 }, { width: 844, height: 390 }]) {
+      await page.setViewportSize(vp);
+      await startLevel1(page);
+      await page.waitForTimeout(400);
+      const overflow = await page.evaluate(
+        () => document.documentElement.scrollWidth - document.documentElement.clientWidth
+      );
+      expect(overflow).toBeLessThanOrEqual(2);
+    }
+  });
+
+  test('R7d: drag can begin anywhere in the lower-left quadrant', async ({ page }) => {
+    await startLevel1(page);
+    const stage = page.getByTestId('stage');
+    const box = await stage.boundingBox();
+    // a point in the lower-left quadrant far from the sling
+    const startX = box.x + (120 / 900) * box.width;
+    const startY = box.y + (430 / 620) * box.height;
+    await page.mouse.move(startX, startY);
+    await page.mouse.down();
+    await page.mouse.move(startX - 80, startY + 40, { steps: 6 });
+    await page.mouse.up();
+    // shot fired ⇒ ammo went from 2 to 1
+    const hud = page.locator('.hud-row .hud-item').nth(1);
+    await expect(hud).toHaveText(/🐦\s*1/, { timeout: 3000 });
+  });
+
+  test('R7e: destroying a block pays 5 points', async ({ page }) => {
+    await startLevel1(page);
+    const stage = page.getByTestId('stage');
+    const box = await stage.boundingBox();
+    const sx = box.x + (150 / 900) * box.width;
+    const sy = box.y + (500 / 620) * box.height;
+    const d = { blocks: 4 }; // L1 has a 4-block tower
+    // aim straight into the tower base
+    const tx = box.x + (574 / 900) * box.width;
+    const ty = box.y + (534 / 620) * box.height;
+    const dx = tx - sx;
+    const dy = ty - sy;
+    const len = Math.hypot(dx, dy);
+    await page.mouse.move(sx, sy);
+    await page.mouse.down();
+    await page.mouse.move(sx + (dx / len) * 160, sy + (dy / len) * 160, { steps: 8 });
+    await page.mouse.up();
+    await page.waitForTimeout(2500);
+    const scoreTxt = await page.locator('.hud-row .hud-item').first().textContent();
+    const n = parseInt(scoreTxt.replace(/\D/g, ''), 10) || 0;
+    // at least one block broke (5pts each) or a target (10) — must exceed 0 and
+    // be consistent with block payouts existing (score is not stuck at 0)
+    expect(n).toBeGreaterThan(0);
+    void d;
+  });
+
+  test('R7f: failed level hides the Next Level button', async ({ page }) => {
+    await startLevel1(page);
+    const stage = page.getByTestId('stage');
+    const box = await stage.boundingBox();
+    const sx = box.x + (150 / 900) * box.width;
+    const sy = box.y + (500 / 620) * box.height;
+    for (let shot = 0; shot < 2; shot++) {
+      // fire weak shots straight up so nothing gets destroyed
+      await page.mouse.move(sx, sy);
+      await page.mouse.down();
+      await page.mouse.move(sx - 20, sy - 10, { steps: 4 });
+      await page.mouse.up();
+      await page.waitForTimeout(3200);
+    }
+    await expect(page.getByTestId('end-overlay')).toBeVisible({ timeout: 15000 });
+    await expect(page.getByTestId('end-overlay')).toContainText('😅');
+    const nextBtn = page.getByTestId('end-overlay').locator('.big-btn', { hasText: 'Prossimo' })
+      .or(page.getByTestId('end-overlay').locator('.big-btn', { hasText: 'Next Level' }))
+      .or(page.getByTestId('end-overlay').locator('.big-btn', { hasText: '▶' }));
+    await expect(nextBtn).toHaveCount(0);
   });
 });

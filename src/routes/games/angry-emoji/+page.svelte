@@ -7,7 +7,7 @@
   import Confetti from '$lib/components/Confetti.svelte';
   import { playPop, playMatch } from '$lib/sounds/audioManager.js';
   import { playFlashWhoosh, fanfare } from '$lib/sounds/trainerSounds.js';
-  import { createWorld, addBody, step as physStep, MATERIALS } from '$lib/angry-emoji/phys.js';
+  import { createWorld, addBody, step as physStep, cull, MATERIALS } from '$lib/angry-emoji/phys.js';
   import { getLevel, WORLD_W, WORLD_H, GROUND_Y, SLING } from '$lib/angry-emoji/levels.js';
   import { levelMaxScore, starsFor, POINTS } from '$lib/angry-emoji/score.js';
 
@@ -30,7 +30,13 @@
 
   let raf = null;
   let stageWidth = $state(0);
-  const worldScale = $derived(stageWidth > 0 ? stageWidth / WORLD_W : 1);
+  let stageHeight = $state(0);
+  const worldScale = $derived.by(() => {
+    if (stageWidth <= 0 || stageHeight <= 0) return 1;
+    return Math.min(stageWidth / WORLD_W, stageHeight / WORLD_H);
+  });
+  const worldOffsetX = $derived((stageWidth - WORLD_W * worldScale) / 2);
+  const worldOffsetY = $derived((stageHeight - WORLD_H * worldScale) / 2);
   let settling = false;
   let settleFrames = 0;
   let dragging = null; // {x,y}
@@ -48,6 +54,7 @@
 
   function saveStar(n, stars) {
     if ((bestStars[n] ?? 0) >= stars) return;
+    newBestStars = true;
     bestStars[n] = stars;
     localStorage.setItem('angry-emoji-levels', JSON.stringify(bestStars));
   }
@@ -57,10 +64,12 @@
   }
 
   function startLevel(n) {
+    if (raf) cancelAnimationFrame(raf); // never run two physics loops (B2)
     levelN = n;
     loadStars();
     const d = getLevel(n);
     world = createWorld();
+    world.brokenLog = [];
     addBody(world, { x: WORLD_W / 2, y: GROUND_Y + 20, w: WORLD_W * 2, h: 40, type: 'ground', isStatic: true });
     for (const b of d.blocks) addBody(world, b);
     for (const t of d.targets) {
@@ -81,21 +90,30 @@
   }
 
   // ---- slingshot ----
+  let activePointerId = null;
+  const inGrabZone = (p) =>
+    Math.hypot(p.x - SLING.x, p.y - SLING.y) < 150 ||
+    (p.x < WORLD_W * 0.5 && p.y > WORLD_H * 0.45); // forgiving lower-left quadrant
+
   function down(e) {
     if (screen !== 'playing' || paused || shotsLeft <= 0) return;
+    if (activePointerId !== null) return; // single-touch lock
     const p = toWorld(e);
-    if (Math.hypot(p.x - SLING.x, p.y - SLING.y) < 150) {
+    if (inGrabZone(p)) {
+      activePointerId = e.pointerId;
       dragging = p;
       aimPoint = p;
       e.preventDefault();
     }
   }
   function move(e) {
-    if (!dragging) return;
+    if (!dragging || e.pointerId !== activePointerId) return;
     aimPoint = toWorld(e);
     e.preventDefault();
   }
-  function up() {
+  function up(e) {
+    if (!dragging || (e.pointerId !== undefined && e.pointerId !== activePointerId)) return;
+    activePointerId = null;
     if (!dragging) return;
     const dx = SLING.x - aimPoint.x;
     const dy = SLING.y - aimPoint.y;
@@ -144,22 +162,20 @@
     const dt = Math.min((ts - lastTs) / 1000, 1 / 30);
     lastTs = ts;
     if (!paused) {
-      const before = world.broken;
       physStep(world, dt);
-      const newlyBroken = world.broken - before;
-      if (newlyBroken > 0) playPop();
+      cull(world, { maxX: WORLD_W + 450, maxY: WORLD_H + 600 });
 
-      // scoring: broken blocks & targets
-      for (const b of world.bodies) {
-        if (b.type.startsWith('target') && b.broken) {
+      // scoring from this step's break log (targets 10 / blocks 5 — B1)
+      for (const b of world.brokenLog.splice(0)) {
+        if (b.type.startsWith('target')) {
           score += POINTS.target;
           targetsBroken += 1;
           playMatch();
+        } else {
+          score += POINTS.block;
+          playPop();
         }
       }
-      world.bodies = world.bodies.filter((b) => !(b.broken && !b.isStatic));
-      // re-count broken targets that were removed above
-      targetsBroken = targetsTotal - world.bodies.filter((b) => b.type.startsWith('target')).length;
 
       if (settling) {
         const moving = world.bodies.some(
@@ -222,7 +238,7 @@
         {#each [1, 2, 3, 4] as tier}
           {@const unlocked = tierUnlocked(tier)}
           <div class="tier" class:locked={!unlocked}>
-            <p class="tier-name">{unlocked ? '🔓' : '🔒'} Tier {tier}</p>
+            <p class="tier-name">{unlocked ? '🔓' : '🔒'} {$_('tierLabel', { n: tier })}</p>
             <div class="lvl-grid">
               {#each Array(5) as _, i}
                 {@const n = (tier - 1) * 5 + i + 1}
@@ -241,19 +257,19 @@
         <HudPill icon="⭐" label={String(score)} />
         <HudPill icon="🐦" label={String(shotsLeft)} />
         <HudPill icon="🎯" label={`${targetsBroken}/${targetsTotal}`} />
-        <button class="pause-mini" onclick={() => (paused = !paused)}>⏸️</button>
       </div>
 
       <div
         class="stage"
         bind:clientWidth={stageWidth}
+        bind:clientHeight={stageHeight}
         data-testid="stage"
         onpointerdown={down}
         onpointermove={move}
         onpointerup={up}
         onpointercancel={up}
       >
-        <div class="world" style:transform="scale({worldScale})">
+        <div class="world" style:left="{worldOffsetX}px" style:top="{worldOffsetY}px" style:transform="scale({worldScale})">
         {#each frameBodies as b (b.id)}
           {#if b.type !== 'ground'}
             {@const cracked = b.hpRatio <= 0.4 && !b.isTarget}
@@ -279,6 +295,10 @@
           {/if}
         {/each}
 
+        {#if screen === 'playing'}
+          <button class="pause-fab" aria-label="pause" data-testid="pause-btn" onclick={() => (paused = !paused)}>⏸️</button>
+        {/if}
+
         <div class="sling" style:left="{SLING.x}px" style:top="{SLING.y}px"></div>
         {#if aimPoint}
           <svg class="aimline" viewBox="0 0 {WORLD_W} {WORLD_H}">
@@ -300,16 +320,18 @@
             {#if outcome === 'failed'}
               <p class="ov-title">😅</p>
               <p class="score-line">{targetsBroken}/{targetsTotal} 🎯</p>
-              <p class="hint-line">{shotsLeft} shots — try again!</p>
+              <p class="hint-line">{$_('shotsRetry', { n: shotsLeft })}</p>
             {:else}
               {#if outcome.stars >= 2 || newBestStars}<Confetti />{/if}
               <p class="ov-title">{'⭐'.repeat(outcome.stars)}{'☆'.repeat(3 - outcome.stars)}</p>
               <p class="score-line">⭐ {outcome.score}</p>
             {/if}
             <BigButton onclick={() => startLevel(levelN)}>{$_('replay')}</BigButton>
-            <BigButton variant="ghost" onclick={() => startLevel(Math.min(20, levelN + 1))}>
-              {$_('nextLevel')} ▶
-            </BigButton>
+            {#if outcome !== 'failed'}
+              <BigButton variant="ghost" onclick={() => startLevel(Math.min(20, levelN + 1))}>
+                {$_('nextLevel')} ▶
+              </BigButton>
+            {/if}
             <BigButton variant="ghost" onclick={() => (screen = 'select')}>{$_('back')}</BigButton>
           </div>
         {/if}
@@ -339,7 +361,6 @@
   .lvl-btn:disabled { filter: grayscale(1); opacity: 0.5; }
   .mini-stars { font-size: 10px; letter-spacing: 1px; }
   .hud-row { display: flex; gap: 8px; align-items: center; }
-  .pause-mini { min-height: var(--touch-min); padding: 0 14px; border-radius: 14px; background: var(--panel-glass); border: 1px solid var(--panel-border); }
   .stage {
     position: relative;
     width: min(96vw, 900px);
@@ -351,6 +372,19 @@
     border: 2px solid var(--panel-border);
     touch-action: none;
     user-select: none;
+    -webkit-touch-callout: none;
+  }
+  .pause-fab {
+    position: absolute;
+    right: calc(10px + env(safe-area-inset-right, 0px));
+    bottom: calc(10px + var(--safe-bottom));
+    width: 52px;
+    height: 52px;
+    border-radius: 16px;
+    font-size: 22px;
+    background: var(--panel-glass);
+    border: 1px solid var(--panel-border);
+    z-index: 5;
   }
   .world {
     position: absolute;
@@ -361,7 +395,7 @@
     transform-origin: top left;
   }
   .body { position: absolute; border-radius: 6px; display: flex; align-items: center; justify-content: center; }
-  .body .face { font-size: 22px; line-height: 1; z-index: 1; }
+  .body .face { font-size: 36px; line-height: 1; z-index: 1; }
   .body.wood .mat, .body.ice .mat, .body.stone .mat { position: absolute; inset: 2px; border-radius: 4px; background: var(--c); opacity: 0.9; }
   .body.cracked .mat { clip-path: polygon(0 0, 60% 0, 45% 40%, 100% 35%, 100% 100%, 0 100%); }
   .crack { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 16px; }
@@ -377,5 +411,5 @@
   .ov-title { font-size: 40px; margin: 0; letter-spacing: 6px; }
   .score-line { font-size: 28px; font-weight: 700; color: var(--gold); margin: 0; }
   .hint-line { color: var(--text-lo); margin: 0; }
-  .drag-hint { color: var(--text-lo); font-size: 13px; margin: 0; }
+  .drag-hint { color: var(--text-lo); font-size: 13px; margin: 0; padding-bottom: calc(6px + var(--safe-bottom)); }
 </style>

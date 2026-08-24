@@ -26,7 +26,21 @@ export const SLOP = 0.5; // penetration allowed before correction (px)
 export const DAMAGE_SPEED_THRESHOLD = 150; // px/s — slower contact never damages
 
 export function createWorld() {
-  return { g: GRAVITY, bodies: [], broken: 0, nextId: 1 };
+  return { g: GRAVITY, bodies: [], broken: 0, nextId: 1, brokenLog: [] };
+}
+
+/**
+ * Removes dynamic bodies that escaped the play area (off-screen birds, sunken
+ * debris). Static bodies are always kept. Bounds use body centers.
+ */
+export function cull(world, { maxX, maxY }) {
+  const minX = arguments[1]?.minX ?? -Infinity;
+  world.bodies = world.bodies.filter((b) => {
+    if (b.isStatic) return true;
+    if (b.x < minX || b.x > maxX) return false;
+    if (b.y > maxY) return false;
+    return true;
+  });
 }
 
 export function addBody(world, { x, y, w, h, type = 'wood', isStatic = false, vx = 0, vy = 0 }) {
@@ -140,6 +154,7 @@ function resolve(world, a, b, o) {
     if (victim.hp <= 0 && !victim.broken) {
       victim.broken = true;
       world.broken++;
+      if (world.brokenLog) world.brokenLog.push(victim);
     }
   }
 }
