@@ -20,7 +20,7 @@
   const NUDGE_MS = 3000;
   const GLIDE_MS = 160;
 
-  let { image, level = 1, backHref = '/games/glossary-puzzle', initialPlaced = null, onWin = () => {} } = $props();
+  let { image, level = 1, backHref = '/games/glossary-puzzle', initialPlaced = null, placeIds = null, onWin = () => {} } = $props();
 
   let pieces = $state([]);
   let placed = $state(new Set());
@@ -77,6 +77,10 @@
     } else {
       placed = new Set();
     }
+    if (placeIds?.length) {
+      // deterministic seeding (?place=id,id) used by tests/debug
+      for (const id of placeIds) if (pieces.some(p => p.id === id)) placed.add(id);
+    }
     celebrating = false;
     showDone = false;
     missHintId = null;
@@ -87,6 +91,10 @@
     activePointer = null;
     resetIdleTimers();
     scheduleIdleNudge();
+    // seeded/resumed state stays consistent with real play:
+    // partial ⇒ persist immediately; complete ⇒ celebrate + let onWin clear the save
+    if (placed.size > 0 && placed.size < pieces.length) saveProgress();
+    if (placed.size > 0 && placed.size === pieces.length) startCelebration();
   }
 
   function getVirtualCoords(clientX, clientY) {
@@ -220,6 +228,7 @@
     popTimer = setTimeout(() => { justPlacedId = null; }, 500);
     if (soundsLoaded) playSnap();
     vibrate(30);
+    saveProgress(); // persist after EVERY placement — tab kill must not lose progress
     if (placed.size === pieces.length) startCelebration();
   }
 
@@ -384,8 +393,8 @@
 
 <style>
   .gp-play { display: flex; flex-direction: column; flex: 1; touch-action: none; user-select: none; -webkit-user-select: none; }
-  .gp-top-bar { display: flex; justify-content: space-between; align-items: center; width: 100%; padding: 6px 12px; flex-shrink: 0; background: var(--panel-glass); backdrop-filter: blur(6px); position: relative; z-index: 1; }
-  .gp-exit-btn { font-size: 14px; font-weight: 600; color: var(--text-hi); background: var(--panel-glass); border: 1px solid var(--panel-border); border-radius: 12px; padding: 4px 8px; text-decoration: none; display: inline-flex; align-items: center; }
+  .gp-top-bar { display: flex; justify-content: space-between; align-items: center; width: 100%; padding: calc(6px + var(--safe-top)) 12px 6px; flex-shrink: 0; background: var(--panel-glass); backdrop-filter: blur(6px); position: relative; z-index: 1; }
+  .gp-exit-btn { font-size: 14px; font-weight: 600; color: var(--text-hi); background: var(--panel-glass); border: 1px solid var(--panel-border); border-radius: 12px; padding: 8px 16px; min-height: 44px; text-decoration: none; display: inline-flex; align-items: center; }
   .gp-exit-btn:active { background: rgba(94,234,212,0.25); border-color: var(--accent); }
   .gp-progress { width: calc(100% - 24px); height: 5px; margin: 0 auto; background: rgba(255,255,255,0.09); border-radius: 3px; overflow: hidden; position: relative; z-index: 1; flex-shrink: 0; }
   .gp-progress-fill { height: 100%; background: linear-gradient(90deg, var(--accent), var(--gold)); border-radius: 3px; transition: width 0.35s ease; }

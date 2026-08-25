@@ -114,3 +114,53 @@ test.describe('Glossary Puzzle E2E', () => {
     await expect(page.locator('.gp-board svg path')).toHaveCount(6);
   });
 });
+
+test.describe('Glossary Puzzle — deep audit (persistence + touch)', () => {
+  const L1_IDS = ['0-0', '0-1', '1-0', '1-1']; // L1: 2×2 grid
+
+  test('GP-place-persists: placing a piece writes the save IMMEDIATELY (no navigation)', async ({ page }) => {
+    await page.goto('/games/glossary-puzzle/play/1?image=garden&place=0-0');
+    await page.waitForTimeout(800);
+    await expect(page.locator('.gp-top-bar')).toBeVisible();
+    // progress pill reflects 1 placed
+    await expect(page.locator('.gp-top-bar .hud-item')).toContainText('1/4');
+    // save must already exist in localStorage — before any destroy/navigation
+    const saved = await page.evaluate(() => localStorage.getItem('glossary-puzzle-save'));
+    expect(saved).not.toBeNull();
+    const data = JSON.parse(saved);
+    expect(data.imageId).toBe('garden');
+    expect(data.placedIds).toEqual(['0-0']);
+  });
+
+  test('GP-win-clears-save: completing the puzzle clears the stale save + celebrates', async ({ page }) => {
+    // land on the app first so localStorage is accessible, then seed a stale save
+    await page.goto('/games/glossary-puzzle/play/1?image=garden');
+    await page.waitForTimeout(400);
+    await page.evaluate(() =>
+      localStorage.setItem('glossary-puzzle-save', JSON.stringify({
+        imageId: 'garden', level: 1, placedIds: ['0-0', '0-1', '1-0', '1-1']
+      }))
+    );
+    // resume fully-placed via the deterministic place hook
+    await page.goto('/games/glossary-puzzle/play/1?image=garden&place=' + encodeURIComponent('0-0,0-1,1-0,1-1'));
+    await expect(page.locator('.win-overlay')).toBeVisible({ timeout: 8000 });
+    const saved = await page.evaluate(() => localStorage.getItem('glossary-puzzle-save'));
+    expect(saved).toBeNull(); // stale save cleared by the win
+  });
+
+  test('GP-touch-pickup: touch-drag lifts a tray piece (ghost appears)', async ({ page }) => {
+    await page.goto('/games/glossary-puzzle/play/1?image=garden');
+    await page.waitForTimeout(800);
+    const piece = page.locator('.gp-tray-piece').first();
+    const from = await piece.boundingBox();
+    const fx = from.x + from.width / 2;
+    const fy = from.y + from.height / 2;
+
+    await piece.dispatchEvent('pointerdown', { pointerId: 31, pointerType: 'touch', isPrimary: true, clientX: fx, clientY: fy, buttons: 1, bubbles: true, cancelable: true });
+    await page.dispatchEvent(':root', 'pointermove', { pointerId: 31, pointerType: 'touch', isPrimary: true, clientX: fx, clientY: fy - 60, buttons: 1, bubbles: true, cancelable: true });
+    await page.waitForTimeout(150);
+
+    await expect(page.locator('.gp-drag-ghost')).toBeVisible();
+    await page.dispatchEvent(':root', 'pointerup', { pointerId: 31, pointerType: 'touch', isPrimary: true, clientX: fx, clientY: fy - 60, buttons: 1, bubbles: true, cancelable: true });
+  });
+});

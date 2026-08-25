@@ -14,7 +14,7 @@ Per-game e2e coverage matrix (2026-08-24 audit). Legend: ✅ covered · ⚠️ p
 | emoji-jump | ✅ | ✅ best | ✅ pause | ❌ | ✅ touch drag | 4 |
 | emoji-math | ✅ | ✅ streak | ❌ | ✅ age-typed | ⚠️ | 4 |
 | focus-tap | ✅ | ✅ level | ✅ blur | ✅ IT (regressions) | ✅ touch | 4 |
-| glossary-puzzle | ✅ | ✅ progress | ❌ | ❌ | ⚠️ mouse-drag e2e | 9 |
+| glossary-puzzle | ✅ | ✅ progress (+ per-placement save) | ❌ | ✅ labels | ✅ touch pickup | 12 |
 | memory | ✅ | ✅ level | ❌ | ❌ | ⚠️ | 5 |
 | paint | ✅ | ❌ | ❌ | ❌ | ✅ touch stroke | 7 |
 | path-builder | ✅ | ✅ level | ❌ | ❌ | ✅ | 3 |

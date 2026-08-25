@@ -7,6 +7,9 @@
 
   let level = $derived(Math.max(1, parseInt($page.params.level, 10) || 1));
   let requestedId = $derived($page.url.searchParams.get('image'));
+  let placeIds = $derived(
+    ($page.url.searchParams.get('place') || '').split(',').map(x => x.trim()).filter(Boolean)
+  );
   let image = $derived(
     PUZZLE_IMAGES.find(i => i.id === requestedId)
     || PUZZLE_IMAGES[(level - 1) % PUZZLE_IMAGES.length]
@@ -39,7 +42,9 @@
       {image}
       {level}
       {initialPlaced}
+      {placeIds}
       backHref="/games/glossary-puzzle"
+      onWin={() => clearSave()}
     />
   {/key}
 {/if}

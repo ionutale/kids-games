@@ -37,5 +37,6 @@
     {level}
     {initialPlaced}
     backHref="/games/glossary-puzzle"
+    onWin={() => clearSave()}
   />
 {/if}
