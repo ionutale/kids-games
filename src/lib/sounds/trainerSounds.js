@@ -65,6 +65,12 @@ export function playStretch(pitch = 1) {
   tone(210, 0.14, { type: 'sawtooth', gain: 0.05, pitch: pitch * 1.15, delay: 0.06 });
 }
 
+/** Gentle descending tone for level fail — feedback, never punitive. */
+export function playSoftFail() {
+  tone(392, 0.14, { type: 'sine', gain: 0.1 });
+  tone(311, 0.22, { type: 'sine', gain: 0.09, delay: 0.12 });
+}
+
 /** Big low blast — TNT crates and the fire-bird explosion. */
 export function playBoom() {
   noiseSweep(0.5, { from: 500, to: 70, gain: 0.28 });

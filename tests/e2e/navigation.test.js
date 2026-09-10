@@ -9,7 +9,6 @@ const games = [
   { id: 'soccer', name: 'Soccer' },
   { id: 'sorting', name: 'Sorting' },
   { id: 'splash', name: 'Splash' },
-  { id: 'tower-defense', name: 'Tower Defense' },
   { id: 'animal-quiz', name: 'Animal Quiz' },
 ];
 

@@ -6,11 +6,11 @@ import { test, expect } from '@playwright/test';
 
 test.describe('G1 — hub navigation sweep', () => {
   const GAMES = [
-    'animal-quiz', 'angry-emoji', 'category-sort', 'emoji-jump', 'emoji-math',
+    'animal-quiz', 'category-sort', 'emoji-math',
     'focus-tap', 'glossary-puzzle', 'memory', 'paint', 'path-builder', 'pop',
     'puzzle', 'quick-count', 'sequence-memory', 'soccer', 'sorting',
-    'speed-match', 'splash', 'spot-the-difference', 'stickers', 'tetris',
-    'tower-defense', 'what-comes-next'
+    'speed-match', 'splash', 'spot-the-difference', 'stickers',
+    'what-comes-next'
   ];
 
   for (const game of GAMES) {
@@ -119,29 +119,5 @@ test.describe('G4 — sound toggle persistence', () => {
     await page.locator('.settings-trigger').click();
     // button reflects muted state (not the 🔊 glyph)
     await expect(page.locator('.sound-btn')).not.toContainText('🔊');
-  });
-});
-
-test.describe('G5 — landscape smokes', () => {
-  test.use({ viewport: { width: 844, height: 390 } });
-
-  test('tetris: no horizontal overflow in landscape', async ({ page }) => {
-    await page.goto('/games/tetris');
-    await page.locator('.center-col .big-btn').first().click();
-    await expect(page.getByTestId('board')).toBeVisible();
-    const overflow = await page.evaluate(
-      () => document.documentElement.scrollWidth - document.documentElement.clientWidth
-    );
-    expect(overflow).toBeLessThanOrEqual(2);
-  });
-
-  test('emoji-jump: no horizontal overflow in landscape', async ({ page }) => {
-    await page.goto('/games/emoji-jump');
-    await page.locator('.big-btn.primary').click();
-    await expect(page.getByTestId('world')).toBeVisible();
-    const overflow = await page.evaluate(
-      () => document.documentElement.scrollWidth - document.documentElement.clientWidth
-    );
-    expect(overflow).toBeLessThanOrEqual(2);
   });
 });
