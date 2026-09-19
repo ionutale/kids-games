@@ -7,7 +7,7 @@
   import { loadLevel } from '$lib/trainers/progress';
   import { startTrainerMusic, stopTrainerMusic } from '$lib/sounds/trainerMusic';
 
-  let { trainerId = '', titleKey = '', tagline = '', hero = '', accent = '#7FD8FF', heroArt = '' } = $props();
+  let { trainerId = '', titleKey = '', tagline = '', hero = '', accent = '#7FD8FF', heroArt = '', showLevels = true } = $props();
 
   const level = $derived(loadLevel(trainerId));
 
@@ -30,12 +30,14 @@
     {/if}
     <h1 class="title">{titleKey}</h1>
     <p class="tagline">{tagline}</p>
-    <LevelBar
-      current={level}
-      count={10}
-      maxUnlocked={10}
-      hrefFor={(n) => `/games/${trainerId}/play/${n}`}
-    />
+    {#if showLevels}
+      <LevelBar
+        current={level}
+        count={10}
+        maxUnlocked={10}
+        hrefFor={(n) => `/games/${trainerId}/play/${n}`}
+      />
+    {/if}
     <BigButton href={`/games/${trainerId}/play/${level}`}>▶ {$_('play')}</BigButton>
   </div>
 </GameShell>

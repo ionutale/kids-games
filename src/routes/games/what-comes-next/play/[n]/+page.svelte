@@ -1,5 +1,5 @@
 <script>
-  import { onMount } from 'svelte';
+  import { onMount, untrack } from 'svelte';
   import { goto } from '$app/navigation';
   import { _ } from '$lib/stores/locale';
   import GameShell from '$lib/components/ui/GameShell.svelte';
@@ -13,8 +13,8 @@
   import { playSlotChime, fanfare } from '$lib/sounds/trainerSounds.js';
 
   let { data } = $props();
-  const level = data.level;
-  const goal = roundGoal(level);
+  const level = $derived(data.level);
+  const goal = $derived(roundGoal(level));
   const FANFARE_PITCH = 1.2;
 
   let solved = $state(0);
@@ -60,9 +60,30 @@
     goto(`/games/what-comes-next/play/${level + 1}`);
   }
 
+  function replay(e) {
+    e.preventDefault();
+    goto(`/games/what-comes-next/play/${level}?seed=${Date.now() % 1000000}`);
+  }
+
+  function resetRound() {
+    clearTimers();
+    solved = 0;
+    won = false;
+    chosen = -1;
+    filled = false;
+    nextPrompt();
+  }
+
+  // The component is reused across /play/[n] navigations: rebuild the round
+  // whenever the route hands us a different level or seed.
+  $effect(() => {
+    data.level;
+    data.seed;
+    untrack(resetRound);
+  });
+
   onMount(() => {
     startTrainerMusic('what-comes-next');
-    nextPrompt();
     return () => {
       clearTimers();
       stopTrainerMusic();
@@ -116,7 +137,7 @@
       >
         {$_('nextLevel')} ▶
       </a>
-      <a class="big-btn ghost" href={`/games/what-comes-next/play/${level}`} data-testid="replay">
+      <a class="big-btn ghost" href={`/games/what-comes-next/play/${level}`} data-testid="replay" onclick={replay}>
         {$_('replay')}
       </a>
       <a class="big-btn ghost" href="/games/what-comes-next">{$_('back')}</a>
