@@ -61,7 +61,7 @@
 
 <GameShell accent="#7FD8FF">
   {#snippet hudLeft()}
-    <HudPill icon="🔍" label={`${found.size}/${puzzle ? puzzle.diffCells.size : 0}`} />
+    <HudPill icon="🔍" label={`${found.length}/${puzzle ? puzzle.diffCells.size : 0}`} />
     <HudPill icon="✅" label={String(solvedCount)} />
   {/snippet}
 

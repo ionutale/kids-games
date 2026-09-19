@@ -10,6 +10,26 @@ test.describe('Spot the Difference E2E', () => {
     expect(cells).toBeGreaterThanOrEqual(9); // 3×3 minimum
   });
 
+  test('HUD progress pill shows found/total (never undefined) and updates', async ({ page }) => {
+    await page.goto('/games/spot-the-difference');
+    await page.waitForTimeout(600);
+    const pill = page.locator('.top-bar .hud-item').first();
+    await expect(pill).toContainText(/0\/\d+/);
+    await expect(pill).not.toContainText('undefined');
+
+    const size = await page.locator('[data-testid="grid-left"] .cell').count();
+    for (let i = 0; i < size; i++) {
+      const l = await page.getByTestId(`left-${i}`).textContent();
+      const r = await page.getByTestId(`right-${i}`).textContent();
+      if (l !== r) {
+        await page.getByTestId(`left-${i}`).click();
+        await page.waitForTimeout(250);
+        break;
+      }
+    }
+    await expect(pill).toContainText(/1\/\d+/);
+  });
+
   test('tapping a difference marks it in BOTH grids with a ring', async ({ page }) => {
     await page.goto('/games/spot-the-difference');
     // find a diff cell by comparing DOM text of left/right at same index
