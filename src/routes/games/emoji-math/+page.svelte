@@ -106,7 +106,7 @@
         {:else}
           <p class="expression" data-testid="expression">
             {#each question.groups as g, gi}
-              {#if gi > 0}<span class="op">➕</span>{/if}<span class="cluster">{groupEmoji(g)}</span>
+              {#if gi > 0}<span class="op">{question.op}</span>{/if}<span class="cluster">{groupEmoji(g)}</span>
             {/each}
             <span class="op">=</span><span class="qmark">❓</span>
           </p>

@@ -5,7 +5,7 @@ describe('age → equation type', () => {
   it('maps age bands per spec', () => {
     expect(equationTypeFor(2)).toBe('count');
     expect(equationTypeFor(3)).toBe('count');
-    expect(equationTypeFor(4)).toBe('add');
+    expect(equationTypeFor(4)).toBe('addsub');
     expect(equationTypeFor(5)).toBe('mixed');
   });
 });
@@ -21,12 +21,61 @@ describe('makeQuestion', () => {
     }
   });
 
-  it('age-4 additions stay ≤ 10; age-5 additions stay ≤ 20', () => {
-    for (let s = 1; s <= 40; s++) {
+  it('age-4 add/subtract stay ≤ 10; age-5 add/subtract stay ≤ 20', () => {
+    for (let s = 1; s <= 60; s++) {
       const q4 = makeQuestion(4, s);
-      if (q4.type === 'add') expect(q4.answer).toBeLessThanOrEqual(10);
+      if (q4.type === 'add' || q4.type === 'subtract') expect(q4.answer).toBeLessThanOrEqual(10);
       const q5 = makeQuestion(5, s);
-      if (q5.type === 'add') expect(q5.answer).toBeLessThanOrEqual(20);
+      if (q5.type === 'add' || q5.type === 'subtract') expect(q5.answer).toBeLessThanOrEqual(20);
+    }
+  });
+
+  it('age 4 mixes addition and subtraction', () => {
+    const types = new Set();
+    for (let s = 1; s <= 40; s++) types.add(makeQuestion(4, s).type);
+    expect(types.has('add')).toBe(true);
+    expect(types.has('subtract')).toBe(true);
+    expect(types.has('count')).toBe(false);
+  });
+
+  it('age 5+ interleaves add, subtract, and compare', () => {
+    const types = new Set();
+    for (let s = 1; s <= 60; s++) types.add(makeQuestion(5, s).type);
+    expect(types.has('add')).toBe(true);
+    expect(types.has('subtract')).toBe(true);
+    expect(types.has('compare')).toBe(true);
+  });
+
+  it('subtraction is well-formed with a real − sign', () => {
+    for (const age of [4, 5]) {
+      let seen = 0;
+      for (let s = 1; s <= 80; s++) {
+        const q = makeQuestion(age, s);
+        if (q.type !== 'subtract') continue;
+        seen++;
+        expect(q.groups.length).toBe(2);
+        const [a, b] = q.groups;
+        expect(a).toBeGreaterThanOrEqual(2);
+        expect(b).toBeGreaterThanOrEqual(1);
+        expect(b).toBeLessThanOrEqual(a - 1);
+        expect(q.answer).toBe(a - b);
+        expect(q.answer).toBeGreaterThanOrEqual(1);
+        expect(q.op).toBe('−');
+      }
+      expect(seen).toBeGreaterThan(0);
+    }
+  });
+
+  it('addition carries a real + sign', () => {
+    for (const age of [4, 5]) {
+      let seen = 0;
+      for (let s = 1; s <= 40; s++) {
+        const q = makeQuestion(age, s);
+        if (q.type !== 'add') continue;
+        seen++;
+        expect(q.op).toBe('+');
+      }
+      expect(seen).toBeGreaterThan(0);
     }
   });
 

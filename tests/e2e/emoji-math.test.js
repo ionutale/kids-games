@@ -43,11 +43,30 @@ test.describe('Emoji Math E2E', () => {
       )
     );
     await page.goto('/games/emoji-math');
-    // age 2 ⇒ count questions only: single cluster, no ➕ operator
+    // age 2 ⇒ count questions only: single cluster, no operator
     for (let i = 0; i < 5; i++) {
       await expect(page.getByTestId('equation')).toBeVisible();
-      const ops = await page.locator('.op').count(); // ➕ marks; compare has none either
+      const ops = await page.locator('.op').count();
       expect(ops).toBeLessThanOrEqual(1);
+      await page.getByTestId('correct-ans').click();
+      await page.waitForTimeout(650);
+    }
+  });
+
+  test('age-4 expressions use real + and − signs (no ➕ emoji)', async ({ page }) => {
+    await page.addInitScript(() =>
+      localStorage.setItem(
+        'kids-games-settings',
+        JSON.stringify({ soundEnabled: true, ageLevel: 4, firstVisit: false })
+      )
+    );
+    await page.goto('/games/emoji-math');
+    for (let i = 0; i < 6; i++) {
+      const expr = page.getByTestId('expression');
+      await expect(expr).toBeVisible({ timeout: 5000 });
+      const text = (await expr.textContent()) ?? '';
+      expect(text).toMatch(/[+−]/);
+      expect(text).not.toContain('➕');
       await page.getByTestId('correct-ans').click();
       await page.waitForTimeout(650);
     }
