@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { patternTier, makePrompt, roundGoal } from '$lib/trainers/whatComesNext.js';
-import { categoryOfEmoji } from '$lib/trainers/emojiSets.js';
+import { patternTier, ladderFor, makePrompt, roundGoal } from '$lib/trainers/whatComesNext.js';
+import { categoryOfEmoji, lookalikePartner } from '$lib/trainers/emojiSets.js';
 
 describe('patternTier', () => {
   it('maps level bands', () => {
@@ -12,6 +12,44 @@ describe('patternTier', () => {
     expect(patternTier(6)).toBe(3);
     expect(patternTier(7)).toBe(4);
     expect(patternTier(30)).toBe(4);
+  });
+});
+
+describe('ladderFor — one distinct step per level', () => {
+  it('gives levels 1–10 ten distinct steps', () => {
+    const steps = [];
+    for (let level = 1; level <= 10; level++) {
+      const l = ladderFor(level);
+      steps.push(`${l.unit ? l.unit.join('') : 'grow'}:${l.partial}:${l.blocks ?? ''}:${l.distractors}`);
+    }
+    expect(new Set(steps).size).toBe(10);
+  });
+
+  it('follows the pedagogical arc AB → AAB/AABB → ABC/AABC → growing', () => {
+    expect(ladderFor(1).unit.join('')).toBe('AB');
+    expect(ladderFor(2).unit.join('')).toBe('AB');
+    expect(ladderFor(3).unit.join('')).toBe('AAB');
+    expect(ladderFor(4).unit.join('')).toBe('AABB');
+    expect(ladderFor(5).unit.join('')).toBe('ABC');
+    expect(ladderFor(6).unit.join('')).toBe('AABC');
+    expect(ladderFor(7).growing).toBe(true);
+  });
+
+  it('grows the partial unit within a family, then the block count, then caps', () => {
+    expect(ladderFor(1).partial).toBe(0);
+    expect(ladderFor(2).partial).toBe(1);
+    expect(ladderFor(4).partial).toBe(1);
+    expect(ladderFor(6).partial).toBe(1);
+    expect([7, 8, 9, 10, 11, 30].map((n) => ladderFor(n).blocks)).toEqual([3, 4, 5, 6, 7, 7]);
+  });
+
+  it('raises distractor similarity with level', () => {
+    expect(ladderFor(1).distractors).toBe('cross');
+    expect(ladderFor(5).distractors).toBe('cross');
+    expect(ladderFor(6).distractors).toBe('same');
+    expect(ladderFor(8).distractors).toBe('same');
+    expect(ladderFor(9).distractors).toBe('lookalike');
+    expect(ladderFor(30).distractors).toBe('lookalike');
   });
 });
 
@@ -89,6 +127,43 @@ describe('makePrompt — property tests over levels and seeds', () => {
         }
       }
     }
+  });
+
+  it('mid levels (6–8) draw wrong options from the answer’s own category', () => {
+    for (let level = 6; level <= 8; level++) {
+      for (let s = 1; s <= 15; s++) {
+        const p = makePrompt(level, s * 19 + level);
+        const answerCat = categoryOfEmoji(p.answer);
+        expect(answerCat).toBeTruthy();
+        for (const o of p.options) {
+          if (o === p.answer) continue;
+          expect(categoryOfEmoji(o)).toBe(answerCat);
+        }
+      }
+    }
+  });
+
+  it('high levels (9+) use lookalike partners when the answer has one', () => {
+    let checked = 0;
+    for (let s = 1; s <= 300; s++) {
+      const p = makePrompt(9, s);
+      const partner = lookalikePartner(p.answer);
+      if (!partner) continue;
+      checked++;
+      expect(p.options).toContain(partner);
+    }
+    expect(checked).toBeGreaterThan(0);
+  });
+
+  it('strip length is deterministic per level and grows along the ladder', () => {
+    expect(makePrompt(1, 42).symbols.length).toBe(4); // ABAB
+    expect(makePrompt(2, 42).symbols.length).toBe(5); // ABABA
+    expect(makePrompt(3, 42).symbols.length).toBe(6); // AAB AAB
+    expect(makePrompt(4, 42).symbols.length).toBe(9); // AABB AABB A
+    expect(makePrompt(5, 42).symbols.length).toBe(6); // ABC ABC
+    expect(makePrompt(6, 42).symbols.length).toBe(9); // AABC AABC A
+    expect(makePrompt(7, 42).symbols.length).toBe(9); // k = 1..3
+    expect(makePrompt(8, 42).symbols.length).toBe(14); // k = 1..4
   });
 
   it('is deterministic per seed', () => {

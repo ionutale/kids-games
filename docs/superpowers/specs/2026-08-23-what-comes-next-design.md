@@ -26,30 +26,41 @@ Cognitive skill trained: pattern recognition, logical reasoning, pre-math sequen
 4. Wrong tap → silent wobble; prompt stays until correct choice (no fail state).
 5. After `goal` solved prompts → Celebration Sequence (WinOverlay + cheer) with **Next Level ▶ / Replay / Back**.
 
-## Level Ladder (unbounded)
+## Level Ladder (unbounded, progressively harder per level)
 
-Two axes: pattern complexity via a fixed pedagogical arc, and emoji discrimination difficulty.
+Two axes: pattern complexity via a fixed pedagogical arc, and emoji discrimination difficulty. Every level 1–10 is a **distinct step** — the pattern unit, the visible strip length, the distractor similarity, and (in the growing tier) the block count all advance level by level.
 
-### Pattern Arc (`patternTier(n)` — pure, unit-tested)
+### Per-level ladder (`ladderFor(n)` — pure, unit-tested)
 
-| Tier | Levels | Pattern Units |
-|---|---|---|
-| 1 | L1–2 | AB |
-| 2 | L3–4 | AAB · ABB · AABB |
-| 3 | L5–6 | ABC · AABC · ABCC |
-| 4 | L7+ | Growing patterns: blocks `[A×k][B]` for k = 1, 2, 3 … shown as complete blocks (🍎🍌 🍎🍎🍌 🍎🍎🍎🍌); the answer is always the first element of the next block |
+| Level | Pattern Unit | Visible strip | Distractors | Goal |
+|---|---|---|---|---|
+| L1 | AB | 2 units (`ABAB`) | cross-category | 5 |
+| L2 | AB | 2 units + 1 (`ABABA`) | cross-category | 6 |
+| L3 | AAB | 2 units | cross-category | 7 |
+| L4 | AABB | 2 units + 1 | cross-category | 8 |
+| L5 | ABC | 2 units | cross-category | 9 |
+| L6 | AABC | 2 units + 1 | same-category | 10 |
+| L7 | growing k=1..3 | 3 blocks | same-category | 10 |
+| L8 | growing k=1..4 | 4 blocks | same-category | 10 |
+| L9 | growing k=1..5 | 5 blocks | lookalike pairs (fallback same→cross) | 10 |
+| L10 | growing k=1..6 | 6 blocks | lookalike pairs | 10 |
+| L11+ | growing k=1..7 (cap) | 7 blocks | lookalike pairs | 10 |
+
+`patternTier(n)` remains the coarse family: tier 1 = L1–2 (AB), tier 2 = L3–4 (AAB/AABB), tier 3 = L5–6 (ABC/AABC), tier 4 = L7+ (growing patterns: blocks `[A×k][B]` for k = 1, 2, 3 … shown as complete blocks (🍎🍌 🍎🍎🍌 🍎🍎🍎🍌); the answer is always the first element of the next block).
 
 Rules:
 - Within a prompt, all As are the same emoji, all Bs another, all Cs a third (drawn from distinct categories at low levels).
 - Slot position: always the item immediately after the visible prefix; the correct answer is deterministic from the unit.
 - Prompt shows ≥ 2 full repetitions of the unit before the slot (growing tier: ≥ 3 complete blocks).
+- L11+ plateaus at max difficulty (7 blocks ≈ 35 emoji strip) so the unbounded Next Level never explodes the UI.
 
 ### Emoji discrimination axis
 
 | Levels | Distractor source |
 |---|---|
 | L1–5 | Different categories than the pattern emojis |
-| L6+ | Same category / lookalike pairs from the shared catalog |
+| L6–8 | Same category as the answer |
+| L9+ | Lookalike pairs from the shared catalog (fallback to same → cross) |
 
 ## Round Goal
 
@@ -71,7 +82,7 @@ Solve `4 + min(n, 6)` prompts correctly per round (goal-driven, no timer).
 
 ## Testing
 
-- **Vitest unit**: `patternTier` mapping and unit generation per level band; growing-tier block expansion (k = 1…m) and deterministic answer; distractor category rules; seeded determinism; slot-answer consistency for every generated prompt (property test over levels 1–30).
+- **Vitest unit**: `patternTier` mapping and `ladderFor` per-level steps (distinct level 1–10, arc order, partial/block growth, distractor tiers); growing-tier block expansion and deterministic answer; distractor category rules per tier; seeded determinism; slot-answer consistency for every generated prompt (property test over levels 1–30).
 - **Playwright e2e** (seeded): landing → play → solve first prompt via data attribute → win overlay after goal → Next Level link.
 
 ## Out of Scope (v1)

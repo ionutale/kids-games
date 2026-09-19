@@ -159,7 +159,7 @@ The following games have been proposed but not yet designed or implemented. Each
 ## What Comes Next Game
 
 - **Pattern Unit**: The repeating emoji block (e.g., AB, AABB, ABC) underlying a Prompt Strip.
-- **Pattern Arc**: The fixed pedagogical ordering by level: AB → AAB/AABB → ABC → growing blocks `[A×k][B]`.
+- **Pattern Arc**: The fixed pedagogical ordering by level: AB → AAB/AABB → ABC/AABC → growing blocks `[A×k][B]`. Every level 1–10 is a distinct step (unit, strip length, distractor similarity, block count); L11+ plateaus at max difficulty (7 growing blocks).
 - **Prompt Strip**: The visible emoji sequence with exactly one ❓ slot; answered from 3 options.
 
 ## Assets
