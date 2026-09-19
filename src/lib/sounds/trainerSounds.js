@@ -1,4 +1,11 @@
+import { get } from 'svelte/store';
+import { settings } from '$lib/stores/settings.js';
+
 let ctx = null;
+
+function muted() {
+  return !get(settings).soundEnabled;
+}
 
 function audioCtx() {
   if (ctx !== null) return ctx;
@@ -14,6 +21,7 @@ function audioCtx() {
 }
 
 function tone(freq, dur, { type = 'sine', gain = 0.15, pitch = 1, delay = 0 } = {}) {
+  if (muted()) return;
   const ac = audioCtx();
   if (!ac) return;
   const t0 = ac.currentTime + delay;
@@ -30,6 +38,7 @@ function tone(freq, dur, { type = 'sine', gain = 0.15, pitch = 1, delay = 0 } = 
 }
 
 function noiseSweep(dur, { from = 300, to = 1800, gain = 0.08, pitch = 1 } = {}) {
+  if (muted()) return;
   const ac = audioCtx();
   if (!ac) return;
   const t0 = ac.currentTime;
@@ -120,6 +129,7 @@ export function playSparkle(pitch = 1) {
 }
 
 export function fanfare(pitch = 1) {
+  if (muted()) return;
   try {
     const audio = new Audio('/sounds/fanfare.mp3');
     audio.volume = 0.8;

@@ -1,4 +1,11 @@
+import { get } from 'svelte/store';
+import { settings } from '$lib/stores/settings.js';
+
 let audioCtx = null;
+
+function muted() {
+  return !get(settings).soundEnabled;
+}
 
 function getContext() {
   if (!audioCtx) {
@@ -11,6 +18,7 @@ function getContext() {
 }
 
 function playTone(freq, duration, type = 'sine', volume = 0.3) {
+  if (muted()) return;
   try {
     const ctx = getContext();
     const osc = ctx.createOscillator();
@@ -70,6 +78,7 @@ async function loadCheer() {
 }
 
 export function playWinCheer() {
+  if (muted()) return;
   loadCheer().then((buffer) => {
     if (buffer) {
       try {
