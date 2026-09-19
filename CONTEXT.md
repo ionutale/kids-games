@@ -58,7 +58,7 @@
 - **Category**: A labeled group of related Emojis (e.g., Animals, Food, Vehicles).
 - **Round**: A set of 8-10 Emojis the player must sort into the correct Bins.
 - **Tap-to-Place**: The dual interaction — drag the Emoji into a Bin, or tap the Emoji to lift it and tap the Bin to drop it.
-- **Hover-Correct**: A green glow + ✓ mark on the Bin matching the dragged Emoji; non-matching Bins dim softly.
+- **Hover-Correct**: A green glow + ✓ mark on the Bin matching the dragged Emoji, shown only for the first five placements of the first round, then permanently retired; non-matching Bins dim softly. The dragged Emoji keeps its own green drop feedback afterward.
 
 ## Path Builder Game
 
@@ -114,7 +114,7 @@ The following games have been proposed but not yet designed or implemented. Each
 - **Category**: A labeled group of related Emojis (e.g., Animals, Food, Vehicles).
 - **Round**: A set of 8-10 Emojis the player must sort into the correct Bins.
 - **Tap-to-Place**: The dual interaction — drag the Emoji into a Bin, or tap the Emoji to lift it and tap the Bin to drop it.
-- **Hover-Correct**: A green glow + ✓ mark on the Bin matching the dragged Emoji; non-matching Bins dim softly.
+- **Hover-Correct**: A green glow + ✓ mark on the Bin matching the dragged Emoji, shown only for the first five placements of the first round, then permanently retired; non-matching Bins dim softly. The dragged Emoji keeps its own green drop feedback afterward.
 
 ## Path Builder Game
 

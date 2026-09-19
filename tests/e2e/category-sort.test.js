@@ -111,6 +111,100 @@ test.describe('Category Sort E2E', () => {
     });
   });
 
+  test('bin-side green helper retires after 5 placements in round 1 (item-side cue stays)', async ({ page }) => {
+    test.setTimeout(120000);
+    await page.goto('/games/category-sort');
+    await page.waitForTimeout(600);
+
+    const score = page.locator('.top-bar .hud-item').first();
+    const bins = page.getByTestId('bins').locator('.bin');
+    const binCount = await bins.count();
+
+    async function placeCurrentItem() {
+      const before = (await score.textContent()) ?? '';
+      for (let i = 0; i < binCount; i++) {
+        await touchDrag(page, page.getByTestId('item'), await center(bins.nth(i)));
+        if (((await score.textContent()) ?? '') !== before) {
+          await page.waitForTimeout(350); // let the fly-in ghost finish
+          return true;
+        }
+        await page.waitForTimeout(350); // let a wrong drop bounce home
+      }
+      return false;
+    }
+
+    for (let n = 1; n <= 5; n++) {
+      expect(await placeCurrentItem(), `placement ${n} failed`).toBe(true);
+    }
+
+    // 6th item of round 1: hover each bin until the item-side cue reveals the correct one
+    const item = page.getByTestId('item');
+    const from = await center(item);
+    await item.dispatchEvent('pointerdown', {
+      pointerId: 7, pointerType: 'touch', isPrimary: true,
+      clientX: from.x, clientY: from.y, buttons: 1, bubbles: true, cancelable: true
+    });
+    let correctIdx = -1;
+    for (let i = 0; i < binCount; i++) {
+      const p = await center(bins.nth(i));
+      await page.dispatchEvent(':root', 'pointermove', {
+        pointerId: 7, pointerType: 'touch', isPrimary: true,
+        clientX: p.x, clientY: p.y, buttons: 1, bubbles: true
+      });
+      await page.waitForTimeout(150);
+      if (((await item.getAttribute('class')) ?? '').includes('over-correct')) {
+        correctIdx = i;
+        break;
+      }
+    }
+    expect(correctIdx, 'item-side drop cue should still reveal the correct bin').toBeGreaterThanOrEqual(0);
+
+    const correctBin = bins.nth(correctIdx);
+    expect((await correctBin.getAttribute('class')) ?? '').not.toContain('hover-correct');
+    await expect(correctBin.locator('.ok-mark')).toHaveCount(0);
+
+    // release over the correct bin — places the 6th item, confirming drops still work
+    const dropP = await center(correctBin);
+    await page.dispatchEvent(':root', 'pointerup', {
+      pointerId: 7, pointerType: 'touch', isPrimary: true,
+      clientX: dropP.x, clientY: dropP.y, buttons: 1, bubbles: true
+    });
+    await page.waitForTimeout(350);
+
+    // finish the round, then round 2 must also show no bin-side hint
+    expect(await placeCurrentItem()).toBe(true);
+    expect(await placeCurrentItem()).toBe(true);
+    await expect(page.getByTestId('item')).toBeVisible({ timeout: 6000 });
+    await page.waitForTimeout(400); // celebration + nextRound settle
+
+    const round2From = await center(item);
+    await item.dispatchEvent('pointerdown', {
+      pointerId: 7, pointerType: 'touch', isPrimary: true,
+      clientX: round2From.x, clientY: round2From.y, buttons: 1, bubbles: true, cancelable: true
+    });
+    let round2Found = false;
+    for (let i = 0; i < binCount; i++) {
+      const p = await center(bins.nth(i));
+      await page.dispatchEvent(':root', 'pointermove', {
+        pointerId: 7, pointerType: 'touch', isPrimary: true,
+        clientX: p.x, clientY: p.y, buttons: 1, bubbles: true
+      });
+      await page.waitForTimeout(150);
+      const cls = (await item.getAttribute('class')) ?? '';
+      if (cls.includes('over-correct')) {
+        round2Found = true;
+        expect((await bins.nth(i).getAttribute('class')) ?? '').not.toContain('hover-correct');
+        await expect(bins.nth(i).locator('.ok-mark')).toHaveCount(0);
+        break;
+      }
+    }
+    expect(round2Found, 'round 2 item-side cue should still reveal the correct bin').toBe(true);
+    await page.dispatchEvent(':root', 'pointerup', {
+      pointerId: 7, pointerType: 'touch', isPrimary: true,
+      clientX: round2From.x, clientY: round2From.y, buttons: 1, bubbles: true
+    });
+  });
+
   test('dragging the item into the CORRECT bin advances round progress', async ({ page }) => {
     test.setTimeout(30000);
     await page.goto('/games/category-sort');

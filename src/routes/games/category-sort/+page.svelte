@@ -62,6 +62,8 @@
 
   const currentItem = $derived(round?.items[itemIdx] ?? null);
   const correctBinId = $derived(currentItem?.categoryId ?? null);
+  // training wheels: bin-side green hints only for the first 5 placements of round 1
+  const showBinHelper = $derived(roundIndex === 0 && correctTotal < 5);
 
   function binCenter(i) {
     const el = binEls[i];
@@ -215,17 +217,17 @@
         <div
           class="bin"
           class:hover={hoverBin === i}
-          class:hover-correct={hoverBin === i && bin.id === correctBinId}
+          class:hover-correct={showBinHelper && hoverBin === i && bin.id === correctBinId}
           class:hover-wrong={hoverBin === i && bin.id !== correctBinId}
           class:wobbling={wrongBin === i}
-          class:selected-target={selected && bin.id === correctBinId}
+          class:selected-target={showBinHelper && selected && bin.id === correctBinId}
           bind:this={binEls[i]}
           data-testid="bin-{bin.id}"
           onclick={() => onBinTap(i)}
         >
           <span class="bin-icon">{bin.icon}</span>
           <span class="bin-name">{$_(bin.id)}</span>
-          {#if hoverBin === i && bin.id === correctBinId}<span class="ok-mark">✓</span>{/if}
+          {#if showBinHelper && hoverBin === i && bin.id === correctBinId}<span class="ok-mark">✓</span>{/if}
         </div>
       {/each}
     </div>
