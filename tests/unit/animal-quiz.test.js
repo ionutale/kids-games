@@ -1,5 +1,7 @@
 import { describe, it, expect } from 'vitest';
-import ANIMALS, { LOCALES } from '$lib/animalQuizData.js';
+import { LOCALES, TOPICS } from '$lib/quiz/topics.js';
+
+const ANIMALS = TOPICS.animals.items;
 
 describe('Animal Quiz data', () => {
   it('has at least 30 animals', () => {

@@ -1,5 +1,7 @@
 import { describe, it, expect } from 'vitest';
-import ANIMALS from '$lib/animalQuizData.js';
+import { TOPICS } from '$lib/quiz/topics.js';
+
+const ANIMALS = TOPICS.animals.items;
 
 describe('Animal Quiz behavior', () => {
   function shuffle(arr) {

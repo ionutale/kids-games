@@ -1,5 +1,7 @@
 import { test, expect } from '@playwright/test';
-import ANIMALS from '../../src/lib/animalQuizData.js';
+import { TOPICS } from '../../src/lib/quiz/topics.js';
+
+const ANIMALS = TOPICS.animals.items;
 
 // The app's detectLocale falls back to 'en' in Playwright's default browser,
 // so the displayed option names are the English ones.

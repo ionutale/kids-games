@@ -4,7 +4,8 @@
   import { locale } from '$lib/stores/locale';
   import { playTap, playMatch, playWin } from '$lib/sounds/audioManager';
   import Confetti from '$lib/components/Confetti.svelte';
-  import ANIMALS from '$lib/animalQuizData.js';
+  import { TOPICS } from '$lib/quiz/topics.js';
+  const ANIMALS = TOPICS.animals.items;
   import GameShell from '$lib/components/ui/GameShell.svelte';
   import WinOverlay from '$lib/components/ui/WinOverlay.svelte';
   import BigButton from '$lib/components/ui/BigButton.svelte';
