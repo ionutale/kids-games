@@ -22,6 +22,7 @@
     { id: 'clothes-quiz', icon: '👕', key: 'clothesQuiz', accent: '#F0ABFC' },
     { id: 'toy-quiz', icon: '🧸', key: 'toyQuiz', accent: '#FDE68A' },
     { id: 'instrument-quiz', icon: '🎸', key: 'instrumentQuiz', accent: '#6EE7B7' },
+    { id: 'grammar', icon: '🇮🇹', key: 'grammar', accent: '#86EFAC' },
     { id: 'glossary-puzzle', icon: '🧩', key: 'puzzle', accent: '#5EEAD4' },
     { id: 'focus-tap', icon: '🎯', key: 'focusTap', accent: '#F87171' },
     { id: 'quick-count', icon: '🔢', key: 'quickCount', accent: '#FDBA74' },
