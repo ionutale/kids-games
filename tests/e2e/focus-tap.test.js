@@ -1,9 +1,21 @@
 import { test, expect } from '@playwright/test';
 
+async function solveRound(page, max = 45) {
+  await expect(page.locator('[data-testid="target"]').first()).toBeVisible({ timeout: 15000 });
+  for (let i = 0; i < max; i++) {
+    if (await page.locator('.win-overlay').isVisible().catch(() => false)) return;
+    const t = page.locator('[data-testid="target"]:not(.popping)').first();
+    if (await t.isVisible().catch(() => false)) {
+      await t.click({ force: true }).catch(() => {});
+    }
+    await page.waitForTimeout(400);
+  }
+}
+
 test.describe('Focus Tap E2E', () => {
-  test('landing shows current level and Play links to play route', async ({ page }) => {
+  test('landing shows hero + play link without a level bar', async ({ page }) => {
     await page.goto('/games/focus-tap');
-    await expect(page.locator('.level-btn').first()).toBeVisible();
+    await expect(page.locator('.level-btn')).toHaveCount(0);
     await expect(page.locator('.big-btn.primary')).toBeVisible();
     const href = await page.locator('.big-btn.primary').getAttribute('href');
     expect(href).toMatch(/\/games\/focus-tap\/play\/\d+/);
@@ -39,20 +51,38 @@ test.describe('Focus Tap E2E', () => {
     }
 
     // tap targets until the win overlay appears (forced-target rule guarantees supply)
-    for (let i = 0; i < 30; i++) {
-      if (await page.locator('[data-testid="win-overlay"], .win-overlay').first().isVisible().catch(() => false)) break;
-      const t = page.locator('[data-testid="target"]:not(.popping)').first();
-      if (await t.isVisible().catch(() => false)) {
-        await t.click({ force: true }).catch(() => {});
-      }
-      await page.waitForTimeout(500);
-    }
+    await solveRound(page);
 
     await expect(page.locator('.win-overlay')).toBeVisible({ timeout: 10000 });
     await expect(page.getByTestId('next-level')).toBeVisible();
 
     await page.getByTestId('next-level').click();
     await page.waitForURL(/\/games\/focus-tap\/play\/2/);
+  });
+
+  test('Next Level loads a fresh round for the new level (no stale board)', async ({ page }) => {
+    test.setTimeout(120000);
+    await page.goto('/games/focus-tap/play/1?seed=42');
+    await solveRound(page);
+    await expect(page.locator('.win-overlay')).toBeVisible({ timeout: 10000 });
+
+    await page.getByTestId('next-level').click();
+    await page.waitForURL(/\/games\/focus-tap\/play\/2/);
+    await expect(page.locator('.win-overlay')).toBeHidden();
+    // level 2 goal is 8: a fresh round starts at 0/8
+    await expect(page.locator('.hud-item').nth(1)).toHaveText(/0\/8/);
+  });
+
+  test('Replay restarts the current level with a fresh round', async ({ page }) => {
+    test.setTimeout(120000);
+    await page.goto('/games/focus-tap/play/2?seed=42');
+    await solveRound(page);
+    await expect(page.locator('.win-overlay')).toBeVisible({ timeout: 10000 });
+
+    await page.getByTestId('replay').click();
+    await expect(page.locator('.win-overlay')).toBeHidden();
+    await expect(page.locator('.hud-item').nth(1)).toHaveText(/0\/8/);
+    await expect(page).toHaveURL(/\/games\/focus-tap\/play\/2/);
   });
 
   test('playing a round saves its level', async ({ page }) => {

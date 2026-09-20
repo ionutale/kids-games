@@ -17,7 +17,7 @@ Web Audio oscillator-based exports following the `audioManager.js` pattern. Ever
 
 | Export | Used by | Character |
 |---|---|---|
-| `playLevelTick()` | LevelBar value change (all landings) | soft short tick |
+| `playLevelTick()` | — (retired: trainer landings no longer show a LevelBar) | soft short tick |
 | `playFlashWhoosh()` | Quick Count flash start | airy noise sweep |
 | `playReadyTick()` | Quick Count get-ready beat | double soft tick |
 | `playAdvancePop()` | Speed Match card answered correctly | pop with upward blip |
@@ -55,7 +55,6 @@ Loader lives beside the trainer kit (`src/lib/sounds/trainerMusic.js`), SSR-safe
 
 | Game | Event | Sound |
 |---|---|---|
-| All | LevelBar change | `playLevelTick()` |
 | All | Button taps | existing `playTap()` |
 | All | Round end | existing cheer |
 | All | Next Level ▶ | `fanfare.mp3` (pitch-shifted per game) |
@@ -84,7 +83,7 @@ Animations are **always on** (no prefers-reduced-motion gating in v1).
 
 - Emojis remain the primary art everywhere.
 - Kenney CC0 sprite accents appear in exactly two places:
-  1. **Landing hero band** — a themed decorative strip (clouds/stars/shapes) above the LevelBar on each trainer's landing page.
+  1. **Landing hero band** — a themed decorative strip (clouds/stars/shapes) above the title on each trainer's landing page.
   2. **Win overlay badge** — a celebratory badge/frame inside WinOverlay.
 - Play areas stay visually clean (focus tasks).
 - Assets stored under `static/art/trainers/{trainer}/…`; sourced from kenney.nl CC0 packs; resized/optimized (SVG preferred, PNG ≤ 50 KB each otherwise).

@@ -17,10 +17,10 @@ These were settled once for the whole batch and are restated here because every 
 | Decision | Value |
 |---|---|
 | Hub integration | Flat cards alongside existing games in `src/routes/+page.svelte` |
-| Routes | `/games/{id}` landing (LevelBar + Play) · `/games/{id}/play` → redirect to saved level · `/games/{id}/play/[n]` plays round *n* and saves *n* |
+| Routes | `/games/{id}` landing (hero + Play, no LevelBar) · `/games/{id}/play` → redirect to saved level · `/games/{id}/play/[n]` plays round *n* and saves *n* |
 | Persistence | Current level only, via shared helper `src/lib/trainers/progress.js` |
 | Scoring | None — progress = goal counters; positive-only audio; celebration only at round end |
-| Difficulty | Unbounded levels, identical LevelBar component, per-game formulas |
+| Difficulty | Unbounded levels advanced via Next Level ▶ / Replay, per-game formulas |
 | Emoji content | Shared catalog `src/lib/trainers/emojiSets.js` (categories: animals, food, vehicles, nature, sea, toys) |
 | AgeSelector | Ignored in v1 (the unbounded ladder adapts); future enhancement |
 | Testing | Vitest unit tests for pure logic + one Playwright happy-path e2e per game |
@@ -58,7 +58,7 @@ All generators accept an injectable `rng` (seeded PRNG) so vitest assertions are
 
 | Route | File | Behavior |
 |---|---|---|
-| `/games/focus-tap` | `src/routes/games/focus-tap/+page.svelte` | Landing: LevelBar (current level preloaded) + big Play button → `/games/focus-tap/play/{level}` |
+| `/games/focus-tap` | `src/routes/games/focus-tap/+page.svelte` | Landing: hero + big Play button (resumes the saved level) → `/games/focus-tap/play/{level}` |
 | `/games/focus-tap/play` | `src/routes/games/focus-tap/play/+page.js` | `redirect(307, '/games/focus-tap/play/' + loadLevel('focus-tap'))` |
 | `/games/focus-tap/play/[n]` | `src/routes/games/focus-tap/play/[n]/+page.svelte` | The round. Clamps *n* to ≥ 1, saves *n* via `saveLevel`, accepts `?seed=` for deterministic tests |
 

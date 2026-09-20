@@ -14,7 +14,7 @@ Cognitive skill trained: subitizing, estimation, number recognition.
 
 | Route | File | Behavior |
 |---|---|---|
-| `/games/quick-count` | `src/routes/games/quick-count/+page.svelte` | Landing: LevelBar + Play |
+| `/games/quick-count` | `src/routes/games/quick-count/+page.svelte` | Landing: hero + Play (no LevelBar) |
 | `/games/quick-count/play` | `src/routes/games/quick-count/play/+page.js` | Redirect to saved level |
 | `/games/quick-count/play/[n]` | `src/routes/games/quick-count/play/[n]/+page.svelte` | The round; saves *n*; accepts `?seed=` |
 

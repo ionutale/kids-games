@@ -14,7 +14,7 @@ Cognitive skill trained: processing speed, visual comparison, decision-making un
 
 | Route | File | Behavior |
 |---|---|---|
-| `/games/speed-match` | `src/routes/games/speed-match/+page.svelte` | Landing: LevelBar + Play |
+| `/games/speed-match` | `src/routes/games/speed-match/+page.svelte` | Landing: hero + Play (no LevelBar) |
 | `/games/speed-match/play` | `src/routes/games/speed-match/play/+page.js` | Redirect to saved level |
 | `/games/speed-match/play/[n]` | `src/routes/games/speed-match/play/[n]/+page.svelte` | The round; saves *n*; accepts `?seed=` |
 

@@ -14,7 +14,7 @@ Cognitive skill trained: pattern recognition, logical reasoning, pre-math sequen
 
 | Route | File | Behavior |
 |---|---|---|
-| `/games/what-comes-next` | `src/routes/games/what-comes-next/+page.svelte` | Landing: LevelBar + Play |
+| `/games/what-comes-next` | `src/routes/games/what-comes-next/+page.svelte` | Landing: hero + Play (no LevelBar) |
 | `/games/what-comes-next/play` | `src/routes/games/what-comes-next/play/+page.js` | Redirect to saved level |
 | `/games/what-comes-next/play/[n]` | `src/routes/games/what-comes-next/play/[n]/+page.svelte` | The round; saves *n*; accepts `?seed=` |
 

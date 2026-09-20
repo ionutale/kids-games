@@ -6,6 +6,7 @@
 <TrainerLanding
   trainerId="focus-tap"
   heroArt="true"
+  showLevels={false}
   title={`🎯 ${$_('focusTap')}`}
   tagline={$_('catchTarget', { e: '🍎' })}
   hero="🎯 ⭐ 🍎 ⭐ 🐶 ⭐ 🎯"

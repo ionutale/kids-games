@@ -1,5 +1,5 @@
 <script>
-  import { onMount, tick } from 'svelte';
+  import { onMount, tick, untrack } from 'svelte';
   import { goto } from '$app/navigation';
   import { _ } from '$lib/stores/locale';
   import GameShell from '$lib/components/ui/GameShell.svelte';
@@ -12,9 +12,9 @@
   import { playAdvancePop, fanfare } from '$lib/sounds/trainerSounds.js';
 
   let { data } = $props();
-  const level = data.level;
-  const config = levelConfig(level);
-  const deck = makeDeck(level, data.seed);
+  const level = $derived(data.level);
+  const config = $derived(levelConfig(level));
+  const deck = $derived(makeDeck(level, data.seed));
   const FANFARE_PITCH = 0.92;
 
   let index = $state(0);
@@ -24,7 +24,7 @@
 
   let timer = null;
   let deadline = 0;
-  let remainingMs = config.windowMs;
+  let remainingMs = 0;
 
   const card = $derived(deck[index]);
 
@@ -96,9 +96,30 @@
     goto(`/games/speed-match/play/${level + 1}`);
   }
 
+  function replay(e) {
+    e.preventDefault();
+    goto(`/games/speed-match/play/${level}?seed=${Date.now() % 1000000}`);
+  }
+
+  function resetRound() {
+    clearTimer();
+    index = 0;
+    won = false;
+    wobbling = '';
+    remainingMs = config.windowMs;
+    tick().then(() => armWindow(config.windowMs));
+  }
+
+  // The component is reused across /play/[n] navigations: rebuild the deck
+  // whenever the route hands us a different level or seed.
+  $effect(() => {
+    data.level;
+    data.seed;
+    untrack(resetRound);
+  });
+
   onMount(() => {
     startTrainerMusic('speed-match');
-    armWindow(config.windowMs);
     document.addEventListener('visibilitychange', visibility);
     return () => {
       document.removeEventListener('visibilitychange', visibility);
@@ -157,7 +178,7 @@
       >
         {$_('nextLevel')} ▶
       </a>
-      <a class="big-btn ghost" href={`/games/speed-match/play/${level}`} data-testid="replay">
+      <a class="big-btn ghost" href={`/games/speed-match/play/${level}`} data-testid="replay" onclick={replay}>
         {$_('replay')}
       </a>
       <a class="big-btn ghost" href="/games/speed-match">{$_('back')}</a>

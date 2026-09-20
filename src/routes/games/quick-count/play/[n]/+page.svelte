@@ -1,5 +1,5 @@
 <script>
-  import { onMount, onDestroy } from 'svelte';
+  import { onMount, untrack } from 'svelte';
   import { goto } from '$app/navigation';
   import { _ } from '$lib/stores/locale';
   import GameShell from '$lib/components/ui/GameShell.svelte';
@@ -14,8 +14,8 @@
   import { playLevelTick, playFlashWhoosh, playReadyTick, fanfare } from '$lib/sounds/trainerSounds.js';
 
   let { data } = $props();
-  const level = data.level;
-  const config = levelConfig(level);
+  const level = $derived(data.level);
+  const config = $derived(levelConfig(level));
   const FANFARE_PITCH = 1.12;
 
   let solved = $state(0);
@@ -85,11 +85,33 @@
     goto(`/games/quick-count/play/${level + 1}`);
   }
 
+  function replay(e) {
+    e.preventDefault();
+    goto(`/games/quick-count/play/${level}?seed=${Date.now() % 1000000}`);
+  }
+
+  function resetRound() {
+    clearTimers();
+    solved = 0;
+    won = false;
+    chosen = -1;
+    prompt = null;
+    phase = 'ready';
+    nextPrompt();
+  }
+
+  // The component is reused across /play/[n] navigations: rebuild the round
+  // whenever the route hands us a different level or seed.
+  $effect(() => {
+    data.level;
+    data.seed;
+    untrack(resetRound);
+  });
+
   onMount(() => {
     startTrainerMusic('quick-count');
     document.addEventListener('visibilitychange', resumeAfterBlur);
     document.addEventListener('visibilitychange', restartFlashIfHidden);
-    nextPrompt();
     return () => {
       document.removeEventListener('visibilitychange', resumeAfterBlur);
       document.removeEventListener('visibilitychange', restartFlashIfHidden);
@@ -144,7 +166,7 @@
       >
         {$_('nextLevel')} ▶
       </a>
-      <a class="big-btn ghost" href={`/games/quick-count/play/${level}`} data-testid="replay">
+      <a class="big-btn ghost" href={`/games/quick-count/play/${level}`} data-testid="replay" onclick={replay}>
         {$_('replay')}
       </a>
       <a class="big-btn ghost" href="/games/quick-count">{$_('back')}</a>

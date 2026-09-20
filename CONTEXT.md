@@ -128,7 +128,7 @@ The following games have been proposed but not yet designed or implemented. Each
 ## Brain Trainers (shared)
 
 - **Trainer**: A short, goal-driven mini-game that trains one cognitive skill. No score, no fail state; Positive-Only Audio throughout; celebration only at round end.
-- **Trainer Routes**: Every trainer uses `/games/{id}` (landing: Level Bar + Play), `/games/{id}/play` (redirects to the saved level), and `/games/{id}/play/[n]` (plays round *n*, saves it). Accepts `?seed=` for deterministic tests.
+- **Trainer Routes**: Every trainer uses `/games/{id}` (landing: hero + Play, no Level Bar — levels advance via Next Level ▶ / Replay), `/games/{id}/play` (redirects to the saved level), and `/games/{id}/play/[n]` (plays round *n*, saves it). Accepts `?seed=` for deterministic tests.
 - **Trainer Progress**: Only the current level persists per game, via `src/lib/trainers/progress.js`.
 - **Emoji Catalog**: Shared categorized emoji sets (`src/lib/trainers/emojiSets.js`: animals, food, vehicles, nature, sea, toys) plus an explicit Lookalikes table of visually confusable pairs reserved for high difficulty.
 - **Trainer SFX Set**: The hybrid sound layer per trainer — synthesized micro-events (`trainerSounds.js`) + CC0 mp3 stings. Wobble and Speed Match window expiry are always silent.

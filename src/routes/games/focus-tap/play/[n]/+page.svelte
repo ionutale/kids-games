@@ -1,5 +1,5 @@
 <script>
-  import { onMount, onDestroy } from 'svelte';
+  import { onMount, untrack } from 'svelte';
   import { goto } from '$app/navigation';
   import { _ } from '$lib/stores/locale';
   import GameShell from '$lib/components/ui/GameShell.svelte';
@@ -14,11 +14,9 @@
   import { playSparkle, fanfare } from '$lib/sounds/trainerSounds.js';
 
   let { data } = $props();
-  const level = data.level;
-  const round = makeRoundState(level, data.seed);
+  const level = $derived(data.level);
+  const round = $derived(makeRoundState(level, data.seed));
   const FANFARE_PITCH = 1.0;
-
-  saveLevel('focus-tap', level);
 
   let items = $state([]);
   let caught = $state(0);
@@ -100,6 +98,31 @@
     goto(`/games/focus-tap/play/${level + 1}`);
   }
 
+  function replay(e) {
+    e.preventDefault();
+    goto(`/games/focus-tap/play/${level}?seed=${Date.now() % 1000000}`);
+  }
+
+  function resetRound() {
+    stopSpawning();
+    saveLevel('focus-tap', level);
+    items = [];
+    caught = 0;
+    won = false;
+    wrongFxId = -1;
+    catchFx = null;
+    touchLock = false;
+    startSpawning();
+  }
+
+  // The component is reused across /play/[n] navigations: rebuild the round
+  // whenever the route hands us a different level or seed.
+  $effect(() => {
+    data.level;
+    data.seed;
+    untrack(resetRound);
+  });
+
   function visibility() {
     if (document.hidden) stopSpawning();
     else if (!won) startSpawning();
@@ -107,7 +130,6 @@
 
   onMount(() => {
     startTrainerMusic('focus-tap');
-    startSpawning();
     document.addEventListener('visibilitychange', visibility);
     return () => {
       document.removeEventListener('visibilitychange', visibility);
@@ -167,6 +189,7 @@
         class="big-btn ghost"
         href={`/games/focus-tap/play/${level}`}
         data-testid="replay"
+        onclick={replay}
       >
         {$_('replay')}
       </a>
