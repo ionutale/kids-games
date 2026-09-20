@@ -7,11 +7,12 @@
   import { loadLevel } from '$lib/trainers/progress';
   import { startTrainerMusic, stopTrainerMusic } from '$lib/sounds/trainerMusic';
 
-  let { trainerId = '', titleKey = '', tagline = '', hero = '', accent = '#7FD8FF', heroArt = '', showLevels = true } = $props();
+  let { trainerId = '', titleKey = '', tagline = '', hero = '', accent = '#7FD8FF', heroArt = '', showLevels = true, music = true } = $props();
 
   const level = $derived(loadLevel(trainerId));
 
   onMount(() => {
+    if (!music) return;
     startTrainerMusic(trainerId);
     return stopTrainerMusic;
   });
