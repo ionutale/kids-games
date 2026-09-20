@@ -27,6 +27,7 @@
 
   function next(seedOffset = Date.now() % 100000) {
     clearTimers();
+    milestone = false;
     question = makeQuestion($settings.ageLevel, seedOffset);
     chosen = -1;
     reveal = false;
@@ -46,7 +47,6 @@
       if (correct % 10 === 0) {
         milestone = true;
         playWin();
-        timers.push(setTimeout(() => (milestone = false), 1600));
       }
       timers.push(setTimeout(() => next((Date.now() + correct * 31) % 100000), milestone ? 1500 : 450));
     } else {

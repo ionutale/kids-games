@@ -71,4 +71,18 @@ test.describe('Emoji Math E2E', () => {
       await page.waitForTimeout(650);
     }
   });
+
+  test('milestone overlay disappears and play continues', async ({ page }) => {
+    test.setTimeout(90000);
+    await page.goto('/games/emoji-math');
+    for (let i = 0; i < 10; i++) {
+      const pill = page.getByTestId('correct-ans');
+      await expect(pill).toBeVisible({ timeout: 5000 });
+      await pill.click();
+      await page.waitForTimeout(500);
+    }
+    await expect(page.getByTestId('milestone')).toBeVisible({ timeout: 3000 });
+    await expect(page.getByTestId('milestone')).toBeHidden({ timeout: 4000 });
+    await expect(page.getByTestId('equation')).toBeVisible();
+  });
 });
