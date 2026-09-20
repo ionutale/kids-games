@@ -70,6 +70,13 @@
 - **Hint**: A visual indicator showing the next optimal cell on the shortest Path.
 
 
+## Quiz Games
+
+- **Topic**: One quiz's content set (`src/lib/quiz/topics.js`) — Animals, Food, Vehicles, Colors & Shapes, Clothes, Toys, Instruments.
+- **Item**: A single quiz entry `{ emoji, en, it, ro, de, fr, zh }`; every quiz requires all six locale names.
+- **Quiz Round**: One pass through a Topic: big emoji → 3 localized name options → silent red shake on wrong, green pop + confetti on correct, All-done overlay with Play Again.
+
+
 ## TODO — New Game Ideas
 
 The following games have been proposed but not yet designed or implemented. Each needs to go through the full brainstorming → design → spec → issues pipeline.
