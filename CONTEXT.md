@@ -77,6 +77,14 @@
 - **Quiz Round**: One pass through a Topic: big emoji → 3 localized name options → silent red shake on wrong, green pop + confetti on correct, All-done overlay with Play Again.
 
 
+## Italian Grammar Game
+
+- **Exercise**: One grammar task — a sentence with a `___` blank (verb, article, plural, preposition, imperative) or a picture-to-sentence match; always 3 options.
+- **Prompt**: The sentence with the blank, or the scene emoji for picture exercises.
+- **Level**: 1–10 distinct difficulty steps (volere → -are → -ere/-ire → articles → plurals → prepositions → imperatives → pictures → mixed); L11+ plateaus on the mixed pool. No Level Bar — advance with Next Level ▶.
+- **Content language**: Always Italian; UI chrome follows the app locale.
+
+
 ## TODO — New Game Ideas
 
 The following games have been proposed but not yet designed or implemented. Each needs to go through the full brainstorming → design → spec → issues pipeline.
