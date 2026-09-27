@@ -1,5 +1,5 @@
 <script>
-  import { onMount, onDestroy } from 'svelte';
+  import { onMount } from 'svelte';
   import { makeRng } from '$lib/trainers/rng.js';
   import { _ } from '$lib/stores/locale';
   import GameShell from '$lib/components/ui/GameShell.svelte';
@@ -19,7 +19,7 @@
   } from '$lib/sequence-memory/game.js';
 
   let { data } = $props();
-  let screen = $state('idle'); // idle | playing | listening | replay | correct | gameOver
+  let screen = $state('idle'); // idle | watching | listening | correct | gameOver | paused
   let round = $state(1);
   let seq = $state([]);
   let inputPos = $state(0);
@@ -30,6 +30,8 @@
     (typeof localStorage !== 'undefined' && parseInt(localStorage.getItem('sequence-memory-best') || '0', 10)) || 0
   );
   let newBest = $state(false);
+  let bestAtStart = 0;
+  let watchingHalfSpeed = false;
   let timers = [];
 
   function clearTimers() {
@@ -40,19 +42,36 @@
     timers.push(setTimeout(fn, ms));
   }
 
+  function saveBest(value) {
+    if (value > best) {
+      best = value;
+      localStorage.setItem('sequence-memory-best', String(best));
+    }
+  }
+
   function startGame() {
     clearTimers();
     round = 1;
     usedSecondChance = false;
     newBest = false;
-    screen = 'playing';
-    playRound();
+    bestAtStart = best;
+    beginRound();
   }
 
-  function playRound(halfSpeed = false) {
+  function beginRound() {
     const rng = data?.seed != null ? makeRng(data.seed + round) : Math.random;
     seq = generateSequence(round, rng);
     inputPos = 0;
+    watchSequence(false);
+  }
+
+  // Plays the CURRENT seq. Never regenerates: the second chance and pause
+  // resume must show the sequence the child already saw.
+  function watchSequence(halfSpeed) {
+    clearTimers();
+    watchingHalfSpeed = halfSpeed;
+    screen = 'watching';
+    litPad = -1;
     const speed = halfSpeed ? flashMs(round) * 2 : flashMs(round);
     const gap = halfSpeed ? gapMs() * 2 : gapMs();
     seq.forEach((padId, i) => {
@@ -62,11 +81,13 @@
       }, i * (speed + gap));
       later(() => (litPad = -1), i * (speed + gap) + speed);
     });
-    later(() => (screen = 'listening'), seq.length * (speed + gap) + 150);
+    later(() => {
+      if (screen === 'watching') screen = 'listening';
+    }, seq.length * (speed + gap) + 150);
   }
 
   function tap(padId) {
-    if (screen !== 'listening' && screen !== 'replay') return;
+    if (screen !== 'listening') return; // watching is for eyes, not fingers
     litPad = padId;
     playPadTone(PADS[padId].tone);
     later(() => (litPad = -1), 200);
@@ -78,9 +99,8 @@
       later(() => (wrongPad = -1), 400);
       if (!usedSecondChance) {
         usedSecondChance = true;
-        screen = 'replay';
-        inputPos = 0;
-        later(() => playRound(true), 900); // replay at half speed
+        screen = 'watching';
+        later(() => watchSequence(true), 900); // replay at half speed
       } else {
         gameOver();
       }
@@ -91,43 +111,45 @@
     if (verdict === 'round-complete') {
       screen = 'correct';
       playMatch();
+      saveBest(scoreFor(round)); // this run's completed rounds survive an abandon
       later(() => {
         round += 1;
         usedSecondChance = false;
-        screen = 'playing';
-        playRound();
+        inputPos = 0;
+        beginRound();
       }, 900);
     }
   }
 
   function gameOver() {
     screen = 'gameOver';
-    const s = scoreFor(round - 1 > 0 ? round - 1 : 0);
-    if (s > best) {
-      best = s;
-      localStorage.setItem('sequence-memory-best', String(best));
-      newBest = true;
-      playWin();
-    } else {
-      playWin();
-    }
+    const s = scoreFor(Math.max(0, round - 1));
+    saveBest(s);
+    newBest = s > bestAtStart;
+    playWin();
   }
 
   function visibility() {
-    if (screen === 'playing' || screen === 'listening' || screen === 'replay') {
+    if (screen === 'watching' || screen === 'listening') {
       pauseGame();
     }
   }
+  let pausedFrom = 'idle';
   function pauseGame() {
     clearTimers();
     pausedFrom = screen;
     screen = 'paused';
   }
-  let pausedFrom = 'idle';
   function resumeGame() {
-    screen = pausedFrom === 'idle' || pausedFrom === 'playing' ? 'playing' : pausedFrom;
-    if (pausedFrom === 'playing' || pausedFrom === 'replay') playRound(pausedFrom === 'replay');
-    else if (pausedFrom === 'listening') playRound();
+    if (pausedFrom === 'listening') {
+      // The sequence was already memorised; keep the child's progress.
+      screen = 'listening';
+    } else if (pausedFrom === 'watching') {
+      // Replay the same sequence so the child sees it whole again.
+      watchSequence(watchingHalfSpeed);
+    } else {
+      screen = 'idle';
+    }
   }
 
   onMount(() => {
@@ -158,14 +180,14 @@
     {:else if screen === 'gameOver'}
       <div class="center-col">
         <p class="big-emoji">{newBest ? '🏆' : '🐸'}</p>
-        <p class="score-line">🎼 {scoreFor(Math.max(1, round - 1))}</p>
+        <p class="score-line">🎼 {scoreFor(Math.max(0, round - 1))}</p>
         <p class="best-line">🏆 {best}</p>
         <BigButton onclick={startGame}>{$_('replay')}</BigButton>
         <BigButton variant="ghost" onclick={() => (screen = 'idle')}>{$_('back')}</BigButton>
       </div>
     {:else}
       <p class="status-line" data-testid="status">
-        {#if screen === 'playing'}👀{:else if screen === 'listening' || screen === 'replay'}👆{:else if screen === 'correct'}🎉{/if}
+        {#if screen === 'watching'}👀{:else if screen === 'listening'}👆{:else if screen === 'correct'}🎉{/if}
       </p>
       <div class="grid" data-testid="pads">
         {#each PADS as pad (pad.id)}
