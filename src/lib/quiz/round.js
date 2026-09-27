@@ -1,5 +1,9 @@
 export function buildOptions(item, items, lang, rng = Math.random) {
-  const pool = items.filter((i) => i.emoji !== item.emoji);
+  // Topics with sub-domains (colors vs shapes) must draw wrong answers from the
+  // same sub-domain — a red circle's wrong answers may not be "Circle".
+  const pool = items.filter(
+    (i) => i.emoji !== item.emoji && (item.group === undefined || i.group === item.group)
+  );
   const picks = [];
   let guard = 0;
   while (picks.length < 2 && pool.length > 0 && guard < 200) {

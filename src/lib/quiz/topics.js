@@ -78,20 +78,20 @@ const VEHICLES = [
 ];
 
 const COLORSHAPES = [
-  { emoji: '🔴', en: 'Red', it: 'Rosso', ro: 'Roșu', de: 'Rot', fr: 'Rouge', zh: '红色' },
-  { emoji: '🟠', en: 'Orange', it: 'Arancione', ro: 'Portocaliu', de: 'Orange', fr: 'Orange', zh: '橙色' },
-  { emoji: '🟡', en: 'Yellow', it: 'Giallo', ro: 'Galben', de: 'Gelb', fr: 'Jaune', zh: '黄色' },
-  { emoji: '🟢', en: 'Green', it: 'Verde', ro: 'Verde', de: 'Grün', fr: 'Vert', zh: '绿色' },
-  { emoji: '🔵', en: 'Blue', it: 'Blu', ro: 'Albastru', de: 'Blau', fr: 'Bleu', zh: '蓝色' },
-  { emoji: '🟣', en: 'Purple', it: 'Viola', ro: 'Violet', de: 'Lila', fr: 'Violet', zh: '紫色' },
-  { emoji: '🟤', en: 'Brown', it: 'Marrone', ro: 'Maro', de: 'Braun', fr: 'Marron', zh: '棕色' },
-  { emoji: '⚫', en: 'Black', it: 'Nero', ro: 'Negru', de: 'Schwarz', fr: 'Noir', zh: '黑色' },
-  { emoji: '⭕', en: 'Circle', it: 'Cerchio', ro: 'Cerc', de: 'Kreis', fr: 'Cercle', zh: '圆形' },
-  { emoji: '🔺', en: 'Triangle', it: 'Triangolo', ro: 'Triunghi', de: 'Dreieck', fr: 'Triangle', zh: '三角形' },
-  { emoji: '⬛', en: 'Square', it: 'Quadrato', ro: 'Pătrat', de: 'Quadrat', fr: 'Carré', zh: '正方形' },
-  { emoji: '🔶', en: 'Diamond', it: 'Rombo', ro: 'Romb', de: 'Raute', fr: 'Losange', zh: '菱形' },
-  { emoji: '⭐', en: 'Star', it: 'Stella', ro: 'Stea', de: 'Stern', fr: 'Étoile', zh: '星星' },
-  { emoji: '❤️', en: 'Heart', it: 'Cuore', ro: 'Inimă', de: 'Herz', fr: 'Cœur', zh: '爱心' }
+  { emoji: '🔴', en: 'Red', it: 'Rosso', ro: 'Roșu', de: 'Rot', fr: 'Rouge', zh: '红色', group: 'color' },
+  { emoji: '🟠', en: 'Orange', it: 'Arancione', ro: 'Portocaliu', de: 'Orange', fr: 'Orange', zh: '橙色', group: 'color' },
+  { emoji: '🟡', en: 'Yellow', it: 'Giallo', ro: 'Galben', de: 'Gelb', fr: 'Jaune', zh: '黄色', group: 'color' },
+  { emoji: '🟢', en: 'Green', it: 'Verde', ro: 'Verde', de: 'Grün', fr: 'Vert', zh: '绿色', group: 'color' },
+  { emoji: '🔵', en: 'Blue', it: 'Blu', ro: 'Albastru', de: 'Blau', fr: 'Bleu', zh: '蓝色', group: 'color' },
+  { emoji: '🟣', en: 'Purple', it: 'Viola', ro: 'Violet', de: 'Lila', fr: 'Violet', zh: '紫色', group: 'color' },
+  { emoji: '🟤', en: 'Brown', it: 'Marrone', ro: 'Maro', de: 'Braun', fr: 'Marron', zh: '棕色', group: 'color' },
+  { emoji: '⚫', en: 'Black', it: 'Nero', ro: 'Negru', de: 'Schwarz', fr: 'Noir', zh: '黑色', group: 'color' },
+  { emoji: '⭕', en: 'Circle', it: 'Cerchio', ro: 'Cerc', de: 'Kreis', fr: 'Cercle', zh: '圆形', group: 'shape' },
+  { emoji: '🔺', en: 'Triangle', it: 'Triangolo', ro: 'Triunghi', de: 'Dreieck', fr: 'Triangle', zh: '三角形', group: 'shape' },
+  { emoji: '⬛', en: 'Square', it: 'Quadrato', ro: 'Pătrat', de: 'Quadrat', fr: 'Carré', zh: '正方形', group: 'shape' },
+  { emoji: '🔶', en: 'Diamond', it: 'Rombo', ro: 'Romb', de: 'Raute', fr: 'Losange', zh: '菱形', group: 'shape' },
+  { emoji: '⭐', en: 'Star', it: 'Stella', ro: 'Stea', de: 'Stern', fr: 'Étoile', zh: '星星', group: 'shape' },
+  { emoji: '❤️', en: 'Heart', it: 'Cuore', ro: 'Inimă', de: 'Herz', fr: 'Cœur', zh: '爱心', group: 'shape' }
 ];
 
 const CLOTHES = [

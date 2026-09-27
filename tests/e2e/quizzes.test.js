@@ -23,6 +23,10 @@ test.describe('Quiz Collection E2E', () => {
       await expect(wrong).toHaveClass(/shake/);
       await expect(page.getByTestId('quiz-progress')).toHaveText(/1 \/ \d+/);
 
+      // A second miss softly highlights the correct option — no child is stuck.
+      await wrong.click();
+      await expect(page.getByTestId('correct-opt')).toHaveClass(/hint/);
+
       await page.waitForTimeout(550);
       await page.getByTestId('correct-opt').click();
       await expect(page.getByTestId('correct-opt')).toHaveClass(/correct/);

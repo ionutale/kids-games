@@ -19,6 +19,7 @@
   let options = $state([]);
   let showConfetti = $state(false);
   let shakeName = $state(null);
+  let misses = $state(0);
   let done = $state(false);
 
   function lang() {
@@ -27,12 +28,14 @@
 
   function nextRound() {
     if (round >= items.length) {
+      showConfetti = false; // never fall confetti over the win card
       done = true;
       return;
     }
     currentItem = items[round];
     options = buildOptions(currentItem, items, lang());
     shakeName = null;
+    misses = 0;
     showConfetti = false;
   }
 
@@ -47,6 +50,7 @@
       }, 1500);
     } else {
       shakeName = opt.name;
+      misses += 1; // after two misses the correct option gets a gentle pulse
       playTap();
       setTimeout(() => (shakeName = null), 500);
     }
@@ -83,6 +87,7 @@
               class="opt-btn"
               class:shake={shakeName === opt.name}
               class:correct={showConfetti && opt.correct}
+              class:hint={misses >= 2 && opt.correct && !showConfetti}
               onclick={() => pick(opt)}
               data-testid={opt.correct ? 'correct-opt' : `wrong-opt-${i}`}
             >
@@ -94,6 +99,7 @@
     {:else}
       <WinOverlay title="🎉 {$_('allDone')}">
         <BigButton variant="primary" class="replay-btn" onclick={restart}>{$_('playAgain')}</BigButton>
+        <BigButton variant="ghost" href="/">{$_('back')}</BigButton>
       </WinOverlay>
     {/if}
 
@@ -178,5 +184,14 @@
     25% { transform: translateX(-10px); }
     50% { transform: translateX(10px); }
     75% { transform: translateX(-5px); }
+  }
+  .opt-btn.hint {
+    border-color: var(--mint);
+    box-shadow: 0 0 18px rgba(110, 231, 183, 0.55);
+    animation: hintPulse 1.2s ease-in-out infinite;
+  }
+  @keyframes hintPulse {
+    0%, 100% { box-shadow: 0 0 6px rgba(110, 231, 183, 0.25); }
+    50% { box-shadow: 0 0 22px rgba(110, 231, 183, 0.65); }
   }
 </style>

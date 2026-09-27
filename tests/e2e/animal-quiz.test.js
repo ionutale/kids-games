@@ -64,5 +64,10 @@ test.describe('Animal Quiz E2E', () => {
     }
 
     await expect(page.locator('.win-title')).toBeVisible();
+    // The completion overlay covers the shell controls: it must offer its own way out.
+    const back = page.locator('.win-actions a[href="/"]');
+    await expect(back).toBeVisible();
+    await back.click();
+    await page.waitForURL(/\/$/);
   });
 });

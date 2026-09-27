@@ -44,3 +44,30 @@ describe('buildOptions', () => {
     expect(opts.filter((o) => o.correct).length).toBe(1);
   });
 });
+
+describe('buildOptions semantic groups (Colors & Shapes)', () => {
+  const cs = TOPICS.colorshapes.items;
+  const seeded = (s) => {
+    let seed = s;
+    return () => ((seed = (seed * 9301 + 49297) % 233280) / 233280);
+  };
+
+  it('every Colors & Shapes item declares its sub-domain', () => {
+    for (const item of cs) expect(['color', 'shape']).toContain(item.group);
+    expect(cs.filter((i) => i.group === 'color').length).toBeGreaterThanOrEqual(4);
+    expect(cs.filter((i) => i.group === 'shape').length).toBeGreaterThanOrEqual(4);
+  });
+
+  it('never offers a wrong answer from the other sub-domain', () => {
+    for (const item of cs) {
+      for (let s = 1; s <= 30; s++) {
+        const opts = buildOptions(item, cs, 'en', seeded(s));
+        for (const w of opts.filter((o) => !o.correct)) {
+          const wrongItem = cs.find((i) => i.en === w.name);
+          expect(wrongItem).toBeDefined();
+          expect(wrongItem.group).toBe(item.group);
+        }
+      }
+    }
+  });
+});
