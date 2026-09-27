@@ -17,7 +17,13 @@ export const LOOKALIKES = [
   ['🚗', '🚙'],
   ['🦋', '🐝'],
   ['🌸', '🌺'],
-  ['🐭', '🐹']
+  ['🐭', '🐹'],
+  // In-catalog pairs so the lookalike tier can fire for category targets too.
+  ['🐶', '🐱'],
+  ['🚗', '🚕'],
+  ['🍎', '🍊'],
+  ['⚽', '🏀'],
+  ['🌻', '🌼']
 ];
 
 const categoryOf = new Map();

@@ -7,7 +7,7 @@
   import WinOverlay from '$lib/components/ui/WinOverlay.svelte';
   import '$lib/trainers/fx.css';
 
-  import { makeRoundState, chooseSpawnItem } from '$lib/trainers/focusTap.js';
+  import { makeRoundState, nextSpawn } from '$lib/trainers/focusTap.js';
   import { saveLevel } from '$lib/trainers/progress.js';
   import { startTrainerMusic, stopTrainerMusic } from '$lib/sounds/trainerMusic.js';
   import { playPop } from '$lib/sounds/audioManager.js';
@@ -22,29 +22,19 @@
   let caught = $state(0);
   let won = $state(false);
   let wrongFxId = $state(-1);
-  let catchFx = $state(null); // { x, y } viewport-relative % for burst
+  let catchFx = $state(null); // { x, y } stream-relative % for burst
   let idSeq = 0;
   let spawnTimer = null;
   let touchLock = false;
-
-  function targetsOnScreen() {
-    return items.filter((i) => i.isTarget).length;
-  }
+  let streamEl = $state(null);
 
   function spawn() {
-    if (won || items.length >= round.config.maxItems) return;
-    const forced = targetsOnScreen() === 0;
-    const pick = chooseSpawnItem(round, targetsOnScreen(), idSeq);
-    if (forced && pick.isTarget) playSparkle();
-    items.push({
-      id: idSeq++,
-      emoji: pick.emoji,
-      isTarget: pick.isTarget,
-      x: 6 + round.rng() * 84,
-      wobbling: false,
-      popping: false
-    });
-    items = items;
+    if (won) return;
+    const next = nextSpawn(round, items, idSeq);
+    items = next.items;
+    if (!next.item) return;
+    idSeq += 1;
+    if (next.forced && next.item.isTarget) playSparkle();
   }
 
   function removeItem(id) {
@@ -58,8 +48,10 @@
     if (item.isTarget) {
       item.popping = true;
       playPop(0.94 + (caught % 4) * 0.04); // slight variation per catch
-      catchFx = { x: item.x, y: lastTouchY ?? 50 };
-      setTimeout(() => (catchFx = null), 450);
+      if (lastTouch) {
+        catchFx = lastTouch;
+        setTimeout(() => (catchFx = null), 450);
+      }
       caught += 1;
       setTimeout(() => removeItem(item.id), 180);
       if (caught >= round.config.goal) {
@@ -76,10 +68,18 @@
     }
   }
 
-  let lastTouchY = null;
+  let lastTouch = null;
   function touchY(e) {
-    const rect = e.currentTarget.getBoundingClientRect();
-    lastTouchY = ((e.clientY - rect.top) / rect.height) * 100;
+    if (!streamEl) return;
+    const rect = streamEl.getBoundingClientRect();
+    const el = e.currentTarget.getBoundingClientRect();
+    // Positions inside an overflow container are layout-relative: add back the
+    // container's own scroll offset so the burst lands on the tapped emoji even
+    // if a focus scroll nudged the stream.
+    lastTouch = {
+      x: el.left + el.width / 2 - rect.left + streamEl.scrollLeft,
+      y: el.top + el.height / 2 - rect.top + streamEl.scrollTop
+    };
   }
 
   function startSpawning() {
@@ -145,13 +145,13 @@
     <HudPill icon="✅" label={`${caught}/${round.config.goal}`} />
   {/snippet}
 
-  <div class="stream" data-testid="stream">
+  <div class="stream" data-testid="stream" bind:this={streamEl}>
     <p class="hint">{$_('catchTarget', { e: round.target })}</p>
     {#if catchFx}
       <div
         class="catch-fx"
-        style:left="{catchFx.x}%"
-        style:top="{catchFx.y}%"
+        style:left="{catchFx.x}px"
+        style:top="{catchFx.y}px"
         data-testid="catch-fx"
       >
         ⭐
@@ -160,8 +160,6 @@
     {#each items as item (item.id)}
       <button
         class="emoji"
-        class:wobbling={item.wobbling}
-        class:popping={item.popping}
         class:wrong-fx={wrongFxId === item.id}
         onpointerdown={(e) => { touchY(e); tap(item); }}
         style:left="{item.x}%"
@@ -169,7 +167,7 @@
         data-testid={item.isTarget ? 'target' : 'distractor'}
                 oncontextmenu={(e) => e.preventDefault()}
       >
-        {item.emoji}
+        <span class="emoji-body" class:wobbling={item.wobbling} class:popping={item.popping}>{item.emoji}</span>
       </button>
     {/each}
   </div>
@@ -223,41 +221,50 @@
     animation-fill-mode: forwards;
     filter: drop-shadow(0 0 6px var(--accent-glow));
   }
+  .emoji-body {
+    display: inline-block;
+  }
   .emoji.wrong-fx {
     outline: 3px solid rgba(255, 120, 120, 0.9);
     outline-offset: -2px;
     border-radius: 12px;
     opacity: 0.75;
   }
-  .emoji.wobbling {
-    animation: fxWobbleFloat 0.3s ease-in-out;
+  .emoji-body.wobbling {
+    animation: fxWobble 0.3s ease-in-out;
   }
   .catch-fx {
     position: absolute;
-    transform: translate(-50%, -50%);
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-left: -20px;
+    margin-top: -20px;
     font-size: 40px;
     pointer-events: none;
     z-index: 4;
     animation: catchBurst 0.45s ease-out forwards;
   }
   @keyframes catchBurst {
-    0% { transform: translate(-50%, -50%) scale(0.4); opacity: 1; }
-    100% { transform: translate(-50%, -50%) scale(2.2); opacity: 0; }
+    0% { transform: scale(0.4); opacity: 1; }
+    100% { transform: scale(2.2); opacity: 0; }
   }
-  .emoji.popping {
-    animation: fxPopFloat 0.18s ease-out forwards;
+  .emoji-body.popping {
+    animation: fxPop 0.18s ease-out forwards;
   }
   @keyframes floatUp {
     from { top: 105%; }
     to { top: -18%; }
   }
-  @keyframes fxWobbleFloat {
-    0%, 100% { margin-left: 0; }
-    25% { margin-left: -5px; }
-    50% { margin-left: 5px; }
-    75% { margin-left: -2px; }
+  @keyframes fxWobble {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-5px); }
+    50% { transform: translateX(5px); }
+    75% { transform: translateX(-2px); }
   }
-  @keyframes fxPopFloat {
+  @keyframes fxPop {
     to { transform: scale(1.6); opacity: 0; }
   }
 

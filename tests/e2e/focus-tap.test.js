@@ -92,4 +92,62 @@ test.describe('Focus Tap E2E', () => {
     const saved = await page.evaluate(() => localStorage.getItem('focusTapLevel'));
     expect(saved).toBe('3');
   });
+
+  test('tapping a distractor wobbles it in place instead of teleporting it', async ({ page }) => {
+    test.setTimeout(60000);
+    await page.goto('/games/focus-tap/play/1?seed=42');
+
+    // Wait until a distractor is floating in the middle band, where a reset of
+    // the rise animation (the old bug) would move it by hundreds of pixels.
+    await page.waitForFunction(() => {
+      const el = document.querySelector('[data-testid="distractor"]');
+      if (!el) return false;
+      const r = el.getBoundingClientRect();
+      return r.top > 180 && r.bottom < window.innerHeight - 180;
+    }, null, { timeout: 20000 });
+
+    const d = page.locator('[data-testid="distractor"]').first();
+    const before = await d.boundingBox();
+    await d.click({ force: true });
+    await page.waitForTimeout(150);
+    const after = await d.boundingBox();
+    expect(after).not.toBeNull();
+    const beforeCy = before.y + before.height / 2;
+    const afterCy = after.y + after.height / 2;
+    expect(Math.abs(afterCy - beforeCy)).toBeLessThan(60);
+  });
+
+  test('the catch burst appears where the emoji was tapped', async ({ page }) => {
+    test.setTimeout(60000);
+    await page.goto('/games/focus-tap/play/1?seed=42');
+    await expect(page.locator('[data-testid="target"]').first()).toBeVisible({ timeout: 15000 });
+
+    // Record the target's rect at pointerdown — the exact moment the burst is anchored.
+    await page.evaluate(() => {
+      window.__tapRect = null;
+      document.addEventListener(
+        'pointerdown',
+        (e) => {
+          const el = e.target && e.target.closest ? e.target.closest('[data-testid="target"]') : null;
+          if (el && !window.__tapRect) window.__tapRect = el.getBoundingClientRect().toJSON();
+        },
+        true
+      );
+    });
+
+    const t = page.locator('[data-testid="target"]:not(.popping)').first();
+    await t.click({ force: true });
+
+    const tapRect = await page.evaluate(() => window.__tapRect);
+    expect(tapRect).not.toBeNull();
+    const fx = page.locator('[data-testid="catch-fx"]');
+    await expect(fx).toBeVisible({ timeout: 3000 });
+    const fxBox = await fx.boundingBox();
+    const targetCx = tapRect.left + tapRect.width / 2;
+    const targetCy = tapRect.top + tapRect.height / 2;
+    const fxCx = fxBox.x + fxBox.width / 2;
+    const fxCy = fxBox.y + fxBox.height / 2;
+    expect(Math.abs(fxCx - targetCx)).toBeLessThan(25);
+    expect(Math.abs(fxCy - targetCy)).toBeLessThan(25);
+  });
 });
