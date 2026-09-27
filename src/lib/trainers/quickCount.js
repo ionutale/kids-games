@@ -1,5 +1,5 @@
 import { makeRng, shuffle, pickOne } from './rng.js';
-import { CATEGORIES, pickTarget } from './emojiSets.js';
+import { CATEGORIES } from './emojiSets.js';
 
 export function levelConfig(level) {
   const n = Math.max(1, level);
@@ -33,37 +33,29 @@ function buildCells(count, rng) {
 export function makePrompt(level, seed = Date.now()) {
   const rng = makeRng(seed);
   const config = levelConfig(level);
-  const count = config.min + Math.floor(rng() * (config.max - config.min + 1));
-
   const categoryName = pickOne(Object.keys(CATEGORIES), rng);
   const pool = CATEGORIES[categoryName];
-  const seen = new Set();
-  const emojis = [];
-  let guard = 0;
-  while (emojis.length < count && guard < 500) {
-    guard++;
-    const e = pickTarget(pool, rng);
-    if (!seen.has(e)) {
-      seen.add(e);
-      emojis.push(e);
-    }
-  }
+  const wanted = config.min + Math.floor(rng() * (config.max - config.min + 1));
+  // The flash set holds distinct emojis, so it can never be larger than the
+  // category pool. The answer must describe what is actually shown.
+  const emojis = shuffle(pool, rng).slice(0, Math.min(wanted, pool.length));
+  const correct = emojis.length;
 
   // answer pills: correct ±1/±2, unique, clamped
   const deltas = shuffle([1, 2, -1, -2], rng);
-  const options = [count];
+  const options = [correct];
   for (const d of deltas) {
     if (options.length >= 3) break;
-    const v = count + d;
+    const v = correct + d;
     if (v >= 0 && v <= config.optionClampMax && !options.includes(v)) options.push(v);
   }
 
   return {
-    count,
+    count: correct,
     emojis,
     category: categoryName,
     cells: buildCells(emojis.length, rng).slice(0, emojis.length),
     options: shuffle(options, rng),
-    correct: count
+    correct
   };
 }

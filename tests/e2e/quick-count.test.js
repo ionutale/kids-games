@@ -72,4 +72,23 @@ test.describe('Quick Count E2E', () => {
     await expect(page.locator('[data-testid="board"]')).toBeVisible();
     expect(await page.evaluate(() => localStorage.getItem('quickCountLevel'))).toBe('4');
   });
+
+  test('double-tapping the correct pill scores exactly once', async ({ page }) => {
+    test.setTimeout(60000);
+    await page.goto('/games/quick-count/play/1?seed=5');
+    await expect(page.locator('[data-testid="correct-pill"]')).toBeVisible({ timeout: 20000 });
+
+    const readSolved = async () =>
+      parseInt((await page.locator('.hud-item').first().textContent()).split('/')[0], 10);
+    const before = await readSolved();
+
+    await page.evaluate(() => {
+      const pill = document.querySelector('[data-testid="correct-pill"]');
+      pill.click();
+      pill.click();
+    });
+    await page.waitForTimeout(250);
+
+    expect(await readSolved()).toBe(before + 1);
+  });
 });

@@ -24,6 +24,7 @@
   let prompt = $state(null);
   let phase = $state('ready'); // ready → flash → answer
   let chosen = $state(-1); // index of wrong pill currently wobbling
+  let answered = $state(false);
   let timers = [];
 
   function clearTimers() {
@@ -39,6 +40,7 @@
     clearTimers();
     prompt = makePrompt(level, (data.seed + solved * 7919) % 100000000);
     chosen = -1;
+    answered = false;
     phase = 'ready';
     playReadyTick();
     later(() => {
@@ -52,13 +54,14 @@
   }
 
   function answer(idx) {
-    if (phase !== 'answer' || won) return;
+    if (phase !== 'answer' || won || answered) return;
     const value = prompt.options[idx];
     if (value !== prompt.correct) {
       chosen = idx; // silent wobble, stays until correct
-      setTimeout(() => (chosen = -1), 320);
+      later(() => (chosen = -1), 320);
       return;
     }
+    answered = true;
     playPop();
     solved += 1;
     if (solved >= config.goal) {

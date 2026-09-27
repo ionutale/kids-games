@@ -69,4 +69,25 @@ describe('makePrompt', () => {
       expect(p.count).toBeLessThanOrEqual(cfg.max);
     }
   });
+
+  it('correct always equals the number of emojis actually shown (no phantom counts)', () => {
+    for (let level = 1; level <= 30; level++) {
+      for (let s = 0; s < 12; s++) {
+        const p = makePrompt(level, s * 31 + 1);
+        expect(p.emojis.length).toBe(p.correct);
+        expect(p.cells.length).toBe(p.correct);
+        expect(p.count).toBe(p.correct);
+        expect(p.options).toContain(p.correct);
+      }
+    }
+  });
+
+  it('never advertises more emojis than the category pool can show', () => {
+    let maxSeen = 0;
+    for (let s = 1; s <= 300; s++) {
+      maxSeen = Math.max(maxSeen, makePrompt(30, s).emojis.length);
+    }
+    // the smallest pool has 8 emojis; no prompt may show more than the largest pool
+    expect(maxSeen).toBeLessThanOrEqual(10);
+  });
 });
