@@ -7,7 +7,7 @@
   import WinOverlay from '$lib/components/ui/WinOverlay.svelte';
   import Confetti from '$lib/components/Confetti.svelte';
   import '$lib/trainers/fx.css';
-  import { exercisesFor, roundGoal } from '$lib/grammar/italian.js';
+  import { exercisesFor, roundGoal, prepareExercise } from '$lib/grammar/italian.js';
   import { makeRng, shuffle } from '$lib/trainers/rng.js';
   import { playMatch } from '$lib/sounds/audioManager.js';
   import { fanfare } from '$lib/sounds/trainerSounds.js';
@@ -36,7 +36,12 @@
 
   function resetRound() {
     clearTimers();
-    queue = shuffle(exercisesFor(level), makeRng(seed)).slice(0, goal);
+    // One seeded rng drives both the exercise order and each option shuffle,
+    // so replays are reproducible and answers land in every slot.
+    const rng = makeRng(seed);
+    queue = shuffle(exercisesFor(level), rng)
+      .slice(0, goal)
+      .map((ex) => prepareExercise(ex, rng));
     index = 0;
     won = false;
     shake = -1;
@@ -120,14 +125,18 @@
 
   {#if won}
     <WinOverlay title={$_('wellDone')} subtitle={`✏️ ${queue.length}/${queue.length}`}>
-      <a
-        class="big-btn primary"
-        href={`/games/grammar/play/${level + 1}`}
-        data-testid="next-level"
-        onclick={nextLevel}
-      >
-        {$_('nextLevel')} ▶
-      </a>
+      {#if level < 10}
+        <a
+          class="big-btn primary"
+          href={`/games/grammar/play/${level + 1}`}
+          data-testid="next-level"
+          onclick={nextLevel}
+        >
+          {$_('nextLevel')} ▶
+        </a>
+      {:else}
+        <p class="ladder-done">🎓</p>
+      {/if}
       <a class="big-btn ghost" href={`/games/grammar/play/${level}`} data-testid="replay" onclick={replay}>
         {$_('replay')}
       </a>
@@ -137,6 +146,7 @@
 </GameShell>
 
 <style>
+  .ladder-done { font-size: 40px; margin: 0; }
   .board {
     flex: 1;
     display: flex;

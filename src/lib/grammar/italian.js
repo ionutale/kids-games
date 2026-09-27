@@ -1,9 +1,21 @@
+import { shuffle } from '../trainers/rng.js';
+
 const verb = (prompt, options, answer) => ({ type: 'verb', prompt, options, answer });
 const article = (prompt, options, answer) => ({ type: 'article', prompt, options, answer });
 const plural = (prompt, options, answer) => ({ type: 'plural', prompt, options, answer });
 const preposition = (prompt, options, answer) => ({ type: 'preposition', prompt, options, answer });
 const imperative = (prompt, options, answer) => ({ type: 'imperative', prompt, options, answer });
 const picture = (emoji, options, answer) => ({ type: 'picture', emoji, prompt: '', options, answer });
+
+/**
+ * Shuffles an exercise's options with the round's seeded rng, remapping the
+ * answer index. Without this, 37/39/16 answers sat in slots 0/1/2 and
+ * "always tap the first button" won most levels.
+ */
+export function prepareExercise(exercise, rng) {
+  const options = shuffle([...exercise.options], rng);
+  return { ...exercise, options, answer: options.indexOf(exercise.options[exercise.answer]) };
+}
 
 export const LEVELS = {
   1: [
@@ -67,22 +79,22 @@ export const LEVELS = {
   6: [
     preposition('Andiamo ___ bici', ['in', 'a', 'con'], 0),
     preposition('Vado ___ scuola', ['in', 'a', 'con'], 1),
-    preposition('Gioco ___ te', ['in', 'con', 'da'], 1),
-    preposition('Questo regalo è ___ te', ['per', 'con', 'da'], 0),
+    preposition('Gioco ___ la palla', ['con', 'da', 'in'], 0),
+    preposition('Questo regalo è ___ la mamma', ['per', 'con', 'da'], 0),
     preposition('Vado ___ nonna', ['da', 'in', 'a'], 0),
     preposition('Andiamo ___ vacanza', ['in', 'a', 'da'], 0),
     preposition('Torno ___ casa', ['a', 'in', 'per'], 0),
-    preposition('Vengo ___ te', ['con', 'per', 'da'], 0)
+    preposition('Vengo ___ la bici', ['con', 'da', 'in'], 0)
   ],
   7: [
-    imperative('___ la pala!', ['Prendi', 'Prendiamo', 'Prendete'], 0),
-    imperative('___ insieme!', ['Gioca', 'Giochiamo', 'Giocate'], 1),
-    imperative('___ in bici!', ['Vai', 'Andiamo', 'Andate'], 1),
-    imperative('___ a fare una camminata!', ["Va'", 'Andiamo', 'Andate'], 1),
-    imperative('___ il cane a spasso!', ['Portiamo', 'Porta', 'Portate'], 1),
-    imperative('___ il gelato!', ['Prendi', 'Prendiamo', 'Prendete'], 0),
-    imperative('___ la palla!', ['Passiamo', 'Passate', 'Passa'], 2),
-    imperative('___ attenzione!', ['Facciamo', 'Fate', 'Fai'], 2)
+    imperative('(tu) ___ la pala!', ['Prendi', 'Prendiamo', 'Prendete'], 0),
+    imperative('(noi) ___ insieme!', ['Gioca', 'Giochiamo', 'Giocate'], 1),
+    imperative('(noi) ___ in bici!', ['Vai', 'Andiamo', 'Andate'], 1),
+    imperative('(noi) ___ a fare una camminata!', ["Va'", 'Andiamo', 'Andate'], 1),
+    imperative('(tu) ___ il cane a spasso!', ['Portiamo', 'Porta', 'Portate'], 1),
+    imperative('(tu) ___ il gelato!', ['Prendi', 'Prendiamo', 'Prendete'], 0),
+    imperative('(tu) ___ la palla!', ['Passiamo', 'Passate', 'Passa'], 2),
+    imperative('(tu) ___ attenzione!', ['Facciamo', 'Fate', 'Fai'], 2)
   ],
   8: [
     picture('🍦', ['Andiamo a prendere un gelato', 'Prendi la pala', 'Giochiamo insieme'], 0),
@@ -108,14 +120,14 @@ export const LEVELS = {
     verb('Noi ___ andare', ['vogliamo', 'volete', 'vogliono'], 0),
     article('___ amici', ['i', 'gli', 'le'], 1),
     plural('lo zaino → ___', ['gli zaini', 'i zaini', 'le zaini'], 0),
-    preposition('Gioco ___ te', ['in', 'con', 'da'], 1),
-    imperative('___ insieme!', ['Gioca', 'Giochiamo', 'Giocate'], 1),
+    preposition('Gioco ___ la palla', ['con', 'da', 'in'], 0),
+    imperative('(noi) ___ insieme!', ['Gioca', 'Giochiamo', 'Giocate'], 1),
     picture('🍦', ['Andiamo a prendere un gelato', 'Prendi la pala', 'Giochiamo insieme'], 0),
     verb('Tu ___ una mela', ['mangio', 'mangi', 'mangia'], 1),
     article('___ stella', ['le', 'la', 'il'], 1),
     plural('la mela → ___', ['i mele', 'la mele', 'le mele'], 2),
     preposition('Vado ___ nonna', ['da', 'in', 'a'], 0),
-    imperative('___ il cane a spasso!', ['Portiamo', 'Porta', 'Portate'], 1),
+    imperative('(tu) ___ il cane a spasso!', ['Portiamo', 'Porta', 'Portate'], 1),
     picture('📖', ['Prendo la palla', 'Faccio una camminata', 'Leggo un libro'], 2)
   ]
 };
