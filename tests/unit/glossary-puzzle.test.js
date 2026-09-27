@@ -1,7 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import { PUZZLE_IMAGES, getCategories, levelConfig } from '$lib/glossary-puzzle/images.js';
-import { generatePieces, piecePath, isWithinSnapZone } from '$lib/glossary-puzzle/pieces.js';
-import { buildSaveData } from '$lib/glossary-puzzle/save.js';
+import { generatePieces, piecePath, isWithinSnapZone, pickNudgeTarget } from '$lib/glossary-puzzle/pieces.js';
+import { buildSaveData, restorePlaced } from '$lib/glossary-puzzle/save.js';
+import { makeRng } from '$lib/trainers/rng.js';
 
 describe('Puzzle images', () => {
   it('has 8 images', () => expect(PUZZLE_IMAGES.length).toBe(8));
@@ -141,6 +142,45 @@ describe('Save data', () => {
     const d = buildSaveData('x', 1, set);
     set.add('b');
     expect(d.placedIds).toEqual(['a']);
+  });
+});
+
+describe('Resume decisions', () => {
+  const stored = { imageId: 'garden', level: 2, placedIds: ['0-0'] };
+
+  it('prefers the handoff from the gallery', () => {
+    expect(restorePlaced({ handoff: ['1-1'], stored, imageId: 'garden', level: 2 })).toEqual(['1-1']);
+  });
+
+  it('falls back to the stored save for the same image and level (reload-safe)', () => {
+    expect(restorePlaced({ handoff: null, stored, imageId: 'garden', level: 2 })).toEqual(['0-0']);
+  });
+
+  it('ignores a save for a different image or level', () => {
+    expect(restorePlaced({ handoff: null, stored, imageId: 'ocean', level: 2 })).toBeNull();
+    expect(restorePlaced({ handoff: null, stored, imageId: 'garden', level: 3 })).toBeNull();
+  });
+
+  it('returns null when there is nothing to restore', () => {
+    expect(restorePlaced({ handoff: null, stored: null, imageId: 'garden', level: 2 })).toBeNull();
+  });
+});
+
+describe('Idle nudge targets', () => {
+  it('only nudges pieces that are currently visible in the tray', () => {
+    const visible = [{ id: 'a' }, { id: 'b' }];
+    const unplaced = [{ id: 'a' }, { id: 'b' }, { id: 'c' }, { id: 'd' }];
+    const seen = new Set();
+    for (let s = 1; s <= 60; s++) seen.add(pickNudgeTarget(visible, unplaced, makeRng(s)));
+    expect([...seen].sort()).toEqual(['a', 'b']);
+  });
+
+  it('falls back to any unplaced piece when the tray is empty', () => {
+    expect(pickNudgeTarget([], [{ id: 'x' }], makeRng(1))).toBe('x');
+  });
+
+  it('returns null when everything is placed', () => {
+    expect(pickNudgeTarget([], [], makeRng(1))).toBeNull();
   });
 });
 

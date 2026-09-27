@@ -11,7 +11,7 @@
   import WinOverlay from '$lib/components/ui/WinOverlay.svelte';
   import Starfield from '$lib/components/ui/Starfield.svelte';
   import { levelConfig } from '$lib/glossary-puzzle/images.js';
-  import { generatePieces, computeVisibleTray, isWithinSnapZone, TRAY_CAPACITY, VIRTUAL_W, VIRTUAL_H } from '$lib/glossary-puzzle/pieces.js';
+  import { generatePieces, computeVisibleTray, isWithinSnapZone, pickNudgeTarget, TRAY_CAPACITY, VIRTUAL_W, VIRTUAL_H } from '$lib/glossary-puzzle/pieces.js';
   import { buildSaveData, writeSave } from '$lib/glossary-puzzle/save.js';
   import { pieceSvgHtml, boardLinesSvgHtml } from '$lib/glossary-puzzle/rendering.js';
 
@@ -182,7 +182,8 @@
       const farFromCenter = Math.hypot(vx - tx, vy - ty) > snapRadius;
       acceptPiece(piece, farFromCenter ? { x: vx, y: vy } : null);
     } else {
-      trayQueue = [piece.id, ...trayQueue.filter(id => id !== piece.id)];
+      // A miss keeps the piece in its tray slot: reordering the queue here made
+      // the visible set flicker on every failed drop.
       missHintId = piece.id;
       clearTimeout(missTimer);
       missTimer = setTimeout(() => { missHintId = null; }, 1500);
@@ -190,6 +191,20 @@
 
     dragging = null;
     activePointer = null;
+    nudgeTarget = null;
+    showNudge = false;
+    resetIdleTimers();
+    scheduleIdleNudge();
+  }
+
+  // A cancelled pointer (browser gesture, lost capture) must abandon the drag —
+  // never treat it as a drop that could snap a piece by accident.
+  function cancelDrag(e) {
+    if (dragging === null || e.pointerId !== activePointer) return;
+    if (soundsLoaded) stopDragLoop();
+    dragging = null;
+    activePointer = null;
+    proximityId = null;
     nudgeTarget = null;
     showNudge = false;
     resetIdleTimers();
@@ -248,8 +263,10 @@
   function fireIdleNudge() {
     if (placed.size >= pieces.length || dragging !== null) { scheduleIdleNudge(); return; }
     const unplaced = pieces.filter(p => !placed.has(p.id));
-    if (unplaced.length === 0) return;
-    nudgeTarget = unplaced[Math.floor(Math.random() * unplaced.length)].id;
+    // Only nudge a piece the child can actually pick right now.
+    const targetId = pickNudgeTarget(trayPieces, unplaced);
+    if (!targetId) return;
+    nudgeTarget = targetId;
     showNudge = true;
     if (soundsLoaded) playNudge();
     clearTimeout(nudgeTimer);
@@ -291,7 +308,7 @@
 <div class="gp-play night-bg" style="--accent: #5EEAD4;"
   onpointermove={handlePointerMove}
   onpointerup={handlePointerUp}
-  onpointercancel={handlePointerUp}>
+  onpointercancel={cancelDrag}>
 
   <Starfield count={30} />
 

@@ -36,6 +36,18 @@ export function clearSave() {
   } catch {}
 }
 
+/**
+ * Decides which placed ids to restore when a resume link opens. The handoff
+ * from the gallery wins; otherwise the stored save is used only when it is for
+ * this exact image and level. This makes reloading a `?resume=1` URL
+ * idempotent — the stored save survives instead of being consumed by the URL.
+ */
+export function restorePlaced({ handoff, stored, imageId, level }) {
+  if (handoff) return handoff;
+  if (stored && stored.imageId === imageId && stored.level === level) return stored.placedIds;
+  return null;
+}
+
 export function stashHandoff(placedIds) {
   if (typeof sessionStorage === 'undefined') return;
   try {

@@ -133,3 +133,12 @@ export function isWithinSnapZone(x, y, piece, snapRadius) {
   return x >= piece.targetX - m && x <= piece.targetX + piece.w + m
     && y >= piece.targetY - m && y <= piece.targetY + piece.h + m;
 }
+
+// The idle nudge must point at a piece the child can actually pick: a visible
+// tray piece, not one buried deeper in the queue (or already placed).
+export function pickNudgeTarget(visiblePieces, unplacedPieces, rng = Math.random) {
+  const pool = visiblePieces && visiblePieces.length > 0 ? visiblePieces : unplacedPieces;
+  if (!pool || pool.length === 0) return null;
+  const idx = Math.floor(rng() * pool.length) % pool.length;
+  return pool[idx].id;
+}

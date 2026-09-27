@@ -119,7 +119,7 @@ test.describe('Glossary Puzzle — deep audit (persistence + touch)', () => {
   const L1_IDS = ['0-0', '0-1', '1-0', '1-1']; // L1: 2×2 grid
 
   test('GP-place-persists: placing a piece writes the save IMMEDIATELY (no navigation)', async ({ page }) => {
-    await page.goto('/games/glossary-puzzle/play/1?image=garden&place=0-0');
+    await page.goto('/games/glossary-puzzle/play/1?image=garden&place=0-0&debug=1');
     await page.waitForTimeout(800);
     await expect(page.locator('.gp-top-bar')).toBeVisible();
     // progress pill reflects 1 placed
@@ -142,10 +142,61 @@ test.describe('Glossary Puzzle — deep audit (persistence + touch)', () => {
       }))
     );
     // resume fully-placed via the deterministic place hook
-    await page.goto('/games/glossary-puzzle/play/1?image=garden&place=' + encodeURIComponent('0-0,0-1,1-0,1-1'));
+    await page.goto('/games/glossary-puzzle/play/1?image=garden&place=' + encodeURIComponent('0-0,0-1,1-0,1-1') + '&debug=1');
     await expect(page.locator('.win-overlay')).toBeVisible({ timeout: 8000 });
     const saved = await page.evaluate(() => localStorage.getItem('glossary-puzzle-save'));
     expect(saved).toBeNull(); // stale save cleared by the win
+  });
+
+  test('GP-resume-reload: reloading a resumed puzzle keeps the restored progress', async ({ page }) => {
+    // a saved partial puzzle, as if the child had placed one piece earlier
+    await page.goto('/games/glossary-puzzle');
+    await page.evaluate(() =>
+      localStorage.setItem('glossary-puzzle-save', JSON.stringify({
+        imageId: 'garden', level: 2, placedIds: ['0-0']
+      }))
+    );
+    await page.reload();
+    await expect(page.locator('.gp-resume-btn')).toBeVisible({ timeout: 5000 });
+    await page.locator('.gp-resume-btn').click();
+    await page.waitForURL(/resume=1/);
+    await expect(page.locator('.gp-top-bar .hud-item')).toContainText('1/6');
+
+    // Old bug: the reload consumed no handoff but still cleared the save,
+    // so the board came back empty and the progress was gone.
+    await page.reload();
+    await expect(page.locator('.gp-top-bar .hud-item')).toContainText('1/6', { timeout: 8000 });
+  });
+
+  test('GP-place-debug: ?place only seeds with an explicit debug flag', async ({ page }) => {
+    await page.goto('/games/glossary-puzzle/play/1?image=garden&place=0-0');
+    await expect(page.locator('.gp-top-bar .hud-item')).toContainText('0/4');
+    await page.goto('/games/glossary-puzzle/play/1?image=garden&place=0-0&debug=1');
+    await expect(page.locator('.gp-top-bar .hud-item')).toContainText('1/4');
+  });
+
+  test('GP-miss-slot: a missed drop keeps the piece in its tray slot', async ({ page }) => {
+    await page.goto('/games/glossary-puzzle/play/1?image=garden');
+    await expect(page.locator('.gp-tray-piece')).toHaveCount(4);
+    const keys = () =>
+      page.evaluate(() =>
+        [...document.querySelectorAll('.gp-tray-piece')].map(
+          (el) => el.querySelector('svg path')?.getAttribute('d') ?? ''
+        )
+      );
+    const before = await keys();
+
+    const board = await page.locator('.gp-board').boundingBox();
+    const piece = await page.locator('.gp-tray-piece').nth(3).boundingBox();
+    await page.mouse.move(piece.x + piece.width / 2, piece.y + piece.height / 2);
+    await page.mouse.down();
+    await page.mouse.move(piece.x + 40, board.y + board.height + 90, { steps: 6 });
+    await page.mouse.up();
+    await page.waitForTimeout(500);
+
+    // Old bug: the missed piece jumped to the front of the tray queue.
+    expect(await keys()).toEqual(before);
+    await expect(page.locator('.gp-top-bar .hud-item')).toContainText('0/4');
   });
 
   test('GP-touch-pickup: touch-drag lifts a tray piece (ghost appears)', async ({ page }) => {
