@@ -79,20 +79,22 @@ describe('makeQuestion', () => {
     }
   });
 
-  it('comparison always has a clear winner', () => {
+  it('comparison answers by side, always with a clear winner', () => {
     for (let s = 1; s <= 40; s++) {
       const q = makeQuestion(6, s);
       if (q.type === 'compare') {
         expect(q.groups[0]).not.toBe(q.groups[1]);
-        expect(q.answer).toBe(Math.max(...q.groups));
+        expect(q.answer).toBe(q.groups[0] > q.groups[1] ? 0 : 1);
+        expect(q.options).toBeUndefined(); // compare is answered by tapping a side
       }
     }
   });
 
-  it('always offers exactly 4 unique numeric options containing the answer', () => {
+  it('numeric questions offer exactly 4 unique numeric options containing the answer', () => {
     for (const age of [2, 3, 4, 5, 6]) {
       for (let s = 1; s <= 25; s++) {
         const q = makeQuestion(age, s * 3 + age);
+        if (q.type === 'compare') continue;
         expect(q.options.length).toBe(4);
         expect(new Set(q.options).size).toBe(4);
         expect(q.options).toContain(String(q.answer));

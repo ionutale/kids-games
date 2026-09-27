@@ -10,8 +10,9 @@
   import { makeQuestion } from '$lib/emoji-math/game.js';
 
   let question = $state(null);
-  let chosen = $state(-1); // index of wrong pick (shake)
+  let chosen = $state(-1); // index of wrong pick (shake) / tapped side for compare
   let reveal = $state(false); // briefly show correct answer after a miss
+  let answered = $state(false); // one score per question, no double-tap
   let correct = $state(0);
   let streak = $state(0);
   let milestone = $state(false);
@@ -19,6 +20,7 @@
     (typeof localStorage !== 'undefined' && parseInt(localStorage.getItem('emoji-math-best-streak') || '0', 10)) || 0
   );
   let timers = [];
+  let pausedMid = false;
 
   function clearTimers() {
     for (const t of timers) clearTimeout(t);
@@ -31,12 +33,17 @@
     question = makeQuestion($settings.ageLevel, seedOffset);
     chosen = -1;
     reveal = false;
+    answered = false;
   }
 
   function answer(idx) {
-    if (!question || chosen !== -1 || reveal) return;
-    const value = Number(question.options[idx]);
-    if (value === question.answer) {
+    if (!question || chosen !== -1 || reveal || answered) return;
+    const isRight =
+      question.type === 'compare'
+        ? idx === question.answer
+        : Number(question.options[idx]) === question.answer;
+    if (isRight) {
+      answered = true;
       playMatch();
       correct += 1;
       streak += 1;
@@ -50,7 +57,7 @@
       }
       timers.push(setTimeout(() => next((Date.now() + correct * 31) % 100000), milestone ? 1500 : 450));
     } else {
-      // silent shake + reveal the correct pill, then move on — no penalty
+      // silent shake + reveal the correct answer, then move on — no penalty
       chosen = idx;
       reveal = true;
       streak = 0;
@@ -58,8 +65,18 @@
     }
   }
 
+  // Hiding the app must never strand the round: freeze any pending advance and
+  // resume on return; an open, unanswered question simply stays open.
   function visibility() {
-    clearTimers(); // freeze mid-question timers when hidden; resume with a fresh question
+    if (document.hidden) {
+      if (timers.length > 0) {
+        clearTimers();
+        pausedMid = true;
+      }
+    } else if (pausedMid) {
+      pausedMid = false;
+      next();
+    }
   }
 
   onMount(() => {
@@ -94,12 +111,17 @@
     {#if question}
       <div class="equation" data-testid="equation">
         {#if question.type === 'compare'}
-          <div class="compare">
+          <div class="compare" data-testid="compare">
             {#each question.groups as g, gi}
-              <div class="side">
-                <p class="cluster">{groupEmoji(g)}</p>
-                <p class="side-label">{gi === 0 ? '⬅️' : '➡️'}</p>
-              </div>
+              <button
+                class="side"
+                class:shake={chosen === gi}
+                class:reveal-correct={reveal && gi === question.answer}
+                onclick={() => answer(gi)}
+                data-testid="compare-side-{gi}"
+              >
+                <span class="cluster">{groupEmoji(g)}</span>
+              </button>
             {/each}
           </div>
           <p class="prompt">{$_('whichMore')}</p>
@@ -113,19 +135,21 @@
         {/if}
       </div>
 
-      <div class="answers" data-testid="answers">
-        {#each question.options as opt, idx}
-          <button
-            class="ans"
-            class:shake={chosen === idx}
-            class:reveal-correct={reveal && Number(opt) === question.answer}
-            onclick={() => answer(idx)}
-            data-testid={Number(opt) === question.answer ? 'correct-ans' : `ans-${idx}`}
-          >
-            {opt}
-          </button>
-        {/each}
-      </div>
+      {#if question.type !== 'compare'}
+        <div class="answers" data-testid="answers">
+          {#each question.options as opt, idx}
+            <button
+              class="ans"
+              class:shake={chosen === idx}
+              class:reveal-correct={reveal && Number(opt) === question.answer}
+              onclick={() => answer(idx)}
+              data-testid={Number(opt) === question.answer ? 'correct-ans' : `ans-${idx}`}
+            >
+              {opt}
+            </button>
+          {/each}
+        </div>
+      {/if}
     {/if}
   </div>
 </GameShell>
@@ -142,10 +166,20 @@
   }
   .milestone { position: fixed; inset: 0; z-index: 30; display: flex; align-items: center; justify-content: center; pointer-events: none; }
   .milestone-text { font-size: 56px; color: var(--gold); text-shadow: 0 0 20px var(--glow-gold); margin: 0; }
-  .compare { display: flex; gap: 40px; justify-content: center; }
-  .side { text-align: center; }
-  .cluster { font-size: 34px; line-height: 1.6; max-width: 300px; word-break: break-all; margin: 0; }
-  .side-label { font-size: 22px; margin: 6px 0 0; }
+  .compare { display: flex; gap: 24px; justify-content: center; }
+  .side {
+    min-width: calc(var(--touch-min) * 1.6);
+    min-height: calc(var(--touch-min) * 1.4);
+    padding: 12px 18px;
+    border-radius: 24px;
+    background: var(--panel-glass);
+    border: 2px solid var(--panel-border);
+    transition: transform 0.12s;
+  }
+  .side:active { transform: scale(0.95); }
+  .side.shake { animation: fxWobble 0.4s ease-in-out; opacity: 0.7; }
+  .side.reveal-correct { box-shadow: 0 0 24px #7ee787; border-color: #7ee787; }
+  .cluster { display: block; font-size: 34px; line-height: 1.6; max-width: 300px; word-break: break-all; margin: 0; }
   .expression {
     display: flex; align-items: center; gap: 14px; flex-wrap: wrap; justify-content: center;
     font-size: 34px; margin: 0;

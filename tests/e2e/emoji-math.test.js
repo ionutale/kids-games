@@ -85,4 +85,60 @@ test.describe('Emoji Math E2E', () => {
     await expect(page.getByTestId('milestone')).toBeHidden({ timeout: 4000 });
     await expect(page.getByTestId('equation')).toBeVisible();
   });
+
+  test('double-tapping a correct answer scores exactly once', async ({ page }) => {
+    await page.goto('/games/emoji-math');
+    await expect(page.getByTestId('correct-ans')).toBeVisible({ timeout: 5000 });
+    const hud = page.locator('.top-bar .hud-item').first();
+    const read = async () => parseInt((await hud.textContent()).replace(/\D/g, ''), 10) || 0;
+    const before = await read();
+
+    await page.evaluate(() => {
+      const btn = document.querySelector('[data-testid="correct-ans"]');
+      btn.click();
+      btn.click();
+    });
+    await page.waitForTimeout(250);
+
+    expect(await read()).toBe(before + 1);
+  });
+
+  test('compare asks which side has more and accepts the bigger pile', async ({ page }) => {
+    test.setTimeout(90000);
+    await page.addInitScript(() =>
+      localStorage.setItem(
+        'kids-games-settings',
+        JSON.stringify({ soundEnabled: true, ageLevel: 5, firstVisit: false })
+      )
+    );
+    await page.goto('/games/emoji-math');
+    const hud = page.locator('.top-bar .hud-item').first();
+
+    let found = false;
+    for (let i = 0; i < 15 && !found; i++) {
+      if (await page.getByTestId('compare').isVisible().catch(() => false)) {
+        found = true;
+        const sides = page.locator('[data-testid^="compare-side-"]');
+        await expect(sides).toHaveCount(2);
+        const lengths = [];
+        for (let k = 0; k < 2; k++) {
+          lengths.push(((await sides.nth(k).textContent()) ?? '').length);
+        }
+        const bigger = lengths[0] > lengths[1] ? 0 : 1;
+        const before = parseInt((await hud.textContent()).replace(/\D/g, ''), 10) || 0;
+        await page.getByTestId(`compare-side-${bigger}`).click();
+        await page.waitForTimeout(600);
+        const after = parseInt((await hud.textContent()).replace(/\D/g, ''), 10) || 0;
+        expect(after).toBeGreaterThanOrEqual(before + 1);
+        break;
+      }
+      // answer whatever numeric question is on screen to move on
+      const ans = page.getByTestId('correct-ans');
+      if (await ans.isVisible().catch(() => false)) {
+        await ans.click({ force: true });
+      }
+      await page.waitForTimeout(650);
+    }
+    expect(found).toBe(true);
+  });
 });

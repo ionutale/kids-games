@@ -61,6 +61,7 @@ export function makeQuestion(ageLevel, seed = Date.now()) {
   const a = 1 + Math.floor(rng() * 6);
   let bb = 1 + Math.floor(rng() * 6);
   if (bb === a) bb = (bb % 6) + 1; // guarantee a clear winner
-  const answer = Math.max(a, bb);
-  return { type: 'compare', emoji, groups: [a, bb], answer, options: numericOptions(answer, rng) };
+  // "Which side has more?" is answered by tapping the bigger pile — the
+  // answer is the side index, not a number.
+  return { type: 'compare', emoji, groups: [a, bb], answer: a > bb ? 0 : 1 };
 }
