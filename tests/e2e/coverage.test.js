@@ -76,11 +76,9 @@ test.describe('G2 — thin-spec games', () => {
     const first2 = Math.floor(rng2() * 4) % 4;
     const wrongPad = (first2 + 1) % 4;
     await page.getByTestId(`pad-${wrongPad}`).click(); // wrong → second chance
-    await page.waitForTimeout(2600); // half-speed replay
-    const st = (await page.locator('[data-testid="status"]').textContent().catch(() => '')) ?? '';
-    if (st.includes('👆')) {
-      await page.getByTestId(`pad-${wrongPad}`).click(); // wrong again → game over
-    }
+    // The half-speed replay must finish before input is accepted again.
+    await expect(page.locator('[data-testid="status"]')).toHaveText('👆', { timeout: 15000 });
+    await page.getByTestId(`pad-${wrongPad}`).click(); // wrong again → game over
     await expect(page.locator('.score-line')).toBeVisible({ timeout: 10000 });
 
     const best = await page.evaluate(() => parseInt(localStorage.getItem('sequence-memory-best') || '0', 10));

@@ -160,6 +160,7 @@
     {#each items as item (item.id)}
       <button
         class="emoji"
+        class:popping={item.popping}
         class:wrong-fx={wrongFxId === item.id}
         onpointerdown={(e) => { touchY(e); tap(item); }}
         style:left="{item.x}%"
