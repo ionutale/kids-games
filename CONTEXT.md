@@ -38,7 +38,7 @@
 - **Pad**: One of 4 emoji buttons in a 2×2 grid that lights up during sequence playback.
 - **Sequence**: An ordered list of Pads that the player must memorize and reproduce.
 - **Round**: One complete cycle of sequence playback → player input → either advance or game over.
-- **Second Chance**: After the first wrong tap, the Sequence replays at half speed before the player tries again.
+- **Second Chance**: After the first wrong tap, the same Sequence replays at half speed before the player tries again.
 
 ## Emoji Math Game
 
@@ -74,14 +74,14 @@
 
 - **Topic**: One quiz's content set (`src/lib/quiz/topics.js`) — Animals, Food, Vehicles, Colors & Shapes, Clothes, Toys, Instruments.
 - **Item**: A single quiz entry `{ emoji, en, it, ro, de, fr, zh }`; every quiz requires all six locale names.
-- **Quiz Round**: One pass through a Topic: big emoji → 3 localized name options → silent red shake on wrong, green pop + confetti on correct, All-done overlay with Play Again.
+- **Quiz Round**: One pass through a Topic: big emoji → 3 localized name options → silent red shake on wrong (after two misses the correct option pulses softly), green pop + confetti on correct, All-done overlay with Play Again and Back.
 
 
 ## Italian Grammar Game
 
 - **Exercise**: One grammar task — a sentence with a `___` blank (verb, article, plural, preposition, imperative) or a picture-to-sentence match; always 3 options.
 - **Prompt**: The sentence with the blank, or the scene emoji for picture exercises.
-- **Level**: 1–10 distinct difficulty steps (volere → -are → -ere/-ire → articles → plurals → prepositions → imperatives → pictures → mixed); L11+ plateaus on the mixed pool. No Level Bar — advance with Next Level ▶.
+- **Level**: 1–10 distinct difficulty steps (volere → -are → -ere/-ire → articles → plurals → prepositions → imperatives → pictures → mixed); the ladder ends at 10 — Next Level ▶ disappears there and deeper links clamp to 10. No Level Bar.
 - **Content language**: Always Italian; UI chrome follows the app locale.
 
 
@@ -109,7 +109,7 @@ The following games have been proposed but not yet designed or implemented. Each
 - **Pad**: One of 4 emoji buttons in a 2×2 grid that lights up during sequence playback.
 - **Sequence**: An ordered list of Pads that the player must memorize and reproduce.
 - **Round**: One complete cycle of sequence playback → player input → either advance or game over.
-- **Second Chance**: After the first wrong tap, the Sequence replays at half speed before the player tries again.
+- **Second Chance**: After the first wrong tap, the same Sequence replays at half speed before the player tries again.
 
 ## Emoji Math Game
 
