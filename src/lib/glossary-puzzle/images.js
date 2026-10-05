@@ -66,10 +66,7 @@ export const PUZZLE_IMAGES = [
     file: '/puzzles/08-transport.jpg',
     thumbEmoji: '🚂',
   },
-  // Blippi — photo by TaurusEmerald (Wikimedia Commons), CC BY-SA 4.0:
-  // https://commons.wikimedia.org/wiki/File:Blippi_Las_Vegas_2026.jpg
-  // Logo card uses the Blippi wordmark by Moonbug Entertainment — public-domain
-  // text logo via Wikimedia Commons (trademarked; personal use).
+  // Blippi promo images supplied by the project owner (personal use).
   {
     id: 'blippi',
     name: 'Blippi',
@@ -79,12 +76,12 @@ export const PUZZLE_IMAGES = [
     thumbEmoji: '🧢',
   },
   {
-    id: 'blippi-logo',
-    name: 'Blippi Logo',
+    id: 'blippi-happy',
+    name: 'Blippi Happy',
     category: 'blippi',
-    icon: '🧡',
-    file: '/puzzles/10-blippi-logo.jpg',
-    thumbEmoji: '🧡',
+    icon: '👍',
+    file: '/puzzles/10-blippi-happy.jpg',
+    thumbEmoji: '👍',
   },
 ];
 
