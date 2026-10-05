@@ -32,6 +32,8 @@ test.describe('Spot the Difference E2E', () => {
 
   test('tapping a difference marks it in BOTH grids with a ring', async ({ page }) => {
     await page.goto('/games/spot-the-difference');
+    // wait for the puzzle to render before scanning, otherwise the scan sees 0 cells
+    await expect(page.locator('[data-testid="grid-left"] .cell').first()).toBeVisible();
     // find a diff cell by comparing DOM text of left/right at same index
     const size = await page.locator('[data-testid="grid-left"] .cell').count();
     let diffIdx = -1;
