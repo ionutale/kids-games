@@ -1,16 +1,15 @@
 <script>
   import { untrack } from 'svelte';
-  import { goto } from '$app/navigation';
   import { _ } from '$lib/stores/locale';
   import GameShell from '$lib/components/ui/GameShell.svelte';
   import HudPill from '$lib/components/ui/HudPill.svelte';
   import WinOverlay from '$lib/components/ui/WinOverlay.svelte';
+  import LadderActions from '$lib/ladder/LadderActions.svelte';
   import Confetti from '$lib/components/Confetti.svelte';
   import '$lib/trainers/fx.css';
   import { exercisesFor, roundGoal, prepareExercise } from '$lib/grammar/italian.js';
   import { makeRng, shuffle } from '$lib/trainers/rng.js';
   import { playMatch } from '$lib/sounds/audioManager.js';
-  import { fanfare } from '$lib/sounds/trainerSounds.js';
 
   let { level = 1, seed = 0 } = $props();
   const FANFARE_PITCH = 1.05;
@@ -73,17 +72,6 @@
       else index += 1;
     }, 1200);
   }
-
-  function nextLevel(e) {
-    e.preventDefault();
-    fanfare(FANFARE_PITCH);
-    goto(`/games/grammar/play/${level + 1}`);
-  }
-
-  function replay(e) {
-    e.preventDefault();
-    goto(`/games/grammar/play/${level}?seed=${Date.now() % 1000000}`);
-  }
 </script>
 
 <GameShell accent="#86EFAC">
@@ -125,28 +113,12 @@
 
   {#if won}
     <WinOverlay title={$_('wellDone')} subtitle={`✏️ ${queue.length}/${queue.length}`}>
-      {#if level < 10}
-        <a
-          class="big-btn primary"
-          href={`/games/grammar/play/${level + 1}`}
-          data-testid="next-level"
-          onclick={nextLevel}
-        >
-          {$_('nextLevel')} ▶
-        </a>
-      {:else}
-        <p class="ladder-done">🎓</p>
-      {/if}
-      <a class="big-btn ghost" href={`/games/grammar/play/${level}`} data-testid="replay" onclick={replay}>
-        {$_('replay')}
-      </a>
-      <a class="big-btn ghost" href="/games/grammar">{$_('back')}</a>
+      <LadderActions gameId="grammar" {level} pitch={FANFARE_PITCH} />
     </WinOverlay>
   {/if}
 </GameShell>
 
 <style>
-  .ladder-done { font-size: 40px; margin: 0; }
   .board {
     flex: 1;
     display: flex;
@@ -230,15 +202,4 @@
     background: rgba(255, 155, 155, 0.25);
     border-color: rgba(255, 155, 155, 0.7);
   }
-
-  .big-btn {
-    display: inline-flex; align-items: center; justify-content: center; gap: 8px;
-    min-height: var(--touch-min); padding: 12px 32px;
-    border-radius: var(--radius-btn);
-    font-family: var(--font-display); font-size: 18px; font-weight: 600;
-    text-decoration: none; transition: transform 0.15s;
-  }
-  .big-btn:active { transform: scale(0.95); }
-  .primary { color: #062033; background: var(--btn-gradient); box-shadow: 0 4px 18px rgba(91,194,240,0.5); }
-  .ghost { color: var(--text-lo); background: var(--panel-glass); border: 1px solid var(--panel-border); }
 </style>

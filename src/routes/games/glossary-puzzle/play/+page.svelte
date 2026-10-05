@@ -4,6 +4,7 @@
   import PuzzleBoard from '$lib/glossary-puzzle/PuzzleBoard.svelte';
   import { PUZZLE_IMAGES } from '$lib/glossary-puzzle/images.js';
   import { readSave, clearSave } from '$lib/glossary-puzzle/save.js';
+  import { MAX_LEVEL } from '$lib/ladder/progress.js';
 
   const params = $page.url.searchParams;
   const resume = params.get('resume') === '1';
@@ -19,7 +20,7 @@
   const levelParam = saved && Number.isFinite(saved.level)
     ? String(saved.level)
     : params.get('level');
-  const level = Math.max(1, parseInt(levelParam, 10) || 1);
+  const level = Math.min(MAX_LEVEL, Math.max(1, parseInt(levelParam, 10) || 1));
   const initialPlaced = (saved && Array.isArray(saved.placedIds)) ? saved.placedIds : null;
 
   if (!image) {

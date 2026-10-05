@@ -6,14 +6,17 @@
   import HudPill from '$lib/components/ui/HudPill.svelte';
   import BigButton from '$lib/components/ui/BigButton.svelte';
   import Confetti from '$lib/components/Confetti.svelte';
+  import WinOverlay from '$lib/components/ui/WinOverlay.svelte';
+  import LadderBar from '$lib/ladder/LadderBar.svelte';
+  import LadderActions from '$lib/ladder/LadderActions.svelte';
+  import { loadLevel, saveLevel, loadMastered, saveMastered, MAX_LEVEL } from '$lib/ladder/progress.js';
   import { playTap, playMatch, playWin } from '$lib/sounds/audioManager.js';
   import { generatePuzzle, validatePath, hintCell, levelSpec } from '$lib/path-builder/engine.js';
 
   const PUZZLES_PER_LEVEL = 5;
 
-  let level = $state(
-    (typeof localStorage !== 'undefined' && parseInt(localStorage.getItem('path-builder-level') || '1', 10)) || 1
-  );
+  let level = $state(loadLevel('path-builder')); // migrates the old path-builder-level key
+  let mastered = $state(loadMastered('path-builder'));
   let puzzleNum = $state(1); // 1..5 within the level
   let puzzle = $state(null);
   let path = $state([]);
@@ -21,6 +24,7 @@
   let solvedTotal = $state(0);
   let complete = $state(false); // puzzle solved
   let levelDone = $state(false);
+  let won = $state(false); // ladder mastered at the top level
 
   let timers = [];
   function clearTimers() {
@@ -74,20 +78,42 @@
       playMatch();
       timers.push(setTimeout(() => {
         if (puzzleNum >= PUZZLES_PER_LEVEL) {
-          levelDone = true;
-          level += 1;
-          localStorage.setItem('path-builder-level', String(level));
-          playWin();
-          timers.push(setTimeout(() => {
-            puzzleNum = 1;
-            newPuzzle();
-          }, 2200));
+          if (level >= MAX_LEVEL) {
+            // Top of the ladder: no auto-advance, just the 🎓 mastery moment.
+            saveMastered('path-builder');
+            mastered = true;
+            won = true;
+            playWin();
+          } else {
+            levelDone = true;
+            level += 1;
+            saveLevel('path-builder', level);
+            playWin();
+            timers.push(setTimeout(() => {
+              puzzleNum = 1;
+              newPuzzle();
+            }, 2200));
+          }
         } else {
           puzzleNum += 1;
           timers.push(setTimeout(() => newPuzzle(), 1400));
         }
       }, 900));
     }
+  }
+
+  function pickLevel(n) {
+    level = n;
+    saveLevel('path-builder', n);
+    puzzleNum = 1;
+    newPuzzle();
+  }
+
+  function replayLevel(e) {
+    e?.preventDefault();
+    won = false;
+    puzzleNum = 1;
+    newPuzzle();
   }
 
   function showHint() {
@@ -170,7 +196,21 @@
       <button class="act ghosty" onclick={restartPuzzle}>↺</button>
       <BigButton variant="ghost" onclick={showHint}>💡 {$_('hint')}</BigButton>
     </div>
+
+    <LadderBar current={level} {mastered} onchange={pickLevel} />
   </div>
+
+  {#if won}
+    <WinOverlay title={$_('wellDone')} subtitle={`🏆 ${$_('level')} ${level}`}>
+      <LadderActions
+        gameId="path-builder"
+        {level}
+        backHref="/"
+        replayHref="/games/path-builder"
+        onreplay={replayLevel}
+      />
+    </WinOverlay>
+  {/if}
 </GameShell>
 
 <style>

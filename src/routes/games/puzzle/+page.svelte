@@ -3,9 +3,10 @@
   import { _ } from '$lib/stores/locale';
   import { playTap, playMatch, playWin } from '$lib/sounds/audioManager';
   import GameShell from '$lib/components/ui/GameShell.svelte';
-  import LevelBar from '$lib/components/ui/LevelBar.svelte';
+  import LadderBar from '$lib/ladder/LadderBar.svelte';
+  import LadderActions from '$lib/ladder/LadderActions.svelte';
   import WinOverlay from '$lib/components/ui/WinOverlay.svelte';
-  import BigButton from '$lib/components/ui/BigButton.svelte';
+  import { loadLevel, saveLevel, loadMastered, saveMastered, MAX_LEVEL } from '$lib/ladder/progress.js';
 
   const emojiSets = {
     2: [['🐶','🐱'],['🐻','🐸']],
@@ -14,7 +15,8 @@
     5: [['🐶','🐱','🐰','🐻','🐸'],['🐵','🦊','🐯','🐭','🐼'],['🐨','🦁','🐮','🐷','🐸'],['🐰','🐱','🐶','🐯','🦊'],['🐻','🐵','🐼','🐨','🦁']],
   };
 
-  let level = $state(1);
+  let level = $state(loadLevel('puzzle'));
+  let mastered = $state(loadMastered('puzzle'));
   let pieces = $state([]);
   let won = $state(false);
   let dragging = $state(null);
@@ -64,7 +66,14 @@
       placed = new Set([...placed, dragging]);
       if ($settings.soundEnabled) playMatch();
       if (placed.size === pieces.length) {
-        setTimeout(() => { won = true; if ($settings.soundEnabled) playWin(); }, 300);
+        setTimeout(() => {
+          if (level >= MAX_LEVEL) {
+            saveMastered('puzzle');
+            mastered = true;
+          }
+          won = true;
+          if ($settings.soundEnabled) playWin();
+        }, 300);
       }
     }
     dragging = null;
@@ -72,6 +81,17 @@
 
   function setLevel(l) {
     level = l;
+    saveLevel('puzzle', l);
+    initGame();
+  }
+
+  function advanceLevel(e) {
+    e?.preventDefault();
+    setLevel(Math.min(MAX_LEVEL, level + 1));
+  }
+
+  function replayLevel(e) {
+    e?.preventDefault();
     initGame();
   }
 
@@ -80,7 +100,6 @@
 
 <GameShell accent="#93C5FD">
   <div class="puzzle-game">
-    <LevelBar current={level} onchange={setLevel} />
 
   <div class="board" style:grid-template-columns="repeat({size}, 1fr)">
     {#each Array(size) as _, r}
@@ -119,9 +138,19 @@
     <div class="drag-hint">{$_('tapItem')}</div>
   {/if}
 
+  <LadderBar current={level} {mastered} onchange={setLevel} />
+
   {#if won}
     <WinOverlay title={$_('puzzleDone')}>
-      <BigButton variant="primary" class="replay-btn" onclick={initGame}>{$_('newPuzzle')}</BigButton>
+      <LadderActions
+        gameId="puzzle"
+        {level}
+        backHref="/"
+        nextHref="/games/puzzle"
+        replayHref="/games/puzzle"
+        onnext={advanceLevel}
+        onreplay={replayLevel}
+      />
     </WinOverlay>
   {/if}
   </div>
@@ -129,6 +158,7 @@
 
 <style>
   .puzzle-game { display: flex; flex-direction: column; align-items: center; flex: 1; padding: 8px; gap: 8px; }
+  .puzzle-game :global(.ladder-bar) { margin-top: auto; }
   .board { display: grid; gap: 4px; width: 100%; max-width: 300px; aspect-ratio: 1; }
   .ghost-cell { position: relative; display: flex; align-items: center; justify-content: center; background: var(--panel-glass); border-radius: 10px; border: 2px dashed color-mix(in srgb, var(--accent) 40%, transparent); transition: all 0.15s; }
   .ghost-cell.drag-over { border-color: #66bb6a; background: rgba(102, 187, 106, 0.1); transform: scale(1.03); }

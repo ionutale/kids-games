@@ -51,12 +51,12 @@ test.describe('Sequence Memory E2E', () => {
     // keep tapping pad-0 whenever input is accepted; statistically a wrong tap
     // arrives quickly (3/4 per step), triggering second chance then game over.
     for (let i = 0; i < 25; i++) {
-      if ((await page.locator('.score-line').isVisible().catch(() => false))) break;
+      if ((await page.locator('.win-title').isVisible().catch(() => false))) break;
       const status = (await page.locator('[data-testid="status"]').textContent().catch(() => '')) ?? '';
       if (status.includes('👆')) await page.getByTestId('pad-0').click();
       await page.waitForTimeout(900);
     }
-    await expect(page.getByTestId('seq-root').locator('.score-line')).toBeVisible({ timeout: 10000 });
+    await expect(page.getByTestId('seq-root').locator('.win-title')).toBeVisible({ timeout: 10000 });
   });
 
   test('second chance replays the same sequence and the original answer still works', async ({ page }) => {
@@ -104,7 +104,7 @@ test.describe('Sequence Memory E2E', () => {
     const wrongB = ['pad-0', 'pad-1', 'pad-2', 'pad-3'].find((id) => id !== replay[0]);
     await page.getByTestId(wrongB).click();
 
-    await expect(page.locator('.score-line')).toBeVisible({ timeout: 8000 });
-    await expect(page.locator('.score-line')).toHaveText('🎼 0');
+    await expect(page.locator('.win-title')).toBeVisible({ timeout: 8000 });
+    await expect(page.locator('.win-title')).toHaveText('🎼 0');
   });
 });

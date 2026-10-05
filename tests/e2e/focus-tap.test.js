@@ -13,9 +13,9 @@ async function solveRound(page, max = 45) {
 }
 
 test.describe('Focus Tap E2E', () => {
-  test('landing shows hero + play link without a level bar', async ({ page }) => {
+  test('landing shows hero + play link and the ladder bar', async ({ page }) => {
     await page.goto('/games/focus-tap');
-    await expect(page.locator('.level-btn')).toHaveCount(0);
+    await expect(page.locator('.ladder-step')).toHaveCount(10);
     await expect(page.locator('.big-btn.primary')).toBeVisible();
     const href = await page.locator('.big-btn.primary').getAttribute('href');
     expect(href).toMatch(/\/games\/focus-tap\/play\/\d+/);

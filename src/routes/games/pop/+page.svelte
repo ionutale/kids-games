@@ -5,10 +5,11 @@
   import { playPop, playWin } from '$lib/sounds/audioManager';
   import GameShell from '$lib/components/ui/GameShell.svelte';
   import HudPill from '$lib/components/ui/HudPill.svelte';
-  import LevelBar from '$lib/components/ui/LevelBar.svelte';
+  import LadderBar from '$lib/ladder/LadderBar.svelte';
+  import LadderActions from '$lib/ladder/LadderActions.svelte';
   import WinOverlay from '$lib/components/ui/WinOverlay.svelte';
-  import BigButton from '$lib/components/ui/BigButton.svelte';
   import SoundToggle from '$lib/components/SoundToggle.svelte';
+  import { loadLevel, saveLevel, loadMastered, saveMastered, MAX_LEVEL } from '$lib/ladder/progress.js';
 
   const items = ['🫧', '🐟', '🦋', '⭐', '🌟', '💫', '🌸', '🍎'];
   let bubbles = $state([]);
@@ -16,7 +17,8 @@
   let score = $state(0);
   let timeLeft = $state(20);
   let playing = $state(false);
-  let level = $state(3);
+  let level = $state(loadLevel('pop'));
+  let mastered = $state(loadMastered('pop'));
 
   function levelConfig(l) {
     const maxItems = Math.min(2 + l * 1.3, 15);
@@ -69,6 +71,10 @@
         timeLeft--;
         if (timeLeft <= 0) {
           resetGame();
+          if (level >= MAX_LEVEL) {
+            saveMastered('pop');
+            mastered = true;
+          }
           if ($settings.soundEnabled) playWin();
         }
       }
@@ -78,6 +84,17 @@
 
   function setLevel(l) {
     level = l;
+    saveLevel('pop', l);
+    startGame();
+  }
+
+  function advanceLevel(e) {
+    e?.preventDefault();
+    setLevel(Math.min(MAX_LEVEL, level + 1));
+  }
+
+  function replayLevel(e) {
+    e?.preventDefault();
     startGame();
   }
 </script>
@@ -97,7 +114,15 @@
   <div class="pop-game">
     {#if !playing && timeLeft <= 0}
       <WinOverlay title="{$_('score')}: {score}">
-        <BigButton variant="primary" class="replay-btn" onclick={startGame}>{$_('playAgain')}</BigButton>
+        <LadderActions
+          gameId="pop"
+          {level}
+          backHref="/"
+          nextHref="/games/pop"
+          replayHref="/games/pop"
+          onnext={advanceLevel}
+          onreplay={replayLevel}
+        />
       </WinOverlay>
     {/if}
 
@@ -113,7 +138,7 @@
       </button>
     {/each}
 
-    <LevelBar current={level} onchange={setLevel} />
+    <LadderBar current={level} {mastered} onchange={setLevel} />
   </div>
 </GameShell>
 
@@ -125,7 +150,7 @@
     display: flex;
     flex-direction: column;
   }
-  .pop-game :global(.level-bar) { margin-top: auto; }
+  .pop-game :global(.ladder-bar) { margin-top: auto; }
   .hud-right {
     display: flex;
     align-items: center;

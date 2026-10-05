@@ -41,28 +41,6 @@ describe('makeRng (mulberry32)', () => {
   });
 });
 
-describe('progress', () => {
-  it('defaults to level 1 when nothing saved', async () => {
-    const { loadLevel } = await import('$lib/trainers/progress');
-    expect(loadLevel('focus-tap')).toBe(1);
-  });
-
-  it('round-trips saveLevel/loadLevel with camelCase keys', async () => {
-    const { loadLevel, saveLevel } = await import('$lib/trainers/progress');
-    saveLevel('focus-tap', 7);
-    expect(localStorage.getItem('focusTapLevel')).toBe('7');
-    expect(loadLevel('focus-tap')).toBe(7);
-  });
-
-  it('clamps garbage and negatives to >= 1', async () => {
-    const { loadLevel, saveLevel } = await import('$lib/trainers/progress');
-    saveLevel('quick-count', -3);
-    expect(loadLevel('quick-count')).toBe(1);
-    localStorage.setItem('speedMatchLevel', 'not-a-number');
-    expect(loadLevel('speed-match')).toBe(1);
-  });
-});
-
 describe('emojiSets catalog', () => {
   it('exposes six categories with at least eight emojis each', async () => {
     const { CATEGORIES } = await import('$lib/trainers/emojiSets');

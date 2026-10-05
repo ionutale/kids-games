@@ -63,13 +63,13 @@ test.describe('Memory E2E', () => {
     }
 
     await expect(page.locator('.win-overlay')).toBeVisible({ timeout: 15000 });
-    if (await page.locator('.next-btn').isVisible()) {
-      await expect(page.locator('.next-btn')).toBeVisible();
+    if (await page.getByTestId('next-level').isVisible()) {
+      await expect(page.getByTestId('next-level')).toBeVisible();
     }
   });
 
-  test('level dots show progression', async ({ page }) => {
+  test('ladder bar shows progression', async ({ page }) => {
     await page.goto('/games/memory');
-    await expect(page.locator('.level-dot')).toHaveCount(10);
+    await expect(page.locator('.ladder-step')).toHaveCount(10);
   });
 });

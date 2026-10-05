@@ -5,8 +5,10 @@
   import PuzzleBoard from '$lib/glossary-puzzle/PuzzleBoard.svelte';
   import { PUZZLE_IMAGES } from '$lib/glossary-puzzle/images.js';
   import { readSave, clearSave, restorePlaced, takeHandoff } from '$lib/glossary-puzzle/save.js';
+  import { MAX_LEVEL } from '$lib/ladder/progress.js';
 
-  let level = $derived(Math.max(1, parseInt($page.params.level, 10) || 1));
+  // The ladder ends at MAX_LEVEL; deeper links clamp.
+  let level = $derived(Math.min(MAX_LEVEL, Math.max(1, parseInt($page.params.level, 10) || 1)));
   let requestedId = $derived($page.url.searchParams.get('image'));
   // ?place= is a test/debug seam only: without debug=1 the ids are ignored.
   let placeIds = $derived(

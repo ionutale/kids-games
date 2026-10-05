@@ -4,23 +4,29 @@
   import { page } from '$app/stores';
   import { _ } from '$lib/stores/locale';
   import GameShell from '$lib/components/ui/GameShell.svelte';
-  import LevelBar from '$lib/components/ui/LevelBar.svelte';
+  import LadderBar from '$lib/ladder/LadderBar.svelte';
   import { PUZZLE_IMAGES, getCategories } from '$lib/glossary-puzzle/images.js';
   import { readSave, stashHandoff } from '$lib/glossary-puzzle/save.js';
+  import { loadLevel, loadMastered, MAX_LEVEL } from '$lib/ladder/progress.js';
 
   let selectedCategory = $state(null);
   let hasSaved = $state(false);
   let savedLevel = $state(1);
+  let storeLevel = $state(1);
+  let mastered = $state(false);
 
   const categories = getCategories();
   let filteredImages = $derived(
     selectedCategory ? PUZZLE_IMAGES.filter(i => i.category === selectedCategory) : PUZZLE_IMAGES
   );
 
-  let levelFromUrl = $derived.by(() => {
+  let urlLevel = $derived.by(() => {
     const n = parseInt($page.url.searchParams.get('level'), 10);
-    return Number.isFinite(n) && n >= 1 ? n : 1;
+    return Number.isFinite(n) && n >= 1 ? Math.min(MAX_LEVEL, n) : null;
   });
+
+  // ?level= wins; otherwise the gallery picks up where the kid left off.
+  let currentLevel = $derived(urlLevel ?? storeLevel);
 
   function readSaved() {
     const data = readSave();
@@ -35,6 +41,8 @@
   }
 
   onMount(() => {
+    storeLevel = loadLevel('glossary-puzzle');
+    mastered = loadMastered('glossary-puzzle');
     const data = readSaved();
     hasSaved = !!data;
     if (data) savedLevel = data.level;
@@ -45,7 +53,7 @@
   <div class="gp-gallery" style="--accent: #5EEAD4;">
     <h2 class="gp-gallery-title">🧩 {$_('puzzle')}</h2>
 
-    <LevelBar current={levelFromUrl} hrefFor={(n) => `/games/glossary-puzzle/play/${n}`} />
+    <LadderBar current={currentLevel} {mastered} hrefFor={(n) => `/games/glossary-puzzle/play/${n}`} />
 
     {#if hasSaved}
       <button class="gp-resume-btn" onclick={startResume}>▶ {$_('replay')}</button>
@@ -62,9 +70,9 @@
 
     <div class="gp-image-grid">
       {#each filteredImages as img}
-        <a class="gp-image-card" href="/games/glossary-puzzle/play/{levelFromUrl}?image={img.id}">
+        <a class="gp-image-card" href="/games/glossary-puzzle/play/{currentLevel}?image={img.id}">
           <div class="gp-thumb" style:background-image="url({img.file})"></div>
-          <span class="gp-thumb-name">{img.name} · {$_('level')} {levelFromUrl}</span>
+          <span class="gp-thumb-name">{img.name} · {$_('level')} {currentLevel}</span>
         </a>
       {/each}
     </div>

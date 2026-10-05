@@ -13,9 +13,9 @@ async function solveDeck(page, max = 25) {
 }
 
 test.describe('Speed Match E2E', () => {
-  test('landing shows hero + play link without a level bar', async ({ page }) => {
+  test('landing shows hero + play link and the ladder bar', async ({ page }) => {
     await page.goto('/games/speed-match');
-    await expect(page.locator('.level-btn')).toHaveCount(0);
+    await expect(page.locator('.ladder-step')).toHaveCount(10);
     const href = await page.locator('.big-btn.primary').getAttribute('href');
     expect(href).toMatch(/\/games\/speed-match\/play\/\d+/);
   });

@@ -6,7 +6,7 @@
   import '$lib/trainers/fx.css';
   import HudPill from '$lib/components/ui/HudPill.svelte';
   import BigButton from '$lib/components/ui/BigButton.svelte';
-  import Confetti from '$lib/components/Confetti.svelte';
+  import WinOverlay from '$lib/components/ui/WinOverlay.svelte';
   import { playTap, playMatch, playWin } from '$lib/sounds/audioManager.js';
   import { makePuzzle, isDifference } from '$lib/spot-difference/game.js';
 
@@ -88,18 +88,20 @@
             {/each}
           </div>
         {/each}
-
-        {#if complete}
-          <div class="overlay" data-testid="complete-overlay">
-            <Confetti />
-            <p class="ov-title">🎉</p>
-            <p class="solved-line">✅ {solvedCount}</p>
-            <BigButton onclick={() => next((Date.now() + solvedCount * 13) % 100000)}>
-              {$_('nextPuzzle')}
-            </BigButton>
-          </div>
-        {/if}
       </div>
+
+      {#if complete}
+        <WinOverlay
+          title={$_('wellDone')}
+          subtitle={`✅ ${solvedCount}`}
+          sound={false}
+          testid="complete-overlay"
+        >
+          <BigButton onclick={() => next((Date.now() + solvedCount * 13) % 100000)}>
+            {$_('nextPuzzle')}
+          </BigButton>
+        </WinOverlay>
+      {/if}
     {/if}
   </div>
 </GameShell>
@@ -147,19 +149,4 @@
   .cell.found { opacity: 0.45; pointer-events: none; }
   .cell.diff-cell .ring { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 22px; }
   .cell.wrong { animation: fxWobble 0.4s ease-in-out; }
-  .overlay {
-    position: absolute;
-    inset: 0;
-    z-index: 6;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 12px;
-    background: rgba(4, 8, 24, 0.85);
-    backdrop-filter: blur(6px);
-    border-radius: 16px;
-  }
-  .ov-title { font-size: 48px; margin: 0; }
-  .solved-line { font-size: 26px; color: var(--gold); margin: 0; }
 </style>

@@ -5,14 +5,14 @@
   import { playWinCheer } from '$lib/sounds/audioManager';
   import Starfield from './Starfield.svelte';
 
-  let { title, subtitle = '', sound = true, badge = null, children } = $props();
+  let { title, subtitle = '', sound = true, badge = null, testid = null, children } = $props();
 
   onMount(() => {
     if (sound && $settings.soundEnabled) playWinCheer();
   });
 </script>
 
-<div class="win-overlay">
+<div class="win-overlay" data-testid={testid}>
   <Starfield count={25} />
   <Confetti />
   <div class="win-card">

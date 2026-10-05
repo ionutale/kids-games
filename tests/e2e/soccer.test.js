@@ -26,6 +26,9 @@ test.describe('Soccer E2E', () => {
 
   test('scores increment on goal swipe', async ({ page }) => {
     await page.goto('/games/soccer');
+    // Play level 5 (target 7) so three kicks stay below the win threshold.
+    await page.locator('.ladder-step').nth(4).click();
+    await page.waitForTimeout(400);
     const field = page.locator('.field');
     const box = await field.boundingBox();
     const sx = box.x + box.width * 0.5, sy = box.y + box.height * 0.4;
@@ -108,12 +111,12 @@ test.describe('Soccer E2E', () => {
 
   test('level buttons exist', async ({ page }) => {
     await page.goto('/games/soccer');
-    await expect(page.locator('.level-btn')).toHaveCount(10);
+    await expect(page.locator('.ladder-step')).toHaveCount(10);
   });
 
   test('level change resets score', async ({ page }) => {
     await page.goto('/games/soccer');
-    await page.locator('.level-btn').nth(5).click();
+    await page.locator('.ladder-step').nth(5).click();
     const s = await page.locator('.score-display').textContent();
     expect(s).toContain('0');
   });

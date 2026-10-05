@@ -25,13 +25,13 @@
 
 ## Glossary Puzzle (Jigsaw) Game
 
-- **Gallery Page** (`/games/glossary-puzzle`): the landing view — Level Bar, categories, image grid. Full app chrome via GameShell (back link + sound toggle). Accepts `?level={n}` to preselect the difficulty step.
-- **Level**: 1–10 shown in the Level Bar, but the **Level = Difficulty Step** and the ladder is unbounded: Level *N* ⇒ grid `cols = 2 + ⌊N/2⌋`, `rows = 2 + ⌊(N−1)/2⌋`, snap radius `max(14, 44 − 2N)`. Any image can be played at any level.
+- **Gallery Page** (`/games/glossary-puzzle`): the landing view — LadderBar, categories, image grid. Full app chrome via GameShell (back link + sound toggle). Accepts `?level={n}` to preselect the difficulty step.
+- **Level**: 1–10 (the shared ladder cap); Level *N* gives grid `cols = 2 + ⌊N/2⌋`, `rows = 2 + ⌊(N−1)/2⌋`, snap radius `max(14, 44 − 2N)`. Level 10 is the top of the ladder; deeper links clamp to 10. Any image can be played at any level.
 - **Toddler Snap**: a drop is accepted if the lifted ghost's visual point *or* raw thumb lands anywhere inside the piece's own target hole expanded by `max(snapRadius, 20% cell size)`; accepted drops that land far from center glide magnetically into place (~160ms).
 - **Level Page**: `/games/glossary-puzzle/play/{n}?image={id}` — every solving session is its own URL; without `?image=` the image rotates by level.
 - **Free-Play Page**: `/games/glossary-puzzle/play?image={id}&level={n}` — opened from gallery image cards; also serves `?resume=1` for saved Progress State (placed pieces handed off via sessionStorage).
 - **PuzzleBoard**: shared solving component (board, Tray, drag ghost, Snap, Idle Nudge, win overlay) used by both play routes; remounted per URL via `{#key}` so navigation always yields a fresh board.
-- **Link-based Back / Next**: exiting an active puzzle uses an ordinary `<a href>` to the gallery; the win dialog offers **Play Again** (same image + level), **Next Level ▶** (same image, level + 1 — always available), and **Back** (gallery link). No parental gate, no unlock gating.
+- **Link-based Back / Next**: exiting an active puzzle uses an ordinary `<a href>` to the gallery; the win dialog offers **Play Again** (same image + level), **Next Level ▶** (same image, level + 1; at level 10 it is replaced by the shared 🎓 mastery badge), and **Back** (gallery link). No parental gate, no unlock gating.
 
 ## Sequence Memory Game
 
@@ -81,7 +81,7 @@
 
 - **Exercise**: One grammar task — a sentence with a `___` blank (verb, article, plural, preposition, imperative) or a picture-to-sentence match; always 3 options.
 - **Prompt**: The sentence with the blank, or the scene emoji for picture exercises.
-- **Level**: 1–10 distinct difficulty steps (volere → -are → -ere/-ire → articles → plurals → prepositions → imperatives → pictures → mixed); the ladder ends at 10 — Next Level ▶ disappears there and deeper links clamp to 10. No Level Bar.
+- **Level**: 1–10 distinct difficulty steps (volere → -are → -ere/-ire → articles → plurals → prepositions → imperatives → pictures → mixed); the ladder ends at 10 — Next Level ▶ disappears there and deeper links clamp to 10. The landing shows the shared LadderBar.
 - **Content language**: Always Italian; UI chrome follows the app locale.
 
 
@@ -140,11 +140,19 @@ The following games have been proposed but not yet designed or implemented. Each
 - **Path**: An ordered list of adjacent cells connecting Start to Goal.
 - **Hint**: A visual indicator showing the next optimal cell on the shortest Path.
 
+## Level Ladder (shared)
+
+- **Ladder**: Every level game offers exactly 10 levels; the current level persists per game. Finishing level 10 marks the game **Mastered** (🎓); deeper links clamp to 10.
+- **Ladder Store** (`src/lib/ladder/progress.js`): the one progress store — camelCase localStorage keys (`{gameId}Level`, `{gameId}Mastered`), clamps 1–10, plus one-time migration from pre-ladder keys (`memory-unlocked-level`, `path-builder-level`).
+- **LadderBar** (`src/lib/ladder/LadderBar.svelte`): the one level indicator/picker — done steps below the current level, 🎓 on step 10 once mastered; free pick, nothing is ever locked.
+- **LadderActions** (`src/lib/ladder/LadderActions.svelte`): the one win-overlay action row — Replay / Next Level ▶ / Back; at level 10 the Next action is replaced by 🎓, and mastery is saved when the overlay renders at the top level.
+- **Ladder Games**: memory, puzzle, glossary-puzzle, sorting, category-sort, path-builder, pop, soccer, grammar, focus-tap, quick-count, speed-match, what-comes-next. Free-play games (paint, stickers, splash) and score games (sequence-memory, emoji-math, spot-the-difference) have no ladder.
+
 ## Brain Trainers (shared)
 
 - **Trainer**: A short, goal-driven mini-game that trains one cognitive skill. No score, no fail state; Positive-Only Audio throughout; celebration only at round end.
-- **Trainer Routes**: Every trainer uses `/games/{id}` (landing: hero + Play, no Level Bar — levels advance via Next Level ▶ / Replay), `/games/{id}/play` (redirects to the saved level), and `/games/{id}/play/[n]` (plays round *n*, saves it). Accepts `?seed=` for deterministic tests.
-- **Trainer Progress**: Only the current level persists per game, via `src/lib/trainers/progress.js`.
+- **Trainer Routes**: Every trainer uses `/games/{id}` (landing: hero + Play + LadderBar; levels advance via Next Level ▶ / Replay), `/games/{id}/play` (redirects to the saved level), and `/games/{id}/play/[n]` (plays round *n*, saves it). Accepts `?seed=` for deterministic tests.
+- **Trainer Progress**: The current level (1–10, clamped) and a mastery flag persist per game, via the shared ladder store `src/lib/ladder/progress.js`.
 - **Emoji Catalog**: Shared categorized emoji sets (`src/lib/trainers/emojiSets.js`: animals, food, vehicles, nature, sea, toys) plus an explicit Lookalikes table of visually confusable pairs reserved for high difficulty.
 - **Trainer SFX Set**: The hybrid sound layer per trainer — synthesized micro-events (`trainerSounds.js`) + CC0 mp3 stings. Wobble and Speed Match window expiry are always silent.
 - **Theme Loop**: A trainer's seamless background music track (15–30s, CC0, ≤400KB), volume ≈ 0.2, controlled solely by the existing SoundToggle; no separate music toggle.

@@ -11,6 +11,7 @@
   import WinOverlay from '$lib/components/ui/WinOverlay.svelte';
   import Starfield from '$lib/components/ui/Starfield.svelte';
   import { levelConfig } from '$lib/glossary-puzzle/images.js';
+  import { saveLevel, saveMastered, MAX_LEVEL } from '$lib/ladder/progress.js';
   import { generatePieces, computeVisibleTray, isWithinSnapZone, pickNudgeTarget, TRAY_CAPACITY, VIRTUAL_W, VIRTUAL_H } from '$lib/glossary-puzzle/pieces.js';
   import { buildSaveData, writeSave } from '$lib/glossary-puzzle/save.js';
   import { pieceSvgHtml, boardLinesSvgHtml } from '$lib/glossary-puzzle/rendering.js';
@@ -250,6 +251,8 @@
   function startCelebration() {
     celebrating = true;
     if (soundsLoaded) playVictory();
+    saveLevel('glossary-puzzle', level);
+    if (level >= MAX_LEVEL) saveMastered('glossary-puzzle');
     onWin();
     setTimeout(() => { showDone = true; celebrating = false; }, 2000);
   }
@@ -402,7 +405,11 @@
   {#if showDone}
     <WinOverlay title="🎉 {$_('puzzleDone')}" sound={false}>
       <BigButton variant="primary" class="gp-celebration-btn" onclick={() => init()}>🔄 {$_('playAgain')}</BigButton>
-      <BigButton variant="primary" class="gp-celebration-btn" href="/games/glossary-puzzle/play/{level + 1}?image={image.id}">⚡ {$_('nextLevel')} ▶</BigButton>
+      {#if level < MAX_LEVEL}
+        <BigButton variant="primary" class="gp-celebration-btn" href="/games/glossary-puzzle/play/{level + 1}?image={image.id}">⚡ {$_('nextLevel')} ▶</BigButton>
+      {:else}
+        <p class="gp-ladder-done" data-testid="ladder-done">🎓</p>
+      {/if}
       <BigButton variant="ghost" class="gp-celebration-btn" href={backHref}>◀ {$_('back')}</BigButton>
     </WinOverlay>
   {/if}
@@ -444,4 +451,5 @@
   .gp-tray-piece:active { cursor: grabbing; }
   .gp-nudge-shake { animation: gpShake 0.4s ease-in-out 3; }
   @keyframes gpShake { 0%,100% { transform: translateX(0); } 25% { transform: translateX(-4px); } 50% { transform: translateX(4px); } }
+  .gp-ladder-done { font-size: 40px; margin: 0; }
 </style>

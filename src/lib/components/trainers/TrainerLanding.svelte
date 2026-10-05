@@ -2,14 +2,15 @@
   import { onMount } from 'svelte';
   import { _ } from '$lib/stores/locale';
   import GameShell from '$lib/components/ui/GameShell.svelte';
-  import LevelBar from '$lib/components/ui/LevelBar.svelte';
+  import LadderBar from '$lib/ladder/LadderBar.svelte';
   import BigButton from '$lib/components/ui/BigButton.svelte';
-  import { loadLevel } from '$lib/trainers/progress';
+  import { loadLevel, loadMastered } from '$lib/ladder/progress';
   import { startTrainerMusic, stopTrainerMusic } from '$lib/sounds/trainerMusic';
 
-  let { trainerId = '', titleKey = '', tagline = '', hero = '', accent = '#7FD8FF', heroArt = '', showLevels = true, music = true } = $props();
+  let { trainerId = '', titleKey = '', tagline = '', hero = '', accent = '#7FD8FF', heroArt = '', music = true } = $props();
 
   const level = $derived(loadLevel(trainerId));
+  const mastered = $derived(loadMastered(trainerId));
 
   onMount(() => {
     if (!music) return;
@@ -31,14 +32,12 @@
     {/if}
     <h1 class="title">{titleKey}</h1>
     <p class="tagline">{tagline}</p>
-    {#if showLevels}
-      <LevelBar
-        current={level}
-        count={10}
-        maxUnlocked={10}
-        hrefFor={(n) => `/games/${trainerId}/play/${n}`}
-      />
-    {/if}
+    <LadderBar
+      current={level}
+      count={10}
+      {mastered}
+      hrefFor={(n) => `/games/${trainerId}/play/${n}`}
+    />
     <BigButton href={`/games/${trainerId}/play/${level}`}>▶ {$_('play')}</BigButton>
   </div>
 </GameShell>

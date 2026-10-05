@@ -3,9 +3,10 @@
   import { _ } from '$lib/stores/locale';
   import { playTap, playMatch, playError, playWin } from '$lib/sounds/audioManager';
   import GameShell from '$lib/components/ui/GameShell.svelte';
-  import LevelBar from '$lib/components/ui/LevelBar.svelte';
+  import LadderBar from '$lib/ladder/LadderBar.svelte';
+  import LadderActions from '$lib/ladder/LadderActions.svelte';
   import WinOverlay from '$lib/components/ui/WinOverlay.svelte';
-  import BigButton from '$lib/components/ui/BigButton.svelte';
+  import { loadLevel, saveLevel, loadMastered, saveMastered, MAX_LEVEL } from '$lib/ladder/progress.js';
 
   const categories = {
     colors: {
@@ -35,7 +36,8 @@
   let won = $state(false);
   let wobbleId = $state(null);
   let selected = $state(null);
-  let level = $state(3);
+  let level = $state(loadLevel('sorting'));
+  let mastered = $state(loadMastered('sorting'));
 
   function levelConfig(l) {
     const numItems = Math.min(2 + l, 8);
@@ -74,13 +76,36 @@
       selected = null;
       if ($settings.soundEnabled) playMatch();
       if (sorted.size === items.length) {
-        setTimeout(() => { won = true; if ($settings.soundEnabled) playWin(); }, 300);
+        setTimeout(() => {
+          if (level >= MAX_LEVEL) {
+            saveMastered('sorting');
+            mastered = true;
+          }
+          won = true;
+          if ($settings.soundEnabled) playWin();
+        }, 300);
       }
     } else {
       wobbleId = item.id;
       if ($settings.soundEnabled) playError();
       setTimeout(() => { wobbleId = null; selected = null; }, 600);
     }
+  }
+
+  function setLevel(l) {
+    level = l;
+    saveLevel('sorting', l);
+    initGame();
+  }
+
+  function advanceLevel(e) {
+    e?.preventDefault();
+    setLevel(Math.min(MAX_LEVEL, level + 1));
+  }
+
+  function replayLevel(e) {
+    e?.preventDefault();
+    initGame();
   }
 
   initGame();
@@ -125,11 +150,19 @@
     {/each}
   </div>
 
-  <LevelBar current={level} onchange={(l) => { level = l; initGame(); }} />
+  <LadderBar current={level} {mastered} onchange={setLevel} />
 
   {#if won}
     <WinOverlay title={$_('allSorted')}>
-      <BigButton variant="ghost" class="replay-btn" onclick={initGame}>{$_('again')}</BigButton>
+      <LadderActions
+        gameId="sorting"
+        {level}
+        backHref="/"
+        nextHref="/games/sorting"
+        replayHref="/games/sorting"
+        onnext={advanceLevel}
+        onreplay={replayLevel}
+      />
     </WinOverlay>
   {/if}
   </div>
@@ -144,7 +177,7 @@
     padding-bottom: 0;
     gap: 16px;
   }
-  .sorting-game :global(.level-bar) { margin-top: auto; }
+  .sorting-game :global(.ladder-bar) { margin-top: auto; }
   .items-row {
     display: flex;
     justify-content: center;

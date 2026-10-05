@@ -26,16 +26,15 @@ test.describe('Glossary Puzzle E2E', () => {
     await expect(page.locator('.back-btn')).toBeVisible();
   });
 
-  test('level bar shows 10 open links reflecting ?level=', async ({ page }) => {
+  test('ladder bar shows 10 open links reflecting ?level=', async ({ page }) => {
     await page.goto('/games/glossary-puzzle');
-    await expect(page.locator('.level-btn')).toHaveCount(10);
-    await expect(page.locator('.level-btn.locked')).toHaveCount(0);
-    await expect(page.locator('.level-btn.active')).toHaveText('1');
+    await expect(page.locator('.ladder-step')).toHaveCount(10);
+    await expect(page.locator('.ladder-step.active')).toHaveText('1');
 
     await page.goto('/games/glossary-puzzle?level=5');
-    await expect(page.locator('.level-btn.active')).toHaveText('5');
+    await expect(page.locator('.ladder-step.active')).toHaveText('5');
 
-    const href = await page.locator('.level-btn').nth(2).getAttribute('href');
+    const href = await page.locator('.ladder-step').nth(2).getAttribute('href');
     expect(href).toBe('/games/glossary-puzzle/play/3');
   });
 

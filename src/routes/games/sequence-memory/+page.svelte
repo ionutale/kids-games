@@ -5,6 +5,7 @@
   import GameShell from '$lib/components/ui/GameShell.svelte';
   import HudPill from '$lib/components/ui/HudPill.svelte';
   import BigButton from '$lib/components/ui/BigButton.svelte';
+  import WinOverlay from '$lib/components/ui/WinOverlay.svelte';
   import Confetti from '$lib/components/Confetti.svelte';
   import { playMatch, playWin } from '$lib/sounds/audioManager.js';
   import { playPadTone, playRetryTone } from '$lib/sounds/padSounds.js';
@@ -177,15 +178,7 @@
         <BigButton onclick={startGame}>▶ {$_('play')}</BigButton>
         <p class="best-line">🏆 {best}</p>
       </div>
-    {:else if screen === 'gameOver'}
-      <div class="center-col">
-        <p class="big-emoji">{newBest ? '🏆' : '🐸'}</p>
-        <p class="score-line">🎼 {scoreFor(Math.max(0, round - 1))}</p>
-        <p class="best-line">🏆 {best}</p>
-        <BigButton onclick={startGame}>{$_('replay')}</BigButton>
-        <BigButton variant="ghost" onclick={() => (screen = 'idle')}>{$_('back')}</BigButton>
-      </div>
-    {:else}
+    {:else if screen !== 'gameOver'}
       <p class="status-line" data-testid="status">
         {#if screen === 'watching'}👀{:else if screen === 'listening'}👆{:else if screen === 'correct'}🎉{/if}
       </p>
@@ -215,6 +208,18 @@
           <BigButton variant="ghost" onclick={() => (screen = 'idle')}>{$_('back')}</BigButton>
         </div>
       {/if}
+    {/if}
+
+    {#if screen === 'gameOver'}
+      <WinOverlay
+        title={`🎼 ${scoreFor(Math.max(0, round - 1))}`}
+        subtitle={`🏆 ${best}`}
+        sound={false}
+      >
+        {#snippet badge()}<span class="win-badge">{newBest ? '🏆' : '🐸'}</span>{/snippet}
+        <BigButton onclick={startGame}>{$_('replay')}</BigButton>
+        <BigButton variant="ghost" onclick={() => (screen = 'idle')}>{$_('back')}</BigButton>
+      </WinOverlay>
     {/if}
   </div>
 </GameShell>
@@ -263,6 +268,5 @@
     background: rgba(4, 8, 24, 0.85);
   }
   .ov-title { font-size: 44px; margin: 0; }
-  .big-emoji { font-size: 60px; margin: 0; }
-  .score-line { font-size: 32px; font-weight: 700; color: var(--gold); margin: 0; }
+
 </style>

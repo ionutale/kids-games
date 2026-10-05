@@ -5,9 +5,10 @@
   import { playTap, playGoal as playGoalSound } from '$lib/sounds/audioManager';
   import Confetti from '$lib/components/Confetti.svelte';
   import GameShell from '$lib/components/ui/GameShell.svelte';
-  import LevelBar from '$lib/components/ui/LevelBar.svelte';
+  import LadderBar from '$lib/ladder/LadderBar.svelte';
+  import LadderActions from '$lib/ladder/LadderActions.svelte';
   import WinOverlay from '$lib/components/ui/WinOverlay.svelte';
-  import BigButton from '$lib/components/ui/BigButton.svelte';
+  import { loadLevel, saveLevel, loadMastered, saveMastered, MAX_LEVEL } from '$lib/ladder/progress.js';
 
   let ballX = $state(50);
   let ballY = $state(82);
@@ -15,20 +16,27 @@
   let score = $state(0);
   let showConfetti = $state(false);
   let gameOver = $state(false);
-  let level = $state(3);
+  let level = $state(loadLevel('soccer'));
+  let mastered = $state(loadMastered('soccer'));
   let dragStart = $state(null);
   let dragEnd = $state(null);
   let dragPower = $state(0);
   let isDragging = $state(false);
   let rafId = null;
 
-  const GOAL_X0 = 30, GOAL_X1 = 70;
-  const GOAL_Y0 = 2, GOAL_Y1 = 24;
   const ballStartX = 50, ballStartY = 82;
 
-  function levelTargets(l) {
-    return { targetScore: Math.min(2 + l, 8), goalSize: Math.max(10, 24 - l) };
+  function targetScoreFor(l) {
+    return Math.min(2 + l, 8);
   }
+
+  // The goal shrinks as the level rises (L1 = 23% wide, L10 = 14%).
+  function goalBounds(l) {
+    const w = Math.max(10, 24 - l);
+    return { x0: 50 - w / 2, x1: 50 + w / 2, y0: 2, y1: 24 };
+  }
+
+  const goal = $derived(goalBounds(level));
 
   // Pointer Events: unified mouse+touch, pointer-id locked, window-level
   // move/up so a swipe that leaves the field still kicks on release.
@@ -99,10 +107,10 @@
     };
   }
 
-  function flightScores(p0, p1, p2) {
+  function flightScores(p0, p1, p2, bounds) {
     for (let i = 0; i <= 10; i++) {
       const pt = quadPoint(p0, p1, p2, i / 10);
-      if (pt.x > GOAL_X0 && pt.x < GOAL_X1 && pt.y > GOAL_Y0 && pt.y < GOAL_Y1) return true;
+      if (pt.x > bounds.x0 && pt.x < bounds.x1 && pt.y > bounds.y0 && pt.y < bounds.y1) return true;
     }
     return false;
   }
@@ -128,8 +136,8 @@
       y: (p0.y + p2.y) / 2 + perpAim.y * lateral * 0.35
     };
 
-    const targets = levelTargets(level);
-    const willScore = flightScores(p0, p1, p2);
+    const targetScore = targetScoreFor(level);
+    const willScore = flightScores(p0, p1, p2, goalBounds(level));
     const duration = 650 - 350 * power;
     const startTime = performance.now();
 
@@ -149,7 +157,11 @@
         showConfetti = true;
         if ($settings.soundEnabled) playGoalSound();
         setTimeout(() => { showConfetti = false; }, 2000);
-        if (score >= targets.targetScore) {
+        if (score >= targetScore) {
+          if (level >= MAX_LEVEL) {
+            saveMastered('soccer');
+            mastered = true;
+          }
           gameOver = true;
           return;
         }
@@ -169,7 +181,21 @@
     dragStart = null; dragEnd = null; isDragging = false; dragPower = 0;
   }
 
-  function setLevel(l) { level = l; resetGame(); }
+  function setLevel(l) {
+    level = l;
+    saveLevel('soccer', l);
+    resetGame();
+  }
+
+  function advanceLevel(e) {
+    e?.preventDefault();
+    setLevel(Math.min(MAX_LEVEL, level + 1));
+  }
+
+  function replayLevel(e) {
+    e?.preventDefault();
+    resetGame();
+  }
 
   onDestroy(() => { if (rafId) cancelAnimationFrame(rafId); });
 </script>
@@ -183,11 +209,17 @@
     onmouseleave={() => { if (isDragging && dragStart) { isDragging = false; dragStart = null; dragEnd = null; } }}
   >
     <div class="field">
-      <div class="goal-area"></div>
+      <div
+        class="goal-area"
+        style:left="{goal.x0}%"
+        style:width="{goal.x1 - goal.x0}%"
+        style:top="{goal.y0}%"
+        style:height="{goal.y1 - goal.y0 - 2}%"
+      ></div>
       <div class="goal-text">🏆</div>
       <div class="ball" style:left="{ballX}%" style:top="{ballY}%" class:kicking={ballMoving}>⚽</div>
       {#if !gameOver}
-        <div class="score-display">{$_('score')}: {score}/{levelTargets(level).targetScore}</div>
+        <div class="score-display">{$_('score')}: {score}/{targetScoreFor(level)}</div>
       {/if}
       {#if !ballMoving && !gameOver && dragStart && dragEnd}
         <svg class="arrow-line" viewBox="0 0 100 100">
@@ -209,18 +241,26 @@
 
   {#if gameOver}
     <WinOverlay title={$_('greatGame')} subtitle="{$_('goals')}: {score}">
-      <BigButton variant="primary" class="replay-btn" onclick={resetGame}>{$_('playAgain')}</BigButton>
+      <LadderActions
+        gameId="soccer"
+        {level}
+        backHref="/"
+        nextHref="/games/soccer"
+        replayHref="/games/soccer"
+        onnext={advanceLevel}
+        onreplay={replayLevel}
+      />
     </WinOverlay>
   {/if}
 
-  <LevelBar current={level} onchange={setLevel} />
+  <LadderBar current={level} {mastered} onchange={setLevel} />
 </GameShell>
 
 <style>
   .soccer-game {
     padding-bottom: calc(8px + var(--safe-bottom)); flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 8px; position: relative; }
   .field { position: relative; width: 100%; max-width: 350px; aspect-ratio: 3/4; background: linear-gradient(180deg, #81C784 0%, #66BB6A 50%, #4CAF50 100%); border-radius: 24px; border: 1px solid var(--panel-border); box-shadow: 0 8px 30px rgba(0,0,0,0.4); overflow: hidden; cursor: crosshair; touch-action: none; }
-  .goal-area { position: absolute; top: 2%; left: 30%; width: 40%; height: 22%; border: 3px solid white; border-radius: 0 0 12px 12px; background: rgba(255,255,255,0.08); }
+  .goal-area { position: absolute; border: 3px solid white; border-radius: 0 0 12px 12px; background: rgba(255,255,255,0.08); transition: left 0.3s, width 0.3s; }
   .goal-text { position: absolute; top: 7%; left: 50%; transform: translateX(-50%); font-size: 20px; opacity: 0.4; }
   .ball { position: absolute; transform: translate(-50%, -50%); font-size: 48px; transition: all 0.4s cubic-bezier(0.25, 0.1, 0.25, 1); filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2)); z-index: 2; }
   .ball.kicking { transition: none; }

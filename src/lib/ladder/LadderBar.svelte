@@ -1,38 +1,38 @@
 <script>
-  let { current = 1, count = 10, onchange, maxUnlocked = count, hrefFor = null } = $props();
+  // The one level picker/progress display for every ladder game.
+  // Steps below `current` read as done; step 10 shows 🎓 once mastered.
+  // Free play: nothing is ever locked.
+  let { current = 1, count = 10, hrefFor = null, onchange = null, mastered = false } = $props();
 </script>
 
-<div class="level-bar">
+<div class="ladder-bar">
   {#each Array(count) as _, i}
     {@const num = i + 1}
-    {@const locked = num > maxUnlocked}
+    {@const done = mastered || num < current}
     {#if hrefFor}
       <a
-        class="level-btn"
+        class="ladder-step"
         class:active={current === num}
-        class:locked={locked}
-        aria-disabled={locked}
-        href={locked ? undefined : hrefFor(num)}
-        onclick={(e) => { if (locked) e.preventDefault(); }}
+        class:done
+        href={hrefFor(num)}
       >
-        {num}
+        {mastered && num === count ? '🎓' : num}
       </a>
     {:else}
       <button
-        class="level-btn"
+        class="ladder-step"
         class:active={current === num}
-        class:locked={locked}
-        disabled={locked}
+        class:done
         onclick={() => onchange?.(num)}
       >
-        {num}
+        {mastered && num === count ? '🎓' : num}
       </button>
     {/if}
   {/each}
 </div>
 
 <style>
-  .level-bar {
+  .ladder-bar {
     display: flex;
     justify-content: center;
     flex-wrap: nowrap;
@@ -43,8 +43,8 @@
     overflow-x: auto;
     scrollbar-width: none;
   }
-  .level-bar::-webkit-scrollbar { display: none; }
-  .level-btn {
+  .ladder-bar::-webkit-scrollbar { display: none; }
+  .ladder-step {
     width: 32px;
     height: 32px;
     min-width: 32px;
@@ -61,15 +61,14 @@
     align-items: center;
     justify-content: center;
   }
-  .level-btn.active {
+  .ladder-step.done {
+    color: var(--mint);
+    border-color: rgba(110, 231, 183, 0.35);
+  }
+  .ladder-step.active {
     color: #062033;
     background: var(--cyan);
     border-color: var(--cyan);
     box-shadow: 0 0 8px rgba(127,216,255,0.6);
   }
-  .level-btn.locked {
-    opacity: 0.35;
-    cursor: not-allowed;
-  }
-  .level-btn.locked:active { transform: none; }
 </style>

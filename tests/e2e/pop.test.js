@@ -46,7 +46,7 @@ test.describe('Pop E2E', () => {
 
   test('level buttons exist and have correct range', async ({ page }) => {
     await page.goto('/games/pop');
-    await expect(page.locator('.level-btn')).toHaveCount(10);
+    await expect(page.locator('.ladder-step')).toHaveCount(10);
   });
 
   test('level button click restarts game', async ({ page }) => {
@@ -56,7 +56,7 @@ test.describe('Pop E2E', () => {
     if (await bubble.isVisible()) {
       await bubble.click({ force: true });
     }
-    await page.locator('.level-btn').nth(4).click();
+    await page.locator('.ladder-step').nth(4).click();
     await page.waitForTimeout(500);
     await expect(page.locator('.game-shell .top-bar')).toBeVisible();
   });

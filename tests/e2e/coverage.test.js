@@ -79,7 +79,7 @@ test.describe('G2 — thin-spec games', () => {
     // The half-speed replay must finish before input is accepted again.
     await expect(page.locator('[data-testid="status"]')).toHaveText('👆', { timeout: 15000 });
     await page.getByTestId(`pad-${wrongPad}`).click(); // wrong again → game over
-    await expect(page.locator('.score-line')).toBeVisible({ timeout: 10000 });
+    await expect(page.locator('.win-title')).toBeVisible({ timeout: 10000 });
 
     const best = await page.evaluate(() => parseInt(localStorage.getItem('sequence-memory-best') || '0', 10));
     expect(best).toBe(1); // completed round 1, failed round 2

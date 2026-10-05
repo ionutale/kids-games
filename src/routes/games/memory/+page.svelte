@@ -3,12 +3,12 @@
   import { _, locale } from '$lib/stores/locale';
   import { playTap, playMatch, playWin, playError } from '$lib/sounds/audioManager';
   import GameShell from '$lib/components/ui/GameShell.svelte';
-  import LevelDots from '$lib/components/ui/LevelDots.svelte';
+  import LadderBar from '$lib/ladder/LadderBar.svelte';
+  import LadderActions from '$lib/ladder/LadderActions.svelte';
   import WinOverlay from '$lib/components/ui/WinOverlay.svelte';
-  import BigButton from '$lib/components/ui/BigButton.svelte';
+  import { loadLevel, saveLevel, loadMastered, saveMastered, MAX_LEVEL } from '$lib/ladder/progress';
 
   const emojis = ['🐶', '🐱', '🐰', '🐻', '🐸', '🐵', '🦊', '🐯', '🐭', '🐼', '🐨', '🦁'];
-  const STORAGE_KEY = 'memory-unlocked-level';
 
   let cards = $state([]);
   let flipped = $state([]);
@@ -17,22 +17,11 @@
   let locked = $state(false);
   let won = $state(false);
   let level = $state(1);
-  let unlockedLevel = $state(1);
+  let mastered = $state(false);
 
-  function loadUnlocked() {
-    let stored = 1;
-    if (typeof localStorage !== 'undefined') {
-      stored = parseInt(localStorage.getItem(STORAGE_KEY));
-    }
-    unlockedLevel = stored >= 1 && stored <= 10 ? stored : 1;
-    level = unlockedLevel;
-  }
-
-  function saveUnlocked(l) {
-    unlockedLevel = Math.min(l, 10);
-    if (typeof localStorage !== 'undefined') {
-      localStorage.setItem(STORAGE_KEY, String(unlockedLevel));
-    }
+  function loadProgress() {
+    level = loadLevel('memory'); // migrates the old memory-unlocked-level key
+    mastered = loadMastered('memory');
   }
 
   function pairsFromLevel(l) {
@@ -81,6 +70,10 @@
           locked = false;
           if (matched.size === cards.length) {
             if ($settings.soundEnabled) playWin();
+            if (level >= MAX_LEVEL) {
+              saveMastered('memory');
+              mastered = true;
+            }
             won = true;
           }
         }, 3000);
@@ -97,30 +90,33 @@
     }
   }
 
-  function advanceLevel() {
-    if (level < 10) {
-      saveUnlocked(level + 1);
-      level = level + 1;
-    }
+  function advanceLevel(e) {
+    e?.preventDefault();
+    level = Math.min(MAX_LEVEL, level + 1);
+    saveLevel('memory', level);
     initGame();
   }
 
-  function replayLevel() {
+  function replayLevel(e) {
+    e?.preventDefault();
+    initGame();
+  }
+
+  function pickLevel(n) {
+    level = n;
+    saveLevel('memory', n);
     initGame();
   }
 
   let cols = $derived(colsFromCount(cards.length));
 
-  loadUnlocked();
+  loadProgress();
   initGame();
 </script>
 
 <GameShell accent="#7FD8FF">
   {#snippet hudLeft()}
-    <div class="level-indicator">
-      <span class="level-label">{$_('level')} {level}</span>
-      <LevelDots total={10} current={level} unlocked={unlockedLevel} />
-    </div>
+    <span class="level-label">{$_('level')} {level}</span>
   {/snippet}
 
   <div class="memory-game">
@@ -144,12 +140,21 @@
       {/each}
     </div>
 
+    <div class="ladder-dock">
+      <LadderBar current={level} {mastered} onchange={pickLevel} />
+    </div>
+
     {#if won}
       <WinOverlay title={$_('greatJob')} subtitle={$_('levelComplete', { n: level })}>
-        {#if level < 10}
-          <BigButton variant="primary" class="next-btn" onclick={advanceLevel}>{$_('nextLevel')}</BigButton>
-        {/if}
-        <BigButton variant="ghost" class="replay-btn" onclick={replayLevel}>{$_('replay')}</BigButton>
+        <LadderActions
+          gameId="memory"
+          {level}
+          backHref="/"
+          nextHref="/games/memory"
+          replayHref="/games/memory"
+          onnext={advanceLevel}
+          onreplay={replayLevel}
+        />
       </WinOverlay>
     {/if}
   </div>
@@ -163,16 +168,15 @@
     flex: 1;
     padding: 16px;
   }
-  .level-indicator {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    margin-bottom: 12px;
-  }
   .level-label {
     font-size: 16px;
     font-weight: 700;
     color: var(--accent);
+  }
+  .ladder-dock {
+    margin-top: auto;
+    padding-top: 12px;
+    align-self: stretch;
   }
   .grid {
     display: grid;

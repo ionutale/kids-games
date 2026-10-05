@@ -4,15 +4,20 @@
   import GameShell from '$lib/components/ui/GameShell.svelte';
   import '$lib/trainers/fx.css';
   import HudPill from '$lib/components/ui/HudPill.svelte';
-  import Confetti from '$lib/components/Confetti.svelte';
+  import WinOverlay from '$lib/components/ui/WinOverlay.svelte';
+  import LadderBar from '$lib/ladder/LadderBar.svelte';
+  import LadderActions from '$lib/ladder/LadderActions.svelte';
+  import { loadLevel, saveLevel, loadMastered, saveMastered, MAX_LEVEL } from '$lib/ladder/progress.js';
   import { playMatch, playWin } from '$lib/sounds/audioManager.js';
   import { buildRound, correctBin } from '$lib/category-sort/categories.js';
 
-  let roundIndex = $state(0);
-  let round = $state(buildRound(0, 8));
+  const initialLevel = loadLevel('category-sort');
+  let level = $state(initialLevel);
+  let mastered = $state(loadMastered('category-sort'));
+  let round = $state(buildRound(initialLevel));
   let itemIdx = $state(0);
   let correctTotal = $state(0);
-  let roundsDone = $state(0);
+  let won = $state(false);
 
   // area geometry (reactive → resize-safe home slot)
   let areaW = $state(0);
@@ -25,7 +30,6 @@
   let dragY = $state(0);
   let hoverBin = $state(-1);
   let wrongBin = $state(-1);
-  let celebrate = $state(false);
   let returning = $state(false);
   let flying = $state(null); // { emoji, x, y } ghost flying into a bin
 
@@ -52,18 +56,35 @@
     return { x: e.clientX - r.left, y: e.clientY - r.top };
   }
 
-  function nextRound() {
-    roundIndex += 1;
-    round = buildRound(roundIndex, 8);
+  function startLevel(l) {
+    clearTimers();
+    level = l;
+    saveLevel('category-sort', l);
+    round = buildRound(l);
     itemIdx = 0;
-    celebrate = false;
+    won = false;
     selected = false;
+    dragging = false;
+    returning = false;
+    hoverBin = -1;
+    wrongBin = -1;
+    flying = null;
+  }
+
+  function nextLevel(e) {
+    e?.preventDefault();
+    startLevel(Math.min(MAX_LEVEL, level + 1));
+  }
+
+  function replayLevel(e) {
+    e?.preventDefault();
+    startLevel(level);
   }
 
   const currentItem = $derived(round?.items[itemIdx] ?? null);
   const correctBinId = $derived(currentItem?.categoryId ?? null);
-  // training wheels: bin-side green hints only for the first 5 placements of round 1
-  const showBinHelper = $derived(roundIndex === 0 && correctTotal < 5);
+  // training wheels: bin-side green hints only for the first 5 placements of level 1
+  const showBinHelper = $derived(level === 1 && correctTotal < 5);
 
   function binCenter(i) {
     const el = binEls[i];
@@ -74,7 +95,7 @@
 
   // ---- drag ------------------------------------------------------------
   function beginDrag(e) {
-    if (!currentItem || celebrate || dragging) return;
+    if (!currentItem || won || dragging) return;
     if (returning) returning = false; // kid re-grabs mid-bounce-back: cancel it
     if (activePointerId !== null) return; // single-touch lock
     activePointerId = e.pointerId;
@@ -163,10 +184,12 @@
 
   function advance() {
     if (itemIdx + 1 >= round.items.length) {
-      roundsDone += 1;
-      celebrate = true;
       playWin();
-      later(nextRound, 1800);
+      if (level >= MAX_LEVEL) {
+        saveMastered('category-sort');
+        mastered = true;
+      }
+      won = true;
     } else {
       itemIdx += 1;
     }
@@ -174,7 +197,7 @@
 
   // ---- tap-to-place ----------------------------------------------------
   function onItemTap() {
-    if (!currentItem || celebrate || returning || dragging) return;
+    if (!currentItem || won || returning || dragging) return;
     if (!selected) {
       selected = true; // lift the item
       return;
@@ -184,7 +207,7 @@
   }
 
   function onBinTap(i) {
-    if (!selected || celebrate) return;
+    if (!selected || won) return;
     const bin = round.bins[i];
     const target = correctBin(currentItem, round.bins);
     if (bin && target && bin.id === target.id) {
@@ -207,7 +230,7 @@
 <GameShell accent="#F0ABFC">
   {#snippet hudLeft()}
     <HudPill icon="✅" label={String(correctTotal)} />
-    <HudPill icon="🔄" label={String(roundsDone)} />
+    <HudPill icon="🚩" label={String(level)} />
     <HudPill icon="🎯" label={`${itemIdx}/${round.items.length}`} />
   {/snippet}
 
@@ -241,10 +264,7 @@
       bind:clientWidth={areaW}
       bind:clientHeight={areaH}
     >
-      {#if celebrate}
-        <Confetti />
-        <p class="celebrate" data-testid="celebrate">🎉</p>
-      {:else if currentItem}
+      {#if currentItem && !won}
         <button
           class="draggable"
           class:dragging
@@ -270,7 +290,23 @@
         </span>
       {/if}
     </div>
+
+    <LadderBar current={level} {mastered} onchange={startLevel} />
   </div>
+
+  {#if won}
+    <WinOverlay title={$_('allSorted')}>
+      <LadderActions
+        gameId="category-sort"
+        {level}
+        backHref="/"
+        nextHref="/games/category-sort"
+        replayHref="/games/category-sort"
+        onnext={nextLevel}
+        onreplay={replayLevel}
+      />
+    </WinOverlay>
+  {/if}
 </GameShell>
 
 <style>
@@ -338,11 +374,6 @@
     touch-action: none;
     user-select: none;
     -webkit-touch-callout: none;
-  }
-  .celebrate {
-    position: absolute; inset: 0;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 64px; margin: 0; z-index: 3;
   }
   .draggable {
     position: absolute;

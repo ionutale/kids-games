@@ -32,7 +32,7 @@ test.describe('Sorting E2E — play all levels', () => {
 
   test('play level 1 correctly', async ({ page }) => {
     await page.goto('/games/sorting');
-    await page.locator('.level-btn').nth(0).click();
+    await page.locator('.ladder-step').nth(0).click();
     await page.waitForTimeout(300);
     await solveLevel(page);
   });
@@ -42,7 +42,7 @@ test.describe('Sorting E2E — play all levels', () => {
     await page.goto('/games/sorting');
 
     for (let level = 0; level < 10; level++) {
-      await page.locator('.level-btn').nth(level).click();
+      await page.locator('.ladder-step').nth(level).click();
       await page.waitForTimeout(300);
 
       for (let pass = 0; pass < 3; pass++) {
@@ -52,7 +52,7 @@ test.describe('Sorting E2E — play all levels', () => {
 
       const wonOverlay = page.locator('.win-overlay');
       if (await wonOverlay.isVisible().catch(() => false)) {
-        await page.locator('.replay-btn').click();
+        await page.getByTestId('replay').click();
         await page.waitForTimeout(300);
       }
     }

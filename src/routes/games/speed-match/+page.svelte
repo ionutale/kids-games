@@ -6,7 +6,6 @@
 <TrainerLanding
   trainerId="speed-match"
   heroArt="true"
-  showLevels={false}
   title={`🃏 ${$_('speedMatch')}`}
   tagline={`${$_('samePair')} · ${$_('diffPair')}`}
   hero="🃏 🍎🍎 🃏 🐶🐺 🃏"

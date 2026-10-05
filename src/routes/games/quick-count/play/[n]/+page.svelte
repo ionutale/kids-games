@@ -1,17 +1,17 @@
 <script>
   import { onMount, untrack } from 'svelte';
-  import { goto } from '$app/navigation';
   import { _ } from '$lib/stores/locale';
   import GameShell from '$lib/components/ui/GameShell.svelte';
   import HudPill from '$lib/components/ui/HudPill.svelte';
   import WinOverlay from '$lib/components/ui/WinOverlay.svelte';
+  import LadderActions from '$lib/ladder/LadderActions.svelte';
   import '$lib/trainers/fx.css';
 
   import { makePrompt } from '$lib/trainers/quickCount.js';
   import { levelConfig } from '$lib/trainers/quickCount.js';
   import { startTrainerMusic, stopTrainerMusic } from '$lib/sounds/trainerMusic.js';
   import { playPop } from '$lib/sounds/audioManager.js';
-  import { playLevelTick, playFlashWhoosh, playReadyTick, fanfare } from '$lib/sounds/trainerSounds.js';
+  import { playLevelTick, playFlashWhoosh, playReadyTick } from '$lib/sounds/trainerSounds.js';
 
   let { data } = $props();
   const level = $derived(data.level);
@@ -82,17 +82,6 @@
     if (!document.hidden && phase === 'paused') nextPrompt(); // fresh flash — never counts
   }
 
-  function nextLevel(e) {
-    e.preventDefault();
-    fanfare(FANFARE_PITCH);
-    goto(`/games/quick-count/play/${level + 1}`);
-  }
-
-  function replay(e) {
-    e.preventDefault();
-    goto(`/games/quick-count/play/${level}?seed=${Date.now() % 1000000}`);
-  }
-
   function resetRound() {
     clearTimers();
     solved = 0;
@@ -161,18 +150,7 @@
   {#if won}
     <WinOverlay title={$_('wellDone')} subtitle={`🔢 ${solved}/${config.goal}`}>
       {#snippet badge()}<img class="win-badge" src="/art/trainers/quick-count/win-badge.png" alt="" />{/snippet}
-      <a
-        class="big-btn primary"
-        href={`/games/quick-count/play/${level + 1}`}
-        data-testid="next-level"
-        onclick={nextLevel}
-      >
-        {$_('nextLevel')} ▶
-      </a>
-      <a class="big-btn ghost" href={`/games/quick-count/play/${level}`} data-testid="replay" onclick={replay}>
-        {$_('replay')}
-      </a>
-      <a class="big-btn ghost" href="/games/quick-count">{$_('back')}</a>
+      <LadderActions gameId="quick-count" {level} pitch={FANFARE_PITCH} />
     </WinOverlay>
   {/if}
 </GameShell>
@@ -239,14 +217,4 @@
   .pill.wobbling { animation: fxWobble 0.3s ease-in-out; }
 
   .win-badge { width: 64px; height: 64px; filter: drop-shadow(0 0 12px var(--glow-gold)); }
-  .big-btn {
-    display: inline-flex; align-items: center; justify-content: center; gap: 8px;
-    min-height: var(--touch-min); padding: 12px 32px;
-    border-radius: var(--radius-btn);
-    font-family: var(--font-display); font-size: 18px; font-weight: 600;
-    text-decoration: none; transition: transform 0.15s;
-  }
-  .big-btn:active { transform: scale(0.95); }
-  .primary { color: #062033; background: var(--btn-gradient); box-shadow: 0 4px 18px rgba(91,194,240,0.5); }
-  .ghost { color: var(--text-lo); background: var(--panel-glass); border: 1px solid var(--panel-border); }
 </style>

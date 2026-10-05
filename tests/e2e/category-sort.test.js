@@ -111,7 +111,7 @@ test.describe('Category Sort E2E', () => {
     });
   });
 
-  test('bin-side green helper retires after 5 placements in round 1 (item-side cue stays)', async ({ page }) => {
+  test('bin-side green helper retires after 5 placements in level 1 (item-side cue stays)', async ({ page }) => {
     test.setTimeout(120000);
     await page.goto('/games/category-sort');
     await page.waitForTimeout(600);
@@ -171,11 +171,11 @@ test.describe('Category Sort E2E', () => {
     });
     await page.waitForTimeout(350);
 
-    // finish the round, then round 2 must also show no bin-side hint
-    expect(await placeCurrentItem()).toBe(true);
-    expect(await placeCurrentItem()).toBe(true);
+    // that was the last of the 6 level-1 items; advance to level 2 which must also show no bin-side hint
+    await expect(page.locator('.win-overlay')).toBeVisible({ timeout: 8000 });
+    await page.getByTestId('next-level').click();
+    await page.waitForTimeout(600);
     await expect(page.getByTestId('item')).toBeVisible({ timeout: 6000 });
-    await page.waitForTimeout(400); // celebration + nextRound settle
 
     const round2From = await center(item);
     await item.dispatchEvent('pointerdown', {
@@ -221,51 +221,47 @@ test.describe('Category Sort E2E', () => {
       await touchDrag(page, item, p);
       const after = (await hud.first().textContent()) ?? '';
       if (after !== before) {
-        // progress pill should show 1/8
-        await expect(hud.nth(2)).toHaveText(/🎯\s*1\/8/);
+        // progress pill should show 1/6 (level 1 has 6 items)
+        await expect(hud.nth(2)).toHaveText(/🎯\s*1\/6/);
         return;
       }
     }
     throw new Error('no bin advanced the round progress');
   });
 
-  test('full round completes → celebration → next round auto-starts', async ({ page }) => {
+  test('full level completes → win overlay with next level, replay and back', async ({ page }) => {
     test.setTimeout(60000);
     await page.goto('/games/category-sort');
     await page.waitForTimeout(600);
-    const rounds = page.locator('.top-bar .hud-item').nth(1);
     const bins = page.getByTestId('bins').locator('.bin');
 
-    for (let n = 0; n < 8; n++) {
+    // Level 1 has 6 items; place each by dragging to every bin until one advances the score.
+    const score = page.locator('.top-bar .hud-item').first();
+    for (let n = 0; n < 6; n++) {
+      const before = (await score.textContent()) ?? '';
       const item = page.getByTestId('item');
       let placed = false;
       for (let i = 0; i < (await bins.count()); i++) {
-        const p = await center(bins.nth(i));
-        await touchDrag(page, item, p);
-        const roundsAfter = (await rounds.textContent()) ?? '';
-        if (roundsAfter.includes('1') && n < 7) {
-          // only when the final round flips do we stop early; mid-round just continue
-        }
-        if (n < 7 && !(await page.getByTestId('item').isVisible().catch(() => false))) break;
-        if (n < 7 && (await rounds.textContent()).includes('1')) break; // next round started
-        if ((await rounds.textContent()).includes('1') && n === 7) placed = true;
-        // detect whether we hit celebrate (item hidden during celebration)
-        if (!(await page.getByTestId('item').isVisible().catch(() => false)) && n < 7) {
-          // celebration in progress — wait for it to pass then break
-          await page.waitForTimeout(2200);
+        await touchDrag(page, item, await center(bins.nth(i)));
+        if (((await score.textContent()) ?? '') !== before) {
           placed = true;
+          await page.waitForTimeout(350);
           break;
         }
-        if (n === 7 && !(await page.getByTestId('item').isVisible().catch(() => false))) {
-          placed = true;
-          break;
-        }
+        await page.waitForTimeout(350); // wrong drop bounces home
       }
-      if (placed) break;
+      expect(placed, `placement ${n + 1} failed`).toBe(true);
     }
 
-    // celebrate marker appears during round end
-    await expect(page.getByTestId('celebrate')).toBeVisible({ timeout: 6000 }).catch(() => {});
+    await expect(page.locator('.win-overlay')).toBeVisible({ timeout: 8000 });
+    await expect(page.getByTestId('next-level')).toBeVisible();
+    await expect(page.getByTestId('replay')).toBeVisible();
+
+    await page.getByTestId('next-level').click();
+    await page.waitForTimeout(600);
+    await expect(page.getByTestId('item')).toBeVisible({ timeout: 6000 });
+    // level 2 has 6 items again starting at 0 progress
+    await expect(page.locator('.top-bar .hud-item').nth(2)).toHaveText(/🎯\s*0\/6/);
   });
 
   test('tap-to-place: tap item then tap its bin places it', async ({ page }) => {
