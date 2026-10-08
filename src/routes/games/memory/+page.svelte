@@ -1,4 +1,5 @@
 <script>
+  import { onDestroy } from 'svelte';
   import { settings } from '$lib/stores/settings';
   import { _, locale } from '$lib/stores/locale';
   import { playTap, playMatch, playWin, playError } from '$lib/sounds/audioManager';
@@ -18,6 +19,15 @@
   let won = $state(false);
   let level = $state(1);
   let mastered = $state(false);
+  let timers = [];
+
+  function clearTimers() {
+    for (const t of timers) clearTimeout(t);
+    timers = [];
+  }
+  function later(fn, ms) {
+    timers.push(setTimeout(fn, ms));
+  }
 
   function loadProgress() {
     level = loadLevel('memory'); // migrates the old memory-unlocked-level key
@@ -35,6 +45,7 @@
   }
 
   function initGame() {
+    clearTimers();
     const pairs = pairsFromLevel(level);
     const selected = emojis.slice(0, pairs);
     const deck = [...selected, ...selected].map((emoji, i) => ({ id: i, emoji, flipped: false }));
@@ -64,7 +75,7 @@
         showcasing = new Set([aId, bId]);
         flipped = [];
         if ($settings.soundEnabled) playMatch();
-        setTimeout(() => {
+        later(() => {
           matched = new Set([...matched, aId, bId]);
           showcasing = new Set();
           locked = false;
@@ -79,7 +90,7 @@
         }, 3000);
       } else {
         if ($settings.soundEnabled) playError();
-        setTimeout(() => {
+        later(() => {
           cards = cards.map(c =>
             c.id === aId || c.id === bId ? { ...c, flipped: false } : c
           );
@@ -112,6 +123,7 @@
 
   loadProgress();
   initGame();
+  onDestroy(clearTimers);
 </script>
 
 <GameShell accent="#7FD8FF">
