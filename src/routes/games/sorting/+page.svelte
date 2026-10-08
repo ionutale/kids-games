@@ -16,7 +16,7 @@
         { emoji: '🔵', cat: 2 }, { emoji: '💧', cat: 2 },
         { emoji: '🟢', cat: 3 }, { emoji: '🍀', cat: 3 }
       ],
-      baskets: ['Red', 'Yellow', 'Blue', 'Green']
+      baskets: ['red', 'yellow', 'blue', 'green']
     },
     shapes: {
       items: [
@@ -25,7 +25,7 @@
         { emoji: '⬜', cat: 0 }, { emoji: '🔵', cat: 1 },
         { emoji: '🔻', cat: 2 }, { emoji: '🔶', cat: 3 }
       ],
-      baskets: ['Square', 'Circle', 'Triangle', 'Diamond']
+      baskets: ['square', 'circle', 'triangle', 'diamond']
     }
   };
 
@@ -142,7 +142,7 @@
         class="basket"
         onclick={() => dropOnBasket(i)}
       >
-        <span class="basket-label">{basket}</span>
+        <span class="basket-label">{$_(basket)}</span>
         <span class="basket-count">
           {items.filter(item => item.cat === i && sorted.has(item.id)).length}
         </span>
