@@ -10,7 +10,7 @@ The 4 brain trainers add a hybrid audio/art layer ([spec](superpowers/specs/2026
 
 | Asset | Source & license | Notes |
 |-------|------------------|-------|
-| `static/sounds/fanfare.mp3` | `jingles_NES00.ogg` — [Kenney "Music Jingles"](https://kenney.nl/assets/music-jingles), **CC0** | shared level-up sting; pitch-shifted per trainer via `playbackRate` |
+| `static/sounds/fanfare.mp3` | `jingles_NES12.ogg` — [Kenney "Music Jingles"](https://kenney.nl/assets/music-jingles), **CC0** | shared level-up sting; rising arpeggio (verified ascending, ends on peak); pitch-shifted per trainer via `playbackRate` |
 | `static/sounds/music/focus-tap.mp3` | "Carefree" — Kevin MacLeod (incompetech.com), **CC-BY 4.0** | trimmed 28.5s, mono 96 kbps (~344 KB) |
 | `static/sounds/music/quick-count.mp3` | "Fluffing a Duck" — Kevin MacLeod, **CC-BY 4.0** | same treatment |
 | `static/sounds/music/speed-match.mp3` | "Life of Riley" — Kevin MacLeod, **CC-BY 4.0** | same treatment |
