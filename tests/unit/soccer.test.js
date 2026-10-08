@@ -1,52 +1,73 @@
 import { describe, it, expect } from 'vitest';
+import {
+  BALL_START,
+  goalBounds,
+  keeperCenter,
+  keeperHalfWidth,
+  openAim,
+  shotResult,
+  starsFor,
+  targetScoreFor
+} from '$lib/soccer/engine.js';
 
-describe('Soccer game', () => {
-  function levelTargets(l) {
-    return {
-      goalWidth: Math.min(40 + l * 2, 55),
-      targetScore: Math.min(2 + l, 8),
-      missChance: Math.max(0, 0.5 - l * 0.05),
-    };
-  }
-
-  it('levelTargets returns correct values for level 1', () => {
-    const t = levelTargets(1);
-    expect(t.targetScore).toBe(3);
-    expect(t.goalWidth).toBe(42);
-    expect(t.missChance).toBe(0.45);
+describe('Soccer levels', () => {
+  it('asks for more goals as the level rises, capped at 8', () => {
+    expect(targetScoreFor(1)).toBe(3);
+    expect(targetScoreFor(5)).toBe(7);
+    expect(targetScoreFor(10)).toBe(8);
+    expect(targetScoreFor(1)).toBeLessThan(targetScoreFor(5));
   });
 
-  it('levelTargets returns correct values for level 10', () => {
-    const t = levelTargets(10);
-    expect(t.targetScore).toBe(8);
-    expect(t.goalWidth).toBe(55);
-    expect(t.missChance).toBe(0);
+  it('shrinks the goal at higher levels', () => {
+    const easy = goalBounds(1);
+    const hard = goalBounds(10);
+    expect(easy.x1 - easy.x0).toBeGreaterThan(hard.x1 - hard.x0);
+    expect(hard.x1 - hard.x0).toBeGreaterThanOrEqual(10);
+  });
+});
+
+describe('Soccer keeper', () => {
+  it('stays inside the goal and always leaves a gap', () => {
+    for (let level = 1; level <= 10; level++) {
+      const goal = goalBounds(level);
+      const half = keeperHalfWidth(level);
+      for (let t = 0; t <= 20; t += 0.25) {
+        const x = keeperCenter(level, t);
+        expect(x - half).toBeGreaterThanOrEqual(goal.x0 - 0.01);
+        expect(x + half).toBeLessThanOrEqual(goal.x1 + 0.01);
+        const aim = openAim(level, x);
+        expect(shotResult(BALL_START, aim, level, x)).toBe('goal');
+      }
+    }
   });
 
-  it('targetScore increases with level', () => {
-    expect(levelTargets(1).targetScore).toBeLessThan(levelTargets(5).targetScore);
-    expect(levelTargets(5).targetScore).toBeLessThan(levelTargets(10).targetScore);
+  it('saves a shot aimed at his gloves', () => {
+    const x = keeperCenter(1, 0);
+    expect(shotResult(BALL_START, { x, y: 13 }, 1, x)).toBe('save');
+  });
+});
+
+describe('Soccer shots', () => {
+  it('misses a swipe that never reaches the goal', () => {
+    expect(shotResult(BALL_START, { x: 50, y: 90 }, 1, 50)).toBe('miss');
+    expect(shotResult(BALL_START, { x: 51, y: 81 }, 1, 50)).toBe('miss');
   });
 
-  it('goal detection works at right positions', () => {
-    const goalTop = 5, goalBottom = 23, goalLeft = 60;
-    expect(10 > goalTop && 10 < goalBottom && 80 > goalLeft).toBe(true);
-    expect(10 > goalTop && 10 < goalBottom && 40 > goalLeft).toBe(false);
-    expect(50 > goalTop && 50 < goalBottom).toBe(false);
+  it('misses a shot that flies wide of the posts', () => {
+    expect(shotResult(BALL_START, { x: 5, y: 10 }, 1, 50)).toBe('miss');
   });
 
-  it('game resets score and ball position', () => {
-    let score = 5;
-    let gameOver = true;
-    let ballX = 88;
-    let ballY = 14;
-    score = 0;
-    gameOver = false;
-    ballX = 20;
-    ballY = 50;
-    expect(score).toBe(0);
-    expect(gameOver).toBe(false);
-    expect(ballX).toBe(20);
-    expect(ballY).toBe(50);
+  it('counts a shot that flies through the mouth even if the finger lifts above the bar', () => {
+    const keeperX = keeperCenter(3, 1.2);
+    const aim = openAim(3, keeperX);
+    expect(shotResult(BALL_START, { x: aim.x, y: -4 }, 3, keeperX)).toBe('goal');
+  });
+});
+
+describe('Soccer stars', () => {
+  it('gives three stars for a clean round and drops as shots are wasted', () => {
+    expect(starsFor(0)).toBe(3);
+    expect(starsFor(2)).toBe(2);
+    expect(starsFor(3)).toBe(1);
   });
 });

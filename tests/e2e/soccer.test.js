@@ -1,51 +1,50 @@
 import { test, expect } from '@playwright/test';
 
+async function kickOpen(page) {
+  const field = page.locator('.field');
+  const box = await field.boundingBox();
+  const sx = box.x + box.width * 0.5;
+  const sy = box.y + box.height * 0.72;
+  await page.mouse.move(sx, sy);
+  await page.mouse.down();
+  await page.waitForTimeout(40);
+  const ox = parseFloat(await field.getAttribute('data-open-x'));
+  const oy = parseFloat(await field.getAttribute('data-open-y'));
+  const ex = box.x + box.width * (ox / 100);
+  const ey = box.y + box.height * (oy / 100);
+  await page.mouse.move(ex, ey, { steps: 5 });
+  await page.waitForTimeout(40);
+  await page.mouse.up();
+}
+
 test.describe('Soccer E2E', () => {
-  test('loads and shows field and ball', async ({ page }) => {
+  test('loads and shows field, ball, and keeper', async ({ page }) => {
     await page.goto('/games/soccer');
     await expect(page.locator('.field')).toBeVisible();
     await expect(page.locator('.ball')).toBeVisible();
+    await expect(page.locator('.keeper')).toBeVisible();
   });
 
-  test('swipe toward goal scores', async ({ page }) => {
+  test('swipe into the open side scores', async ({ page }) => {
     await page.goto('/games/soccer');
-    const field = page.locator('.field');
-    const box = await field.boundingBox();
-    const sx = box.x + box.width * 0.5, sy = box.y + box.height * 0.4;
-    const ex = box.x + box.width * 0.5, ey = box.y + box.height * 0.1;
-
-    await page.mouse.move(sx, sy);
-    await page.mouse.down();
-    await page.waitForTimeout(50);
-    await page.mouse.move(ex, ey, { steps: 5 });
-    await page.waitForTimeout(50);
-    await page.mouse.up();
-    await page.waitForTimeout(700);
-    await expect(page.locator('.score-display')).toBeVisible();
+    await kickOpen(page);
+    await page.waitForTimeout(900);
+    await expect(page.locator('.score-display')).toContainText('1/');
   });
 
-  test('scores increment on goal swipe', async ({ page }) => {
+  test('scores increment on shots past the keeper', async ({ page }) => {
     await page.goto('/games/soccer');
     // Play level 5 (target 7) so three kicks stay below the win threshold.
     await page.locator('.ladder-step').nth(4).click();
     await page.waitForTimeout(400);
-    const field = page.locator('.field');
-    const box = await field.boundingBox();
-    const sx = box.x + box.width * 0.5, sy = box.y + box.height * 0.4;
-    const ex = box.x + box.width * 0.5, ey = box.y + box.height * 0.1;
 
     for (let i = 0; i < 3; i++) {
-      await page.mouse.move(sx, sy);
-      await page.mouse.down();
-      await page.waitForTimeout(50);
-      await page.mouse.move(ex, ey, { steps: 5 });
-      await page.waitForTimeout(50);
-      await page.mouse.up();
-      await page.waitForTimeout(1500);
+      await kickOpen(page);
+      await page.waitForTimeout(1400);
     }
 
     const scoreText = await page.locator('.score-display').textContent();
-    expect(parseInt(scoreText.split('/')[0].replace('Score: ', ''))).toBeGreaterThanOrEqual(1);
+    expect(parseInt(scoreText.split('/')[0].replace('Score: ', ''))).toBe(3);
   });
 
   test('swipe away from goal does not score', async ({ page }) => {
@@ -94,8 +93,8 @@ test.describe('Soccer E2E', () => {
     const ball = page.locator('.ball');
     const box = await field.boundingBox();
     const initialTop = await ball.evaluate(el => el.style.top);
-    const sx = box.x + box.width * 0.5, sy = box.y + box.height * 0.4;
-    const ex = box.x + box.width * 0.5, ey = box.y + box.height * 0.1;
+    const sx = box.x + box.width * 0.5, sy = box.y + box.height * 0.72;
+    const ex = box.x + box.width * 0.5, ey = box.y + box.height * 0.12;
 
     await page.mouse.move(sx, sy);
     await page.mouse.down();

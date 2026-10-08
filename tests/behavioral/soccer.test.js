@@ -1,79 +1,38 @@
 import { describe, it, expect } from 'vitest';
+import {
+  BALL_START,
+  keeperCenter,
+  openAim,
+  shotResult,
+  targetScoreFor
+} from '$lib/soccer/engine.js';
 
 describe('Soccer game behavior', () => {
-  it('tap in goal area scores', () => {
-    const goalTop = 5, goalBottom = 23, goalLeft = 60;
-    const tapX = 75, tapY = 14;
-    const willScore = tapX > goalLeft && tapY > goalTop && tapY < goalBottom;
-    expect(willScore).toBe(true);
+  it('a shot into the open side of the goal scores', () => {
+    const keeperX = keeperCenter(1, 0);
+    const aim = openAim(1, keeperX);
+    expect(shotResult(BALL_START, aim, 1, keeperX)).toBe('goal');
   });
 
-  it('tap outside goal area does not score', () => {
-    const goalTop = 5, goalBottom = 23, goalLeft = 60;
-    expect(30 > goalLeft && 50 > goalTop && 50 < goalBottom).toBe(false);
+  it('a shot into the keeper is a save, not a goal', () => {
+    const keeperX = keeperCenter(4, 2);
+    expect(shotResult(BALL_START, { x: keeperX, y: 12 }, 4, keeperX)).toBe('save');
   });
 
-  it('ballMoving flag prevents multi-kick', () => {
-    let ballMoving = false;
-    const kick = () => { if (ballMoving) return; ballMoving = true; };
-    kick();
-    expect(ballMoving).toBe(true);
-    kick();
-    expect(ballMoving).toBe(true);
+  it('a short swipe does not score', () => {
+    expect(shotResult(BALL_START, { x: 50, y: 78 }, 1, keeperCenter(1, 0))).toBe('miss');
   });
 
-  it('game over blocks further kicks', () => {
-    let gameOver = false;
-    let score = 0;
-    const kick = () => { if (gameOver) return; score++; gameOver = true; };
-    kick();
-    expect(score).toBe(1);
-    kick();
-    expect(score).toBe(1);
+  it('level 1 needs 3 goals and level 10 needs 8', () => {
+    expect(targetScoreFor(1)).toBe(3);
+    expect(targetScoreFor(10)).toBe(8);
   });
 
-  it('ball returns to start position after kick', () => {
-    let ballX = 20, ballY = 50;
-    let ballMoving = true;
-    setTimeout(() => {
-      ballMoving = false;
-      ballX = 20;
-      ballY = 50;
-    }, 10);
-    expect(ballMoving).toBe(true);
-  });
-
-  it('level 1 needs 3 goals to win', () => {
-    const targetScore = Math.min(2 + 1, 8);
-    expect(targetScore).toBe(3);
-    let score = 0;
-    for (let i = 0; i < targetScore; i++) score++;
-    expect(score).toBe(3);
-  });
-
-  it('level 10 needs 8 goals to win', () => {
-    const targetScore = Math.min(2 + 10, 8);
-    expect(targetScore).toBe(8);
-  });
-
-  it('reset sets score to 0, gameOver false, ball to start', () => {
-    let score = 5, gameOver = true, ballX = 88, ballY = 14;
-    score = 0;
-    gameOver = false;
-    ballX = 20;
-    ballY = 50;
-    expect(score).toBe(0);
-    expect(gameOver).toBe(false);
-    expect(ballX).toBe(20);
-    expect(ballY).toBe(50);
-  });
-
-  it('confetti appears on goal', () => {
-    let showConfetti = false;
-    let score = 0;
-    score++;
-    showConfetti = true;
-    expect(showConfetti).toBe(true);
-    expect(score).toBe(1);
+  it('the same open spot is a miss once the goal has shrunk past it', () => {
+    const wide = openAim(1, 50);
+    const hardKeeper = keeperCenter(10, 0);
+    const atWideSpot = shotResult(BALL_START, wide, 10, hardKeeper);
+    expect(['miss', 'save']).toContain(atWideSpot);
+    expect(shotResult(BALL_START, openAim(10, hardKeeper), 10, hardKeeper)).toBe('goal');
   });
 });

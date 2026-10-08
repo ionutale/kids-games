@@ -144,9 +144,24 @@ The following games have been proposed but not yet designed or implemented. Each
 
 - **Ladder**: Every level game offers exactly 10 levels; the current level persists per game. Finishing level 10 marks the game **Mastered** (🎓); deeper links clamp to 10.
 - **Ladder Store** (`src/lib/ladder/progress.js`): the one progress store — camelCase localStorage keys (`{gameId}Level`, `{gameId}Mastered`), clamps 1–10, plus one-time migration from pre-ladder keys (`memory-unlocked-level`, `path-builder-level`).
-- **LadderBar** (`src/lib/ladder/LadderBar.svelte`): the one level indicator/picker — done steps below the current level, 🎓 on step 10 once mastered; free pick, nothing is ever locked.
+- **LadderBar** (`src/lib/ladder/LadderBar.svelte`): the one level indicator/picker — done steps below the current level, 🎓 on step 10 once mastered; free pick, nothing is ever locked. It does not show stars.
 - **LadderActions** (`src/lib/ladder/LadderActions.svelte`): the one win-overlay action row — Replay / Next Level ▶ / Back; at level 10 the Next action is replaced by 🎓, and mastery is saved when the overlay renders at the top level.
 - **Ladder Games**: memory, puzzle, glossary-puzzle, sorting, category-sort, path-builder, pop, soccer, grammar, focus-tap, quick-count, speed-match, what-comes-next. Free-play games (paint, stickers, splash) and score games (sequence-memory, emoji-math, spot-the-difference) have no ladder.
+
+## Soccer Game
+
+- **Pitch**: The field markings — sidelines, a center circle, and a penalty spot — drawn as lines. The ball and the Keeper stay emoji.
+- **Shot**: A swipe that sends the ball toward a landing point on the field.
+- **Power**: How long the swipe is. Higher Power shrinks the Keeper's Reach and lofts the Flight higher. The landing point still has to be inside the goal.
+- **Flight**: The ball's trip. It rises, casts a shrinking shadow, and squashes when kicked. A Goal bulges the net. The arc does not change the result.
+- **Keeper**: The glove in the goal mouth. On levels 1–5 he freezes when the finger goes down. From level 6 he keeps moving during the swipe, then dives toward the landing point but stops short, so the far post always has room for a ball. The dive stays up until the ball is back.
+- **Reach**: The band around the Keeper that turns a landing in the goal into a Save. The softest Shot widens it to about 1.6× his body. Full Power narrows it to his body. In between, it shrinks in a straight line.
+- **Goal**: A Shot that lands in the goal mouth, outside the Keeper's Reach.
+- **Save**: A Shot that lands in the goal mouth, inside the Keeper's Reach. It plays a short glove thud.
+- **Miss**: A Shot that lands outside the goal mouth. It is silent.
+- **Star**: The rating of a finished round. Each Save or Miss costs one. None left is 3 stars, one or two left is 2 stars, and more is 1 star. The round cannot be lost. The win screen shows the stars for the round just played.
+- **Best Stars**: The highest Star count earned on a Soccer level. Remembered for Soccer only. Shown as up to three pips under that level's number. An unplayed level has none. A worse replay does not lower them. On a mastered level 10 the graduation cap stays, with the pips under it.
+- **Streak**: Consecutive Goals. A Save or a Miss clears it.
 
 ## Brain Trainers (shared)
 
