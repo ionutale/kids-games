@@ -25,6 +25,8 @@
   let timer = null;
   let deadline = 0;
   let remainingMs = 0;
+  let busy = false;
+  let roundToken = 0;
 
   const card = $derived(deck[index]);
 
@@ -51,19 +53,27 @@
   }
 
   async function advance() {
+    if (busy) return;
+    busy = true;
+    const token = roundToken;
     clearTimer();
-    if (index + 1 >= deck.length) {
-      won = true;
-      return;
+    try {
+      if (index + 1 >= deck.length) {
+        won = true;
+        return;
+      }
+      index += 1;
+      remainingMs = config.windowMs;
+      await tick(); // the {#key index} block remounts the bar — arm the NEW element
+      if (token !== roundToken) return;
+      armWindow(config.windowMs);
+    } finally {
+      if (token === roundToken) busy = false;
     }
-    index += 1;
-    remainingMs = config.windowMs;
-    await tick(); // the {#key index} block remounts the bar — arm the NEW element
-    armWindow(config.windowMs);
   }
 
   function answer(saysSame) {
-    if (won) return;
+    if (won || busy || !card) return;
     if (saysSame === card.same) {
       playAdvancePop();
       remainingMs = config.windowMs;
@@ -91,6 +101,8 @@
   }
 
   function resetRound() {
+    roundToken += 1;
+    busy = false;
     clearTimer();
     index = 0;
     won = false;
