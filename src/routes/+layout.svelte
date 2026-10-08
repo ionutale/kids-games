@@ -1,5 +1,6 @@
 <script>
   import { onMount } from 'svelte';
+  import { dev } from '$app/environment';
   import { settings } from '$lib/stores/settings';
   import { _ } from '$lib/stores/locale';
   import '../app.css';
@@ -19,15 +20,18 @@
       showInstall = false;
     });
 
-    // When a new service worker takes over (post-deploy), reload once so the
-    // app shell always matches the routes — prevents stale-shell dead buttons.
-    if ('serviceWorker' in navigator) {
+    // Production only: `vite dev` has no sw.js. One registration precaches the
+    // whole build, so every game works offline after a single online visit.
+    if (!dev && 'serviceWorker' in navigator) {
       let refreshing = false;
+      // A new worker taking over means the shell changed; reload once so
+      // routes match the cached build.
       navigator.serviceWorker.addEventListener('controllerchange', () => {
         if (refreshing) return;
         refreshing = true;
         location.reload();
       });
+      navigator.serviceWorker.register('/sw.js', { scope: '/' }).catch(() => {});
     }
   });
 

@@ -7,7 +7,15 @@ export default defineConfig({
     sveltekit(),
     SvelteKitPWA({
       registerType: 'autoUpdate',
-      includeAssets: ['**/*'],
+      // Registration is done from the root layout. SvelteKit writes index.html
+      // after Vite's HTML transform, so an injected registerSW.js tag never lands.
+      injectRegister: null,
+      kit: {
+        // SPA: the static adapter emits index.html after this plugin runs.
+        // Precache it as "/" so every /games/* navigation works offline.
+        adapterFallback: 'index.html',
+        spa: { fallbackMapping: '/' }
+      },
       manifest: {
         name: 'Kids Games',
         short_name: 'KidsGames',
@@ -23,7 +31,14 @@ export default defineConfig({
         ]
       },
       workbox: {
-        globPatterns: ['**/*.{js,css,html,ico,png,svg,webp,woff2}']
+        // Every built file and every static asset, so one online visit caches
+        // the whole app: routes, fonts, puzzle photos, and sounds.
+        globPatterns: [
+          '**/*.{js,css,html,ico,png,svg,webp,jpg,jpeg,gif,mp3,wav,ogg,woff,woff2,webmanifest,json,txt}'
+        ],
+        globIgnores: ['**/.DS_Store', 'server/**', '**/*.map'],
+        navigateFallback: '/',
+        maximumFileSizeToCacheInBytes: 3 * 1024 * 1024
       }
     })
   ]
