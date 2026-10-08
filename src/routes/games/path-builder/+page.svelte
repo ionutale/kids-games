@@ -126,9 +126,10 @@
   }
 
   function restartPuzzle() {
-    path = [];
+    if (!puzzle || complete) return;
+    // The path always includes Start. An empty path fails every later tap.
+    path = [{ r: puzzle.start.r, c: puzzle.start.c }];
     hint = null;
-    complete = false;
   }
 
   onMount(() => {
