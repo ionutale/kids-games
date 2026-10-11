@@ -12,12 +12,13 @@
     '/games/glossary-puzzle/play/' + level + '?image=' + encodeURIComponent(image.id)
   );
 
-  // Vertical/horizontal cut positions as percentages of the square frame.
+  // Interior cut lines in grid units (the SVG viewBox is cols × rows and stretches
+  // over the full, uncropped picture box, so cells divide it evenly at any aspect).
   const vCuts = $derived(
-    Array.from({ length: Math.max(0, config.cols - 1) }, (_, i) => ((i + 1) * 100) / config.cols)
+    Array.from({ length: Math.max(0, config.cols - 1) }, (_, i) => i + 1)
   );
   const hCuts = $derived(
-    Array.from({ length: Math.max(0, config.rows - 1) }, (_, i) => ((i + 1) * 100) / config.rows)
+    Array.from({ length: Math.max(0, config.rows - 1) }, (_, i) => i + 1)
   );
 
   // Backdrop dismiss: only a click on the overlay itself (not its contents) closes.
@@ -43,12 +44,12 @@
 
     <div class="gp-preview-frame">
       <img class="gp-preview-img" src={image.file} alt={image.name} />
-      <svg class="gp-preview-grid" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+      <svg class="gp-preview-grid" viewBox="0 0 {config.cols} {config.rows}" preserveAspectRatio="none" aria-hidden="true">
         {#each vCuts as x}
-          <line x1={x} y1="0" x2={x} y2="100" />
+          <line x1={x} y1="0" x2={x} y2={config.rows} />
         {/each}
         {#each hCuts as y}
-          <line x1="0" y1={y} x2="100" y2={y} />
+          <line x1="0" y1={y} x2={config.cols} y2={y} />
         {/each}
       </svg>
     </div>
@@ -109,18 +110,16 @@
   .gp-preview-close:active { background: rgba(94, 234, 212, 0.25); border-color: var(--accent); }
   .gp-preview-frame {
     position: relative;
-    width: min(78vw, 320px);
-    aspect-ratio: 1;
     border-radius: 14px;
     overflow: hidden;
     background: #f0f0f0;
   }
   .gp-preview-img {
-    position: absolute;
-    inset: 0;
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
+    display: block;
+    width: auto;
+    height: auto;
+    max-width: min(86vw, 640px);
+    max-height: 55vh;
   }
   .gp-preview-grid {
     position: absolute;
