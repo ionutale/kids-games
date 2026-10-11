@@ -40,15 +40,25 @@ test.describe('Glossary Puzzle E2E', () => {
 
   test('image cards carry the selected level', async ({ page }) => {
     await page.goto('/games/glossary-puzzle?level=4');
-    const href = await page.locator('.gp-image-card').first().getAttribute('href');
+    await page.locator('.gp-image-card').first().click();
+    await expect(page.locator('.gp-preview')).toBeVisible();
+    const href = await page.locator('.gp-preview-start').getAttribute('href');
     expect(href).toMatch(/\/play\/4\?image=/);
+    // close via the documented backdrop tap (top-left corner, clear of the card)
+    await page.locator('.gp-preview').click({ position: { x: 5, y: 5 } });
+    await expect(page.locator('.gp-preview')).toBeHidden();
   });
 
   test('category filter works', async ({ page }) => {
     await page.goto('/games/glossary-puzzle');
-    await page.locator('.gp-cat-btn').first().click();
+    await page.locator('.gp-cat-btn[data-cat="nature"]').click();
     await page.waitForTimeout(200);
     await expect(page.locator('.gp-image-card').first()).toBeVisible();
+    const cats = await page
+      .locator('.gp-image-card')
+      .evaluateAll((els) => els.map((el) => el.getAttribute('data-cat')));
+    expect(cats.length).toBeGreaterThan(0);
+    for (const cat of cats) expect(cat).toBe('nature');
   });
 
   test('level page renders its grid density and default image', async ({ page }) => {

@@ -8,7 +8,7 @@
   const R = 46;
   const CIRC = 2 * Math.PI * R;
 
-  let { onpass } = $props();
+  let { onpass, children } = $props();
 
   let progress = $state(0);
   let holding = $state(false);
