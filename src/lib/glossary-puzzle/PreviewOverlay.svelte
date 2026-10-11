@@ -131,6 +131,8 @@
     width: 100%;
     height: 100%;
     pointer-events: none;
+    /* Base opacity 0 so the single-run fade ends invisible (no fill-mode needed). */
+    opacity: 0;
     animation: gpGridFade 2.4s ease-in-out;
   }
   .gp-preview-grid line {
@@ -139,8 +141,8 @@
     vector-effect: non-scaling-stroke;
   }
   @keyframes gpGridFade {
-    0%, 100% { opacity: 0.3; }
-    50% { opacity: 1; }
+    0%, 100% { opacity: 0; }
+    50% { opacity: 0.85; }
   }
   .gp-preview-name {
     font-family: var(--font-display);
