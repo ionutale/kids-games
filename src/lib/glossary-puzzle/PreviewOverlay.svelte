@@ -110,6 +110,9 @@
   .gp-preview-close:active { background: rgba(94, 234, 212, 0.25); border-color: var(--accent); }
   .gp-preview-frame {
     position: relative;
+    width: fit-content;
+    max-width: 100%;
+    min-width: 0;
     border-radius: 14px;
     overflow: hidden;
     background: #f0f0f0;
@@ -118,7 +121,7 @@
     display: block;
     width: auto;
     height: auto;
-    max-width: min(86vw, 640px);
+    max-width: 100%;
     max-height: 55vh;
   }
   .gp-preview-grid {
