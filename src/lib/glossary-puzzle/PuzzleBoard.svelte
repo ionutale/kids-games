@@ -14,6 +14,7 @@
   import { saveLevel, saveMastered, MAX_LEVEL } from '$lib/ladder/progress.js';
   import { generatePieces, computeVisibleTray, isWithinSnapZone, pickNudgeTarget, TRAY_CAPACITY, VIRTUAL_W, VIRTUAL_H } from '$lib/glossary-puzzle/pieces.js';
   import { buildSaveData, writeSave } from '$lib/glossary-puzzle/save.js';
+  import { recordSolved } from '$lib/glossary-puzzle/solved.js';
   import { pieceSvgHtml, boardLinesSvgHtml } from '$lib/glossary-puzzle/rendering.js';
 
   const GHOST_LIFT_PX = 26;
@@ -252,6 +253,7 @@
     celebrating = true;
     if (soundsLoaded) playVictory();
     saveLevel('glossary-puzzle', level);
+    recordSolved(image.id, level);
     if (level >= MAX_LEVEL) saveMastered('glossary-puzzle');
     onWin();
     setTimeout(() => { showDone = true; celebrating = false; }, 2000);
