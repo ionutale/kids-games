@@ -328,7 +328,7 @@ Tests (one `test.describe('Glossary Puzzle — My Photos')`; drive the gate with
 
 - [ ] **Step 1: Add the seven tests:**
   1. **gate timing** — 1s hold on `.gp-lock-card` → `.gp-photos-manager` hidden; 3.2s hold → visible.
-  2. **add + play** — gate open; `setInputFiles` on `.gp-photos-input` with the PNG → one `.gp-photo-item`; close manager; click the chip `.gp-cat-btn[data-cat="myPhotos"]`; card `[data-id^="photo:"]` visible; click it → `.gp-preview` + `.gp-preview-start` href `/\/play\/1\?image=photo/`; capture the href, extract the id.
+  2. **add + play** — gate open; `setInputFiles` on `.gp-photos-input` with the PNG → one `.gp-photo-item`; close manager; click the chip `.gp-cat-btn[data-cat="myPhotos"]`; card `[data-id^="photo:"]` visible; click it → `.gp-preview` + `.gp-preview-start` href `/\/play\/1\?image=photo/`; capture the href, extract the id; close via `.gp-preview-close` and assert `.gp-preview` hidden (the ✕ must sit above the picture).
   3. **error file** — add `not-a-photo.bin` → `.gp-photos-error` visible, `.gp-photo-item` count unchanged.
   4. **resume with a photo** — with the photo added, `goto('/games/glossary-puzzle/play/1?image=' + id + '&place=0-0&debug=1')` → HUD `1/4`; back to gallery → `.gp-resume-btn` visible → click → URL has `resume=1` → HUD `1/4`.
   5. **badge ✓ + gold** — solve L1 for the photo via `place=0-0,0-1,1-0,1-1&debug=1` → win overlay → gallery: `[data-id="<id>"] .gp-badge-check` visible. Then seed `localStorage` `glossary-puzzle-solved` `{"garden":10}` and open `/games/glossary-puzzle?level=10` → `.gp-badge-gold` on the garden card.
