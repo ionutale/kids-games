@@ -1,6 +1,8 @@
 // Puzzle image definitions using downloaded CC0 images
 // Images from Pixabay / Unsplash (CC0 / Public Domain)
 
+import { getPhoto } from './photos.js';
+
 export const PUZZLE_IMAGES = [
   {
     id: 'garden',
@@ -152,6 +154,21 @@ export function revokeVM(vm) {
   if (vm?.source !== 'photo') return;
   URL.revokeObjectURL(vm.file);
   URL.revokeObjectURL(vm.thumb);
+}
+
+// One entry point for both sources of puzzle art. A builtin id resolves to its
+// VM immediately; a `photo:<uuid>` id is loaded from IndexedDB and mapped the
+// same way the gallery does it, so the play page gets an identical VM shape.
+// Anything else — including a since-deleted photo — resolves to null so callers
+// can fall back to a rotation.
+export async function resolveImage(id, t = (k) => k) {
+  const builtin = PUZZLE_IMAGES.find(img => img.id === id);
+  if (builtin) return builtinToVM(builtin);
+  if (typeof id === 'string' && id.startsWith('photo:')) {
+    const record = await getPhoto(id.slice('photo:'.length));
+    return record ? photoToVM(record, t) : null;
+  }
+  return null;
 }
 
 // Level = difficulty step (unbounded): grid grows and snap tightens with N.
