@@ -28,13 +28,24 @@
         ? String(saved.level)
         : params.get('level');
       const level = Math.min(MAX_LEVEL, Math.max(1, parseInt(levelParam, 10) || 1));
-      // A save whose picture no longer resolves (deleted photo) is ignored; the
-      // `?image=` param then takes over, or we redirect. Never crashes.
-      const savedImage = saved?.imageId ? await resolveImage(saved.imageId, get(_)) : null;
+      // A storage failure (IndexedDB blocked/evicted) must degrade exactly like
+      // an unresolvable photo: ignore the save, then try `?image=`, else redirect.
+      let savedImage = null;
+      if (saved?.imageId) {
+        try {
+          savedImage = await resolveImage(saved.imageId, get(_));
+        } catch {
+          savedImage = null;
+        }
+      }
       let image = savedImage;
       let initialPlaced = savedImage && Array.isArray(saved.placedIds) ? saved.placedIds : null;
       if (!image && requested) {
-        image = await resolveImage(requested, get(_));
+        try {
+          image = await resolveImage(requested, get(_));
+        } catch {
+          image = null;
+        }
         initialPlaced = null;
       }
       if (!alive) return;

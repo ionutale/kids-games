@@ -32,7 +32,16 @@
       const requested = params.get('image');
       const lvl = Math.min(MAX_LEVEL, Math.max(1, parseInt($page.params.level, 10) || 1));
       const resume = params.get('resume') === '1';
-      const vm = requested?.startsWith('photo:') ? await resolveImage(requested, get(_)) : null;
+      // A storage failure (IndexedDB blocked/evicted) must degrade exactly like
+      // an unresolvable photo — never reject out of the effect and blank the page.
+      let vm = null;
+      if (requested?.startsWith('photo:')) {
+        try {
+          vm = await resolveImage(requested, get(_));
+        } catch {
+          vm = null;
+        }
+      }
       if (!alive) return;
       const image = vm
         ?? PUZZLE_IMAGES.find(i => i.id === requested)
