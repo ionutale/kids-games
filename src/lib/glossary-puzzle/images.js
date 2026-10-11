@@ -66,11 +66,11 @@ export const PUZZLE_IMAGES = [
     file: '/puzzles/08-transport.jpg',
     thumbEmoji: '🚂',
   },
-  // Blippi promo images supplied by the project owner (personal use).
+  // Show-character promo images supplied by the project owner (personal use).
   {
     id: 'blippi',
     name: 'Blippi',
-    category: 'blippi',
+    category: 'shows',
     icon: '🧢',
     file: '/puzzles/09-blippi.jpg',
     thumbEmoji: '🧢',
@@ -78,28 +78,35 @@ export const PUZZLE_IMAGES = [
   {
     id: 'blippi-happy',
     name: 'Blippi Happy',
-    category: 'blippi',
+    category: 'shows',
     icon: '👍',
     file: '/puzzles/10-blippi-happy.jpg',
     thumbEmoji: '👍',
   },
 ];
 
-const CATEGORY_META = {
-  nature: { icon: '🌿' },
-  adventure: { icon: '🧭' },
-  food: { icon: '🍎' },
-  animals: { icon: '🐾' },
-  blippi: { icon: '🧢' },
+// Category key → chip icon. `myPhotos` is user content (no builtins yet), so its
+// icon is a literal. Keys double as the merge order in CATEGORY_ORDER below.
+export const CATEGORY_META = {
+  myPhotos: '⭐',
+  nature: '🌿',
+  adventure: '🧭',
+  food: '🍎',
+  animals: '🐾',
+  vehicles: '🚌',
+  shows: '🧢',
 };
+
+// Merge/display order: user photos first, then builtins by category. Unknown
+// categories (not listed here) are appended last by buildImageList.
+export const CATEGORY_ORDER = ['myPhotos', 'nature', 'animals', 'food', 'adventure', 'vehicles', 'shows'];
 
 export function getCategories() {
   const cats = {};
   PUZZLE_IMAGES.forEach(img => {
     if (!cats[img.category]) {
-      const meta = CATEGORY_META[img.category] || { icon: img.icon };
       cats[img.category] = {
-        icon: meta.icon,
+        icon: CATEGORY_META[img.category] || img.icon,
         name: img.category.charAt(0).toUpperCase() + img.category.slice(1),
         images: [],
       };
@@ -107,6 +114,44 @@ export function getCategories() {
     cats[img.category].images.push(img);
   });
   return Object.entries(cats).map(([key, val]) => ({ key, ...val }));
+}
+
+// A builtin entry already has `file` (a plain URL, no lifetime to manage), so its
+// VM just reuses that URL as the thumb and tags itself for revokeVM to skip.
+function builtinToVM(img) {
+  return { ...img, thumb: img.file, source: 'builtin' };
+}
+
+// Single view model for both builtins and user photos: the gallery and the board
+// never need to know which is which except through `source`.
+export function buildImageList(builtins = PUZZLE_IMAGES, photoVMs = []) {
+  const known = CATEGORY_ORDER.flatMap(cat =>
+    builtins.filter(img => img.category === cat).map(builtinToVM)
+  );
+  const unknown = builtins
+    .filter(img => !CATEGORY_ORDER.includes(img.category))
+    .map(builtinToVM);
+  return [...photoVMs, ...known, ...unknown];
+}
+
+export function photoToVM(record, t) {
+  return {
+    id: 'photo:' + record.id,
+    name: t('photoName', { n: record.seq }),
+    category: 'myPhotos',
+    icon: '⭐',
+    file: URL.createObjectURL(record.blob),
+    thumb: URL.createObjectURL(record.thumb),
+    source: 'photo',
+  };
+}
+
+// Object URLs leak until explicitly revoked; builtin `file`s are static paths and
+// must be left alone.
+export function revokeVM(vm) {
+  if (vm?.source !== 'photo') return;
+  URL.revokeObjectURL(vm.file);
+  URL.revokeObjectURL(vm.thumb);
 }
 
 // Level = difficulty step (unbounded): grid grows and snap tightens with N.
