@@ -324,7 +324,7 @@ Render the board only when `state.ready && state.image`, still wrapped in `{#key
 **Interfaces:**
 - Consumes: DOM contracts from Tasks 6–9; `?place=` + `?debug=1` seam (existing); localStorage keys `glossary-puzzle-save`, `glossary-puzzle-solved`.
 
-Tests (one `test.describe('Glossary Puzzle — My Photos')`; drive the gate with raw pointer events like the existing `GP-touch-pickup` test — `pointerdown` on `.gp-lock-card`, wait, `pointerup`):
+Tests (one `test.describe('Glossary Puzzle — My Photos')`; drive the gate with raw pointer events like the existing `GP-touch-pickup` test — `pointerdown` on `.gp-lock-card .gp-gate` (the handler lives on `.gp-gate`), wait, `pointerup`):
 
 - [ ] **Step 1: Add the seven tests:**
   1. **gate timing** — 1s hold on `.gp-lock-card` → `.gp-photos-manager` hidden; 3.2s hold → visible.
