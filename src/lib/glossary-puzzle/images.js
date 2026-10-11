@@ -36,6 +36,24 @@ export const PUZZLE_IMAGES = [
     file: '/puzzles/04-farm.jpg',
     thumbEmoji: '🌾',
   },
+  // Pexels (free license) #5513326 — https://www.pexels.com/photo/5513326/
+  {
+    id: 'butterfly',
+    name: 'Butterfly',
+    category: 'nature',
+    icon: '🦋',
+    file: '/puzzles/butterfly.jpg',
+    thumbEmoji: '🦋',
+  },
+  // Pexels (free license) #6134011 — https://www.pexels.com/photo/6134011/
+  {
+    id: 'rainbow',
+    name: 'Rainbow',
+    category: 'nature',
+    icon: '🌈',
+    file: '/puzzles/rainbow.jpg',
+    thumbEmoji: '🌈',
+  },
   {
     id: 'jungle',
     name: 'Jungle',
@@ -52,6 +70,24 @@ export const PUZZLE_IMAGES = [
     file: '/puzzles/06-food.jpg',
     thumbEmoji: '🍎',
   },
+  // Pexels (free license) #6978242 — https://www.pexels.com/photo/6978242/
+  {
+    id: 'fruits',
+    name: 'Fruits',
+    category: 'food',
+    icon: '🍓',
+    file: '/puzzles/fruits.jpg',
+    thumbEmoji: '🍓',
+  },
+  // Pexels (free license) #11128671 — https://www.pexels.com/photo/11128671/
+  {
+    id: 'cupcakes',
+    name: 'Cupcakes',
+    category: 'food',
+    icon: '🧁',
+    file: '/puzzles/cupcakes.jpg',
+    thumbEmoji: '🧁',
+  },
   {
     id: 'pets',
     name: 'Pets',
@@ -60,6 +96,42 @@ export const PUZZLE_IMAGES = [
     file: '/puzzles/07-pets.jpg',
     thumbEmoji: '🐶',
   },
+  // Pexels (free license) #8014537 — https://www.pexels.com/photo/8014537/
+  {
+    id: 'dinosaurs',
+    name: 'Dinosaurs',
+    category: 'animals',
+    icon: '🦖',
+    file: '/puzzles/dinosaurs.jpg',
+    thumbEmoji: '🦖',
+  },
+  // Pexels (free license) #144608 — https://www.pexels.com/photo/144608/
+  {
+    id: 'puppy',
+    name: 'Puppy',
+    category: 'animals',
+    icon: '🐶',
+    file: '/puzzles/puppy.jpg',
+    thumbEmoji: '🐶',
+  },
+  // Pexels (free license) #6900232 — https://www.pexels.com/photo/6900232/
+  {
+    id: 'kitten',
+    name: 'Kitten',
+    category: 'animals',
+    icon: '🐱',
+    file: '/puzzles/kitten.jpg',
+    thumbEmoji: '🐱',
+  },
+  // Pexels (free license) #13024199 — https://www.pexels.com/photo/13024199/
+  {
+    id: 'sea-turtle',
+    name: 'Sea Turtle',
+    category: 'animals',
+    icon: '🐢',
+    file: '/puzzles/sea-turtle.jpg',
+    thumbEmoji: '🐢',
+  },
   {
     id: 'transport',
     name: 'Transport',
@@ -67,6 +139,85 @@ export const PUZZLE_IMAGES = [
     icon: '🚂',
     file: '/puzzles/08-transport.jpg',
     thumbEmoji: '🚂',
+  },
+  // Pexels (free license) #18015296 — https://www.pexels.com/photo/18015296/
+  {
+    id: 'rocket',
+    name: 'Rocket',
+    category: 'adventure',
+    icon: '🚀',
+    file: '/puzzles/rocket.jpg',
+    thumbEmoji: '🚀',
+  },
+  // Pexels (free license) #23881493 — https://www.pexels.com/photo/23881493/
+  {
+    id: 'pirate-ship',
+    name: 'Pirate Ship',
+    category: 'adventure',
+    icon: '🏴‍☠️',
+    file: '/puzzles/pirate-ship.jpg',
+    thumbEmoji: '🏴‍☠️',
+  },
+  // Vehicles — stock photos (Pexels, free license).
+  // Pexels #12274597 — https://www.pexels.com/photo/12274597/
+  {
+    id: 'fire-truck',
+    name: 'Fire Truck',
+    category: 'vehicles',
+    icon: '🚒',
+    file: '/puzzles/fire-truck.jpg',
+    thumbEmoji: '🚒',
+  },
+  // Pexels #30751525 — https://www.pexels.com/photo/30751525/
+  {
+    id: 'digger',
+    name: 'Digger',
+    category: 'vehicles',
+    icon: '🚜',
+    file: '/puzzles/digger.jpg',
+    thumbEmoji: '🚜',
+  },
+  // Vehicles — original flat-style character illustrations authored for this
+  // project (no third-party or branded characters).
+  {
+    id: 'vc-train',
+    name: 'Train Buddy',
+    category: 'vehicles',
+    icon: '🚂',
+    file: '/puzzles/characters/vc-train.svg',
+    thumbEmoji: '🚂',
+  },
+  {
+    id: 'vc-bus',
+    name: 'Bus Buddy',
+    category: 'vehicles',
+    icon: '🚌',
+    file: '/puzzles/characters/vc-bus.svg',
+    thumbEmoji: '🚌',
+  },
+  {
+    id: 'vc-monster-truck',
+    name: 'Monster Truck',
+    category: 'vehicles',
+    icon: '🛻',
+    file: '/puzzles/characters/vc-monster-truck.svg',
+    thumbEmoji: '🛻',
+  },
+  {
+    id: 'vc-fire-engine',
+    name: 'Fire Engine',
+    category: 'vehicles',
+    icon: '🚒',
+    file: '/puzzles/characters/vc-fire-engine.svg',
+    thumbEmoji: '🚒',
+  },
+  {
+    id: 'vc-digger',
+    name: 'Digger Buddy',
+    category: 'vehicles',
+    icon: '🚜',
+    file: '/puzzles/characters/vc-digger.svg',
+    thumbEmoji: '🚜',
   },
   // Show-character promo images supplied by the project owner (personal use).
   {

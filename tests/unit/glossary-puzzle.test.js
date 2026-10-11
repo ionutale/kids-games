@@ -5,7 +5,7 @@ import { buildSaveData, restorePlaced } from '$lib/glossary-puzzle/save.js';
 import { makeRng } from '$lib/trainers/rng.js';
 
 describe('Puzzle images', () => {
-  it('has 10 images', () => expect(PUZZLE_IMAGES.length).toBe(10));
+  it('has 27 images', () => expect(PUZZLE_IMAGES.length).toBe(27));
   it('each image has id, name, category, icon, file', () => {
     PUZZLE_IMAGES.forEach(img => {
       expect(img.id).toBeTruthy();
@@ -13,7 +13,7 @@ describe('Puzzle images', () => {
       expect(img.category).toBeTruthy();
     });
   });
-  it('has 5 categories', () => expect(getCategories().length).toBe(5));
+  it('has 6 categories', () => expect(getCategories().length).toBe(6));
   it('category names are capitalized and have icons', () => {
     getCategories().forEach(c => {
       expect(c.name[0]).toBe(c.name[0].toUpperCase());

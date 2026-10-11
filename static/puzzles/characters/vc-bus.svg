@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600" width="800" height="600" role="img" aria-label="Bus Buddy">
+  <!-- two-tone background: pastel sky band (~2/3) over ground band (~1/3) -->
+  <rect width="800" height="600" fill="#B3E5FC"/>
+  <rect y="410" width="800" height="190" fill="#A5D6A7"/>
+  <rect y="410" width="800" height="26" fill="#81C784"/>
+  <g fill="#FFFFFF" opacity="0.95">
+    <ellipse cx="170" cy="100" rx="72" ry="32"/>
+    <ellipse cx="236" cy="86" rx="48" ry="24"/>
+    <ellipse cx="600" cy="150" rx="60" ry="26"/>
+  </g>
+  <!-- wheels -->
+  <g fill="#37474F">
+    <circle cx="250" cy="452" r="54"/>
+    <circle cx="560" cy="452" r="54"/>
+  </g>
+  <g fill="#B0BEC5">
+    <circle cx="250" cy="452" r="20"/>
+    <circle cx="560" cy="452" r="20"/>
+  </g>
+  <!-- body -->
+  <rect x="110" y="210" width="580" height="200" rx="46" fill="#FFD54F"/>
+  <rect x="110" y="358" width="580" height="32" fill="#4FC3F7"/>
+  <g fill="#B3E5FC">
+    <rect x="148" y="246" width="112" height="92" rx="18"/>
+    <rect x="286" y="246" width="112" height="92" rx="18"/>
+    <rect x="424" y="246" width="112" height="92" rx="18"/>
+  </g>
+  <!-- cute face on the body -->
+  <circle cx="592" cy="292" r="14" fill="#37474F"/>
+  <circle cx="648" cy="292" r="14" fill="#37474F"/>
+  <path d="M 580 330 Q 620 362 660 330" fill="none" stroke="#37474F" stroke-width="12" stroke-linecap="round"/>
+</svg>
