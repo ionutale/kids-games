@@ -32,7 +32,7 @@ The image jigsaw's pictures are its content and its interface, but today's journ
 
 - Category chip row (wrap, emoji-first): **All · My Photos ⭐ · Nature 🌿 · Animals 🐾 · Food 🍎 · Adventure 🧭 · Vehicles 🚌 · Shows 🧢** — only categories that have images, plus All/My Photos always. Tapping the active chip returns to All.
 - "My Photos" chip is **always visible** (it is the only door into the parent flow). The add-photo card lives inside the My Photos category view.
-- Cards: 2-column grid, **4:3 thumbnail** (`<img loading="lazy" decoding="async">`), name small under the thumb. Badge overlays:
+- Cards: 2-column grid, **4:3 thumbnail** (`<img loading="lazy" decoding="async">`), name small under the thumb. The card is a `<button>` (no href) — the play URL lives on the preview's Start (§2). Badge overlays:
   - `check` → small ✓ badge (top-right).
   - `gold` → gold border + 🎓 badge.
 - **Continue card** at the top when a save exists: picture thumb + progress ring + `placed/total` (total = `cols*rows` from `levelConfig(save.level)`), tap → straight to the board (`?resume=1` handoff, existing flow). If the saved image no longer resolves (deleted photo), `clearSave()` and skip the card — never crash.
@@ -118,7 +118,7 @@ Pages:
 - **Vehicle characters (5)**: train, bus, monster truck, fire engine, digger — authored **flat SVG originals** in `static/puzzles/characters/` (e.g. `vc-train.svg`, 800×600 viewBox, rounded shapes, bright palette, friendly faces). Originals only — not copies of Bob the Train/Pinkfong/Gecko's Garage. SVGs render natively in the board background and the SVG pieces, and stay crisp at every level. If authored art proves weak, fallback: CC0 packs (e.g. Kenney) — not branded characters.
 - **Owner-supplied real characters**: files dropped into `static/puzzles/` (e.g. `11-<name>.jpg`) + one `PUZZLE_IMAGES` entry under `shows`, exactly like Blippi. Accepted: repo is public; entries get a "supplied by the project owner (personal use)" comment.
 - **How-to**: `docs/how-to-add-puzzle-images.md` — drop file, add entry (name/category/icon), run tests — so adding an image is a 5-minute repeatable task.
-- PWA precache picks up new `static/puzzles/**` automatically (glob includes jpg/png/svg); no config change.
+- PWA precache picks up new `static/puzzles/**` automatically (glob includes jpg/png/svg). Repo asset convention: shipped files live in `static/puzzles/` **and** the built copies in `public/puzzles/` are tracked — run `pnpm build` so `public/` (including `sw.js` precache) is regenerated and commit both, like the Blippi images did.
 
 ## 7. Locale strings
 
@@ -181,7 +181,7 @@ Unchanged: `pieces.js`, `rendering.js` (SVG pieces already accept any image URL)
   6. Badge: complete → ✓ on the card; recorded level 10 → gold.
   7. Deleted-photo-with-live-save → gallery renders, save cleared, no crash.
 - **Manual iPhone checklist**: HEIC add works; long-press gate shows no iOS callout; offline reload keeps photos and plays; thumbnails lazy-load.
-- **Gates**: `pnpm check`, `pnpm lint`, `pnpm test`, `pnpm test:e2e` all green; existing glossary-puzzle e2e untouched and passing.
+- **Gates**: `pnpm check`, `pnpm lint`, `pnpm test`, `pnpm test:e2e` all green. Existing glossary-puzzle tests are updated in the same commits where behavior intentionally changes (card href moves to the preview's Start; the illustrated category pick test targets a real category; image/category counts); everything else in every suite stays untouchable-green.
 
 **Done means:** a kid reaches Start in ≤2 taps from the shelf; a parent adds a phone photo in under a minute; photos survive restarts and offline; deep links and resume never break on a deleted photo.
 
