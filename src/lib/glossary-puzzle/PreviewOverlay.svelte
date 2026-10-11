@@ -94,6 +94,7 @@
     position: absolute;
     top: 8px;
     right: 8px;
+    z-index: 1;
     width: 44px;
     height: 44px;
     min-width: 44px;
