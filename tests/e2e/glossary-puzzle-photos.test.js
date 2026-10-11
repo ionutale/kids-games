@@ -181,4 +181,21 @@ test.describe('Glossary Puzzle — My Photos', () => {
     const trayHref = await page.locator('.gp-tray-piece svg image').first().getAttribute('href');
     expect(trayHref).toContain('vc-train.svg');
   });
+
+  test('builtins still render when IndexedDB is unavailable', async ({ page }) => {
+    // Builtins need no IndexedDB, so a blocked/absent store must not empty the
+    // gallery or crash the page — the grid is seeded synchronously (§10.3).
+    await page.addInitScript(() => {
+      Object.defineProperty(window, 'indexedDB', {
+        configurable: true,
+        get() {
+          throw new Error('IDB blocked');
+        },
+      });
+    });
+    await page.goto('/games/glossary-puzzle');
+    await expect(page.locator('.gp-gallery')).toBeVisible();
+    await expect(page.locator('.gp-image-card[data-id="garden"]')).toBeVisible();
+    expect(await page.locator('.gp-image-card').count()).toBeGreaterThanOrEqual(27);
+  });
 });

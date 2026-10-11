@@ -48,7 +48,7 @@
         }
         initialPlaced = null;
       }
-      if (!alive) return;
+      if (!alive) { revokeVM(image); return; }
       if (!image) { goto('/games/glossary-puzzle'); return; }
       state = { image, initialPlaced, level, ready: true };
     })();

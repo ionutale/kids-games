@@ -66,7 +66,7 @@
 
 <div class="gp-photos-manager" role="dialog" aria-modal="true" aria-label={$_('forGrownUps')}>
   <div class="gp-photos-card">
-    <button class="gp-photos-close" type="button" aria-label={$_('back')} onclick={close}>✕</button>
+    <button class="gp-photos-close" type="button" aria-label={$_('close')} onclick={close}>✕</button>
 
     <h2 class="gp-photos-title">{$_('myPhotos')}</h2>
 

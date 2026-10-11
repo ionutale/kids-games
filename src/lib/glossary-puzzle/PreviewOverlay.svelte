@@ -40,7 +40,7 @@
 <!-- svelte-ignore a11y_no_static_element_interactions -->
 <div class="gp-preview" onclick={handleBackdrop}>
   <div class="gp-preview-card">
-    <button class="gp-preview-close" type="button" aria-label="Close" onclick={onclose}>✕</button>
+    <button class="gp-preview-close" type="button" aria-label={$_('close')} onclick={onclose}>✕</button>
 
     <div class="gp-preview-frame">
       <img class="gp-preview-img" src={image.file} alt={image.name} />
@@ -131,7 +131,7 @@
     width: 100%;
     height: 100%;
     pointer-events: none;
-    animation: gpGridFade 2.4s ease-in-out infinite;
+    animation: gpGridFade 2.4s ease-in-out;
   }
   .gp-preview-grid line {
     stroke: rgba(255, 255, 255, 0.85);

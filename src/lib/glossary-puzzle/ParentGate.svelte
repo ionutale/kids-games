@@ -22,12 +22,17 @@
     const p = Math.min(1, (now - startTime) / HOLD_MS);
     progress = p;
     if (p >= 1) {
-      // Fire once per hold, then snap the ring back so the next press starts clean.
-      if (!fired) {
-        fired = true;
-        onpass?.();
+      // Fire once per hold, then snap the ring back so the next press starts
+      // clean. `finally` guarantees the hold is released even if `onpass` throws
+      // — otherwise `holding` would stay true and the gate would lock forever.
+      try {
+        if (!fired) {
+          fired = true;
+          onpass?.();
+        }
+      } finally {
+        stop();
       }
-      stop();
       return;
     }
     rafId = requestAnimationFrame(tick);

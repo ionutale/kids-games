@@ -42,7 +42,7 @@
           vm = null;
         }
       }
-      if (!alive) return;
+      if (!alive) { revokeVM(vm); return; }
       const image = vm
         ?? PUZZLE_IMAGES.find(i => i.id === requested)
         ?? PUZZLE_IMAGES[(lvl - 1) % PUZZLE_IMAGES.length];

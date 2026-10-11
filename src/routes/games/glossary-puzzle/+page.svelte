@@ -23,10 +23,17 @@
   import PhotosManager from '$lib/glossary-puzzle/PhotosManager.svelte';
   import { loadLevel, loadMastered, MAX_LEVEL } from '$lib/ladder/progress.js';
 
-  let images = $state([]);
+  // Builtins need no IndexedDB, so seed the grid synchronously: it renders on the
+  // first paint instead of flashing empty while `listPhotos()` is in flight (and
+  // still renders if `indexedDB.open` hangs). `refresh()` replaces it with the
+  // merged list once the photo read settles.
+  let images = $state(buildImageList(PUZZLE_IMAGES, []));
   // Object URLs we own and must revoke. Kept as a plain (non-reactive) array:
   // only `images` drives rendering, this is bookkeeping for teardown.
   let ownedVMs = [];
+  // Whether the last `listPhotos()` actually succeeded. A failed read means an
+  // absent photo id may be a false negative, so a save must not be cleared.
+  let photosLoaded = false;
   let activeCat = $state('all');
   let previewImage = $state(null);
   let managerOpen = $state(false);
@@ -82,21 +89,30 @@
       save = null;
       return;
     }
-    // A save whose picture no longer resolves (e.g. deleted photo) is dropped.
     if (images.some(i => i.id === data.imageId)) {
       save = data;
-    } else {
-      clearSave();
-      save = null;
+      return;
     }
+    // The picture is absent from the merged list. If the photo read failed, that
+    // absence may be a false negative (the photo could still exist on disk), so
+    // keep the save and just hide the card (no resolvable thumb). Only a save
+    // whose photo is genuinely gone from a *successful* read is dropped.
+    if (!photosLoaded) {
+      save = null;
+      return;
+    }
+    clearSave();
+    save = null;
   }
 
   async function refresh() {
     let records = [];
     try {
       records = await listPhotos();
+      photosLoaded = true;
     } catch {
       records = [];
+      photosLoaded = false;
     }
     // Revoke the previous batch before minting the new one — no leaked URLs.
     for (const vm of ownedVMs) revokeVM(vm);
@@ -124,6 +140,9 @@
     storeLevel = loadLevel('glossary-puzzle');
     mastered = loadMastered('glossary-puzzle');
     solvedMap = loadSolved();
+    // Resolve against the seeded builtins first so a builtin save shows its card
+    // without waiting on IndexedDB; `refresh()` re-resolves once photos arrive.
+    resolveSave();
     refresh();
   });
 
