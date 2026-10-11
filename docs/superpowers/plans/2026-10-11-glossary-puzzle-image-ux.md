@@ -208,7 +208,7 @@ How-to doc outline (short): 1) drop the file in `static/puzzles/`, 2) add the en
 - [ ] **Step 2: Add the 17 entries** to `images.js` with provenance comments; keep entries adjacent to their category's existing entries.
 - [ ] **Step 3: Update the two literal counts** in `tests/unit/glossary-puzzle.test.js`.
 - [ ] **Step 4: `pnpm test` → green.**
-- [ ] **Step 5: Smoke-check in dev** — `pnpm dev`, open `/games/glossary-puzzle/play/3?image=vc-train` and one new photo: board ghost + pieces render (SVG-in-SVG check; if a character SVG fails to render on **iPhone Safari** it was verified here in Chrome — flag for Task 11 manual checklist).
+- [ ] **Step 5: Build check** — `pnpm build` succeeds and the new assets are copied into `public/puzzles/` (do **not** commit `public/` in this task — Task 11 rebuilds and commits it). If a browser is available, spot-check `/games/glossary-puzzle/play/3?image=vc-train`; the visual iPhone Safari verification is the Task 11 human checklist.
 - [ ] **Step 6: Commit** — `git commit -m "feat(glossary-puzzle): grow the puzzle library (12 photos, 5 character illustrations)"`
 
 ---
@@ -255,7 +255,7 @@ How-to doc outline (short): 1) drop the file in `static/puzzles/`, 2) add the en
 
 **Interfaces:**
 - Consumes: everything above.
-- Produces (DOM contract): chips `.gp-cat-btn[data-cat]` (All first, then `myPhotos` always, then non-empty categories in `CATEGORY_ORDER`); cards `button.gp-image-card[data-id]` with `.gp-thumb` (`<img>`, 4:3, lazy) + `.gp-thumb-name` + optional `.gp-badge-check` / gold `.gp-badge-gold` (aria-label `$_('solved')`); Continue card keeps class `.gp-resume-btn` (thumb + ring + `placed/total`); My Photos view shows `.gp-lock-card` (wraps ParentGate, content: 🔒 + `$_('addPhotos')` + `$_('holdToAdd')`) with the grid after it; `noPhotos` empty text when none.
+- Produces (DOM contract): chips `.gp-cat-btn[data-cat]` (All first, then `myPhotos` always, then non-empty categories in `CATEGORY_ORDER`); cards `button.gp-image-card[data-id][data-cat]` with `.gp-thumb` (`<img>`, 4:3, lazy) + `.gp-thumb-name` + optional `.gp-badge-check` / gold `.gp-badge-gold` (aria-label `$_('solved')`); Continue card keeps class `.gp-resume-btn` (thumb + ring + `placed/total`); My Photos view shows `.gp-lock-card` (wraps ParentGate, content: 🔒 + `$_('addPhotos')` + `$_('holdToAdd')`) with the grid after it; `noPhotos` empty text when none.
 
 - [ ] **Step 1: Rework the page script** — state: `images`, `ownedVMs`, `activeCat='all'`, `previewImage=null`, `managerOpen=false`, `solvedMap`, `save`; `refresh()`: `listPhotos()` → `photos.map(r => photoToVM(r, get(_)))` (revoke previous `ownedVMs` first) → `buildImageList(PUZZLE_IMAGES, photoVMs)`; resolve Continue: VM lookup by `save.imageId`, `clearSave()` when missing; `piecesTotal = cols*rows` from `levelConfig(save.level)`; on destroy revoke `ownedVMs`. Keep LadderBar, `?level=`, `stashHandoff` + `goto` resume logic as-is.
 - [ ] **Step 2: Rework the markup** per DOM contract; card click sets `previewImage`; PreviewOverlay `Start` handles navigation (href); `onclose` of overlay clears `previewImage`; manager `onclose(changed)` → close + `refresh()` when changed.
@@ -326,13 +326,14 @@ Render the board only when `state.ready && state.image`, still wrapped in `{#key
 
 Tests (one `test.describe('Glossary Puzzle — My Photos')`; drive the gate with raw pointer events like the existing `GP-touch-pickup` test — `pointerdown` on `.gp-lock-card`, wait, `pointerup`):
 
-- [ ] **Step 1: Add the six tests:**
+- [ ] **Step 1: Add the seven tests:**
   1. **gate timing** — 1s hold on `.gp-lock-card` → `.gp-photos-manager` hidden; 3.2s hold → visible.
   2. **add + play** — gate open; `setInputFiles` on `.gp-photos-input` with the PNG → one `.gp-photo-item`; close manager; click the chip `.gp-cat-btn[data-cat="myPhotos"]`; card `[data-id^="photo:"]` visible; click it → `.gp-preview` + `.gp-preview-start` href `/\/play\/1\?image=photo/`; capture the href, extract the id.
   3. **error file** — add `not-a-photo.bin` → `.gp-photos-error` visible, `.gp-photo-item` count unchanged.
   4. **resume with a photo** — with the photo added, `goto('/games/glossary-puzzle/play/1?image=' + id + '&place=0-0&debug=1')` → HUD `1/4`; back to gallery → `.gp-resume-btn` visible → click → URL has `resume=1` → HUD `1/4`.
   5. **badge ✓ + gold** — solve L1 for the photo via `place=0-0,0-1,1-0,1-1&debug=1` → win overlay → gallery: `[data-id="<id>"] .gp-badge-check` visible. Then seed `localStorage` `glossary-puzzle-solved` `{"garden":10}` and open `/games/glossary-puzzle?level=10` → `.gp-badge-gold` on the garden card.
   6. **deleted-photo save clears gracefully** — photo + save from test 4 state; open manager, `.gp-photo-del` → close; gallery → no `.gp-resume-btn`, no crash; `/play/1?image=<deleted>&resume=1` → board renders the fallback image, save cleared.
+  7. **character SVG renders** — `goto('/games/glossary-puzzle/play/3?image=vc-train')` → `.gp-board svg path` count 9 and the first `.gp-tray-piece svg image` href contains `vc-train.svg`.
 - [ ] **Step 2: Run the new file** — `pnpm exec playwright test tests/e2e/glossary-puzzle-photos.test.js` → green (repeat flaky timing tests; retries are playbook-default).
 - [ ] **Step 3: Run the FULL e2e suite** — `pnpm test:e2e` → green (this catches any unknown test that touched changed behavior).
 - [ ] **Step 4: Commit** — `git commit -m "test(glossary-puzzle): e2e for gate, photos, preview, badges, resume"`
