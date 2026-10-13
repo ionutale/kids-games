@@ -2,4 +2,4 @@
   import QuizGame from '$lib/components/QuizGame.svelte';
 </script>
 
-<QuizGame topic="colorshapes" />
+<QuizGame topic="colorshapes" gameId="color-shape-quiz" />

@@ -1,19 +1,27 @@
 <script>
   import { get } from 'svelte/store';
+  import { untrack } from 'svelte';
   import { _, locale } from '$lib/stores/locale';
   import { playTap, playMatch } from '$lib/sounds/audioManager';
   import Confetti from '$lib/components/Confetti.svelte';
   import GameShell from '$lib/components/ui/GameShell.svelte';
   import WinOverlay from '$lib/components/ui/WinOverlay.svelte';
-  import BigButton from '$lib/components/ui/BigButton.svelte';
+  import LadderBar from '$lib/ladder/LadderBar.svelte';
+  import LadderActions from '$lib/ladder/LadderActions.svelte';
   import { TOPICS, itemsFor } from '$lib/quiz/topics.js';
   import { buildOptions } from '$lib/quiz/round.js';
+  import { quizLevelConfig, buildQueue } from '$lib/quiz/levels.js';
+  import { loadLevel, saveLevel, loadMastered, saveMastered, MAX_LEVEL } from '$lib/ladder/progress.js';
 
-  let { topic = '' } = $props();
+  let { topic = '', gameId = '' } = $props();
 
   const meta = $derived(TOPICS[topic]);
   const items = $derived(itemsFor(topic));
 
+  // A quiz is bound to one topic per mounted route: read the saved level once.
+  let level = $state(untrack(() => loadLevel(gameId)));
+  let mastered = $state(untrack(() => loadMastered(gameId)));
+  let queue = $state([]);
   let round = $state(0);
   let currentItem = $state(null);
   let options = $state([]);
@@ -27,16 +35,48 @@
   }
 
   function nextRound() {
-    if (round >= items.length) {
+    if (round >= queue.length) {
       showConfetti = false; // never fall confetti over the win card
       done = true;
+      if (level >= MAX_LEVEL) {
+        saveMastered(gameId);
+        mastered = true;
+      }
       return;
     }
-    currentItem = items[round];
-    options = buildOptions(currentItem, items, lang());
+    currentItem = queue[round];
+    options = buildOptions(currentItem, items, lang(), Math.random, quizLevelConfig(level).options);
     shakeName = null;
     misses = 0;
     showConfetti = false;
+  }
+
+  function startRound() {
+    // A fresh shuffle every round: replays are never the same order.
+    queue = buildQueue(items, level);
+    round = 0;
+    currentItem = null;
+    options = [];
+    done = false;
+    showConfetti = false;
+    shakeName = null;
+    nextRound();
+  }
+
+  function startLevel(n) {
+    level = Math.min(MAX_LEVEL, Math.max(1, n));
+    saveLevel(gameId, level);
+    startRound();
+  }
+
+  function advanceLevel(e) {
+    e?.preventDefault();
+    startLevel(level + 1);
+  }
+
+  function replayLevel(e) {
+    e?.preventDefault();
+    startRound();
   }
 
   function pick(opt) {
@@ -56,17 +96,7 @@
     }
   }
 
-  function restart() {
-    round = 0;
-    currentItem = null;
-    options = [];
-    done = false;
-    showConfetti = false;
-    shakeName = null;
-    setTimeout(() => nextRound(), 0);
-  }
-
-  nextRound();
+  startRound();
 </script>
 
 <GameShell accent={meta?.accent ?? '#FDBA74'}>
@@ -74,7 +104,9 @@
     <h2 class="quiz-title">{meta?.icon} {meta ? $_(meta.titleKey) : ''}</h2>
 
     {#if !done}
-      <p class="quiz-progress" data-testid="quiz-progress">{round + 1} / {items.length}</p>
+      <p class="quiz-progress" data-testid="quiz-progress">
+        {$_('level')} {level} · {round + 1} / {queue.length}
+      </p>
 
       {#if currentItem}
         <div class="item-display">
@@ -98,8 +130,16 @@
       {/if}
     {:else}
       <WinOverlay title="🎉 {$_('allDone')}">
-        <BigButton variant="primary" class="replay-btn" onclick={restart}>{$_('playAgain')}</BigButton>
-        <BigButton variant="ghost" href="/">{$_('back')}</BigButton>
+        <LadderBar current={level} {mastered} onchange={startLevel} />
+        <LadderActions
+          {gameId}
+          {level}
+          backHref="/"
+          nextHref={`/games/${gameId}`}
+          replayHref={`/games/${gameId}`}
+          onnext={advanceLevel}
+          onreplay={replayLevel}
+        />
       </WinOverlay>
     {/if}
 

@@ -2,4 +2,4 @@
   import QuizGame from '$lib/components/QuizGame.svelte';
 </script>
 
-<QuizGame topic="instruments" />
+<QuizGame topic="instruments" gameId="instrument-quiz" />

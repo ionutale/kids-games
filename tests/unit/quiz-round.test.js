@@ -70,4 +70,19 @@ describe('buildOptions semantic groups (Colors & Shapes)', () => {
       }
     }
   });
+
+  it('supports the ladder\'s 2–4 option rounds', () => {
+    for (const count of [2, 3, 4]) {
+      for (let s = 1; s <= 25; s++) {
+        const opts = buildOptions(cs[0], cs, 'en', seeded(s), count);
+        expect(opts.length).toBe(count);
+        expect(opts.filter((o) => o.correct).length).toBe(1);
+        expect(new Set(opts.map((o) => o.name)).size).toBe(count);
+        // wrong picks respect the sub-domain rule at every count
+        for (const w of opts.filter((o) => !o.correct)) {
+          expect(cs.find((i) => i.en === w.name)?.group).toBe(cs[0].group);
+        }
+      }
+    }
+  });
 });

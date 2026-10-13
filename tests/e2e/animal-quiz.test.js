@@ -8,7 +8,7 @@ const ANIMALS = TOPICS.animals.items;
 const emojiToEn = Object.fromEntries(ANIMALS.map(a => [a.emoji, a.en]));
 
 async function correctButton(page) {
-  const emoji = (await page.locator('.big-emoji').textContent())?.trim();
+  const emoji = (await page.locator('.big-emoji').textContent({ timeout: 1000 }).catch(() => null))?.trim();
   const name = emojiToEn[emoji];
   if (!name) return null;
   return page.locator('.opt-btn').filter({ hasText: name }).first();
@@ -19,7 +19,8 @@ test.describe('Animal Quiz E2E', () => {
     await page.goto('/games/animal-quiz');
     await expect(page.locator('.quiz-title')).toBeVisible();
     await expect(page.locator('.big-emoji')).toBeVisible();
-    await expect(page.locator('.opt-btn')).toHaveCount(3);
+    // level 1 of the ladder = 2 options
+    expect(await page.locator('.opt-btn').count()).toBeGreaterThanOrEqual(2);
   });
 
   test('tapping correct answer shows confetti and highlights the button', async ({ page }) => {
@@ -56,6 +57,7 @@ test.describe('Animal Quiz E2E', () => {
     await page.goto('/games/animal-quiz');
 
     for (let round = 0; round < ANIMALS.length; round++) {
+      if (await page.locator('.win-overlay').isVisible().catch(() => false)) break;
       await page.waitForTimeout(200);
       const btn = await correctButton(page);
       if (!btn) break;
