@@ -1,6 +1,7 @@
 <script>
   import { settings } from '$lib/stores/settings';
   import { playTap, playPop } from '$lib/sounds/audioManager';
+  import { dragOffsetFor } from '$lib/stickers/interaction.js';
   import GameShell from '$lib/components/ui/GameShell.svelte';
 
   const scenes = ['🌿', '🌊', '🚀', '🦁'];
@@ -63,12 +64,9 @@
     activePointer = e?.pointerId ?? null;
     sceneRect = (document.querySelector('.scene-area') ?? e?.target?.closest?.('.scene-area'))?.getBoundingClientRect() ?? null;
     const sticker = placed.find(p => p.id === id);
-    if (sticker && sceneRect && e) {
-      dragOffset = {
-        x: ((e.clientX - sceneRect.left) / sceneRect.width) * 100 - sticker.x,
-        y: ((e.clientY - sceneRect.top) / sceneRect.height) * 100 - sticker.y
-      };
-    }
+    // No grab event (tray tap) ⇒ zero offset: a leftover offset would make the
+    // new sticker jump away from the finger on its first move.
+    dragOffset = dragOffsetFor(e, sceneRect, sticker);
     attachDragListeners();
   }
 
