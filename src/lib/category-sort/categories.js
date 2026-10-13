@@ -46,21 +46,28 @@ export function setFor(level) {
 
 /**
  * Builds one round: bins from the level's category set and `count` shuffled
- * items sampled only from those categories.
+ * items sampled evenly across those bins — every bin gets at least one item,
+ * and bins differ by at most one. (Global sampling could leave a bin empty,
+ * which reads as a broken round to a child.)
  */
 export function buildRound(level, count = itemsForLevel(level), rng = Math.random) {
   const r = typeof rng === 'function' ? rng : makeRng(rng);
   const ids = setFor(level);
   const bins = ids.map((id) => ({ ...CATEGORIES[id] }));
 
-  const pool = [];
+  // one shuffled bag per category: drawing from it guarantees no repeats
+  const bags = new Map(ids.map((id) => [id, shuffle([...CATEGORIES[id].items], r)]));
+
+  const base = Math.floor(count / ids.length);
+  const slots = [];
   for (const id of ids) {
-    for (const emoji of CATEGORIES[id].items) {
-      pool.push({ emoji, categoryId: id });
-    }
+    for (let i = 0; i < base; i++) slots.push(id);
   }
-  const items = shuffle(pool, r).slice(0, count);
-  return { roundIndex: level, bins, items };
+  const remainder = shuffle([...ids], r).slice(0, count - base * ids.length);
+  slots.push(...remainder);
+
+  const items = slots.map((id) => ({ emoji: bags.get(id).pop(), categoryId: id }));
+  return { roundIndex: level, bins, items: shuffle(items, r) };
 }
 
 /** The bin that matches the item's category, or null. */

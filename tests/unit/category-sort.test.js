@@ -90,6 +90,31 @@ describe('buildRound', () => {
     const b = buildRound(2, 6, rngB);
     expect(a).toEqual(b);
   });
+
+  it('never leaves a bin empty (every bin gets at least one item)', () => {
+    for (let level = 1; level <= 10; level++) {
+      for (let s = 1; s <= 60; s++) {
+        const round = buildRound(level, itemsForLevel(level), s);
+        for (const bin of round.bins) {
+          const count = round.items.filter((i) => i.categoryId === bin.id).length;
+          expect(count, `L${level} seed ${s} bin ${bin.id}`).toBeGreaterThanOrEqual(1);
+        }
+      }
+    }
+  });
+
+  it('balances items across bins (no lopsided rounds)', () => {
+    for (let level = 1; level <= 10; level++) {
+      for (let s = 1; s <= 40; s++) {
+        const round = buildRound(level, itemsForLevel(level), s);
+        const counts = round.bins.map((bin) => round.items.filter((i) => i.categoryId === bin.id).length);
+        expect(Math.max(...counts) - Math.min(...counts)).toBeLessThanOrEqual(1);
+        // items are unique — a bin can never contain the same emoji twice
+        const emojis = round.items.map((i) => i.emoji);
+        expect(new Set(emojis).size).toBe(emojis.length);
+      }
+    }
+  });
 });
 
 describe('correctBin', () => {
