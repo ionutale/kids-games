@@ -2,7 +2,7 @@
   import { onMount } from 'svelte';
   import { settings } from '$lib/stores/settings';
   import { _ } from '$lib/stores/locale';
-  import { playPop, playWin } from '$lib/sounds/audioManager';
+  import { playPop } from '$lib/sounds/audioManager';
   import GameShell from '$lib/components/ui/GameShell.svelte';
   import HudPill from '$lib/components/ui/HudPill.svelte';
   import LadderBar from '$lib/ladder/LadderBar.svelte';
@@ -10,6 +10,7 @@
   import WinOverlay from '$lib/components/ui/WinOverlay.svelte';
   import SoundToggle from '$lib/components/SoundToggle.svelte';
   import { loadLevel, saveLevel, loadMastered, saveMastered, MAX_LEVEL } from '$lib/ladder/progress.js';
+  import { levelConfig } from '$lib/pop/config.js';
 
   const items = ['🫧', '🐟', '🦋', '⭐', '🌟', '💫', '🌸', '🍎'];
   let bubbles = $state([]);
@@ -20,14 +21,6 @@
   let level = $state(loadLevel('pop'));
   let mastered = $state(loadMastered('pop'));
 
-  function levelConfig(l) {
-    const maxItems = Math.min(2 + l * 1.3, 15);
-    const spawnMs = Math.max(300, 2000 - l * 170);
-    const speed = Math.min(3 + l * 0.5, 10);
-    const itemCount = Math.min(2 + l, 8);
-    return { maxItems, spawnMs, speed, itemCount };
-  }
-
   function spawnBubble() {
     if (!playing) return;
     const config = levelConfig(level);
@@ -37,7 +30,7 @@
       emoji: items[Math.floor(Math.random() * config.itemCount)],
       x: 5 + Math.random() * 90,
       size: level <= 3 ? 50 + Math.random() * 15 : 36 + Math.random() * 12,
-      speed: config.speed + Math.random() * 2
+      fall: config.fallSec + Math.random() * 2
     }];
   }
 
@@ -75,7 +68,7 @@
             saveMastered('pop');
             mastered = true;
           }
-          if ($settings.soundEnabled) playWin();
+          // WinOverlay plays the single win cheer on mount; no second jingle here.
         }
       }
     }, 1000);
@@ -113,7 +106,7 @@
 
   <div class="pop-game">
     {#if !playing && timeLeft <= 0}
-      <WinOverlay title="{$_('score')}: {score}">
+      <WinOverlay title={$_('greatJob')} subtitle="{$_('score')}: {score}">
         <LadderActions
           gameId="pop"
           {level}
@@ -131,7 +124,7 @@
         class="bubble"
         style:left="{b.x}%"
         style:font-size="{b.size}px"
-        style:--speed="{b.speed}s"
+        style:--fall="{b.fall}s"
         onclick={() => popBubble(b.id)}
       >
         {b.emoji}
@@ -159,7 +152,7 @@
   .bubble {
     position: absolute;
     transform: translateX(-50%);
-    animation: float var(--speed) linear infinite;
+    animation: float var(--fall) linear infinite;
     filter: drop-shadow(0 2px 6px rgba(196,181,253,0.55));
   }
   @keyframes float {
