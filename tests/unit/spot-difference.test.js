@@ -63,4 +63,37 @@ describe('makePuzzle', () => {
   it('is deterministic per seed', () => {
     expect(makePuzzle(3, 999)).toEqual(makePuzzle(3, 999));
   });
+
+  it('age ≥4: replacements reuse emojis already in the puzzle (no “foreign emoji” scan)', () => {
+    for (const age of [4, 5, 6]) {
+      for (let s = 1; s <= 40; s++) {
+        const p = makePuzzle(age, s);
+        const inGrid = new Set(p.left);
+        for (const pos of p.diffCells) {
+          expect(inGrid.has(p.right[pos]), `age ${age} seed ${s}`).toBe(true);
+        }
+      }
+    }
+  });
+
+  it('age ≥4: replacement emojis are unique across difference cells', () => {
+    for (let s = 1; s <= 40; s++) {
+      const p = makePuzzle(5, s);
+      const replacements = [...p.diffCells].map((pos) => p.right[pos]);
+      expect(new Set(replacements).size).toBe(replacements.length);
+    }
+  });
+
+  it('age ≤3 keeps the toddler aid: replacements are emojis not present in the grid', () => {
+    let checked = 0;
+    for (let s = 1; s <= 40; s++) {
+      const p = makePuzzle(2, s);
+      const inGrid = new Set(p.left);
+      for (const pos of p.diffCells) {
+        if (!inGrid.has(p.right[pos])) checked++;
+      }
+    }
+    // every difference on the toddler band is a brand-new emoji (pool is large enough)
+    expect(checked).toBe(40 * gridSpecFor(2).diffs);
+  });
 });
