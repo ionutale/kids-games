@@ -1,4 +1,5 @@
 <script>
+  import { onDestroy } from 'svelte';
   import { settings } from '$lib/stores/settings';
   import { _ } from '$lib/stores/locale';
   import { playTap, playMatch } from '$lib/sounds/audioManager';
@@ -21,6 +22,12 @@
   let won = $state(false);
   let dragging = $state(null);
   let placed = $state(new Set());
+  // The answer is not an answer key: a piece's target glows only after the
+  // child has missed twice with that piece (or re-selects it after two misses).
+  let missCounts = {};
+  let hintPieceId = $state(null);
+  let missCell = $state(null);
+  let missTimer = null;
 
   function levelConfig(l) {
     if (l <= 2) return { size: 2, tiles: 4 };
@@ -50,11 +57,18 @@
     pieces = result;
     placed = new Set();
     won = false;
+    dragging = null;
+    missCounts = {};
+    hintPieceId = null;
+    missCell = null;
   }
+
+  onDestroy(() => clearTimeout(missTimer));
 
   function startDrag(id) {
     if (won || placed.has(id)) return;
     dragging = id;
+    hintPieceId = (missCounts[id] || 0) >= 2 ? id : null;
     if ($settings.soundEnabled) playTap();
   }
 
@@ -64,6 +78,7 @@
     if (!piece) { dragging = null; return; }
     if (piece.correctRow === correctRow && piece.correctCol === correctCol && !placed.has(dragging)) {
       placed = new Set([...placed, dragging]);
+      if (hintPieceId === piece.id) hintPieceId = null;
       if ($settings.soundEnabled) playMatch();
       if (placed.size === pieces.length) {
         setTimeout(() => {
@@ -75,6 +90,13 @@
           // WinOverlay plays the single win cheer on mount.
         }, 300);
       }
+    } else if (!placed.has(piece.id)) {
+      // Wrong cell: shake it, count the miss, and only then start hinting.
+      missCounts[piece.id] = (missCounts[piece.id] || 0) + 1;
+      missCell = { r: correctRow, c: correctCol };
+      clearTimeout(missTimer);
+      missTimer = setTimeout(() => { missCell = null; }, 450);
+      if (missCounts[piece.id] >= 2) hintPieceId = piece.id;
     }
     dragging = null;
   }
@@ -107,7 +129,8 @@
         <button
           class="ghost-cell"
           class:small={size >= 4}
-          class:drag-over={dragging !== null && pieces.find(p => p.id === dragging)?.correctRow === r && pieces.find(p => p.id === dragging)?.correctCol === c}
+          class:drag-over={hintPieceId !== null && pieces.find(p => p.id === hintPieceId)?.correctRow === r && pieces.find(p => p.id === hintPieceId)?.correctCol === c}
+          class:wrong={missCell?.r === r && missCell?.c === c}
           onclick={() => dropOnCell(r, c)}
         >
           <span class="ghost-emoji" class:small={size >= 4}>{emojiSets[size][r][c]}</span>
@@ -162,6 +185,13 @@
   .board { display: grid; gap: 4px; width: 100%; max-width: 300px; aspect-ratio: 1; }
   .ghost-cell { position: relative; display: flex; align-items: center; justify-content: center; background: var(--panel-glass); border-radius: 10px; border: 2px dashed color-mix(in srgb, var(--accent) 40%, transparent); transition: all 0.15s; }
   .ghost-cell.drag-over { border-color: #66bb6a; background: rgba(102, 187, 106, 0.1); transform: scale(1.03); }
+  .ghost-cell.wrong { animation: cellShake 0.4s ease-in-out; border-color: #e57373; }
+  @keyframes cellShake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-6px); }
+    50% { transform: translateX(6px); }
+    75% { transform: translateX(-3px); }
+  }
   .ghost-emoji { font-size: 42px; opacity: 0.2; filter: grayscale(1); }
   .ghost-emoji.small { font-size: 28px; }
   .placed-piece { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 38px; animation: popIn 0.3s ease-out; }

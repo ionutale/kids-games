@@ -85,4 +85,30 @@ test.describe('Puzzle E2E', () => {
       await expect(page.locator('.win-overlay')).toBeVisible();
     }
   });
+
+  test('the board does not give away the answer; after two misses the right cell glows', async ({ page }) => {
+    await page.goto('/games/puzzle');
+    const piece = page.locator('.tray-piece').first();
+    const emoji = ((await piece.textContent()) ?? '').trim();
+    await piece.click();
+
+    const rightCell = page
+      .locator('.ghost-cell')
+      .filter({ has: page.locator('.ghost-emoji', { hasText: emoji }) })
+      .first();
+    // Selecting a piece must NOT reveal its target.
+    await expect(rightCell).not.toHaveClass(/drag-over/);
+
+    // Two wrong attempts (a wrong drop clears the selection, so re-select).
+    const wrongCell = page
+      .locator('.ghost-cell')
+      .filter({ hasNot: page.locator('.ghost-emoji', { hasText: emoji }) })
+      .first();
+    await wrongCell.click();
+    await piece.click();
+    await wrongCell.click();
+
+    // After two misses the child gets the hint.
+    await expect(rightCell).toHaveClass(/drag-over/);
+  });
 });
