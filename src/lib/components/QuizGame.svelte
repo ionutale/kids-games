@@ -11,12 +11,19 @@
   import { TOPICS, itemsFor } from '$lib/quiz/topics.js';
   import { buildOptions } from '$lib/quiz/round.js';
   import { quizLevelConfig, buildQueue } from '$lib/quiz/levels.js';
+  import { speak, defaultQuizMode } from '$lib/quiz/audio.js';
+  import { settings } from '$lib/stores/settings';
   import { loadLevel, saveLevel, loadMastered, saveMastered, MAX_LEVEL } from '$lib/ladder/progress.js';
 
   let { topic = '', gameId = '' } = $props();
 
   const meta = $derived(TOPICS[topic]);
   const items = $derived(itemsFor(topic));
+
+  // Pre-readers (age ≤4) start in listen mode: the word is spoken and the
+  // answers are emoji cards. The header toggle switches per user and sticks.
+  const initialSettings = get(settings);
+  let mode = $state(initialSettings.quizMode ?? defaultQuizMode(initialSettings.ageLevel));
 
   // A quiz is bound to one topic per mounted route: read the saved level once.
   let level = $state(untrack(() => loadLevel(gameId)));
@@ -33,6 +40,24 @@
   function lang() {
     return get(locale);
   }
+
+  function sayWord() {
+    if (!currentItem) return;
+    speak(currentItem[lang()] || currentItem.en, lang());
+  }
+
+  function toggleMode() {
+    mode = mode === 'listen' ? 'read' : 'listen';
+    settings.setQuizMode(mode);
+  }
+
+  // Best effort: read each new question aloud in listen mode (the 🔊 button
+  // always works — it is inside a user gesture).
+  $effect(() => {
+    if (mode === 'listen' && currentItem) {
+      speak(currentItem[lang()] || currentItem.en, lang());
+    }
+  });
 
   function nextRound() {
     if (round >= queue.length) {
@@ -100,6 +125,17 @@
 </script>
 
 <GameShell accent={meta?.accent ?? '#FDBA74'}>
+  {#snippet hudLeft()}
+    <button
+      class="mode-btn"
+      data-testid="quiz-mode"
+      aria-label={mode === 'listen' ? $_('readMode') : $_('listenMode')}
+      onclick={toggleMode}
+    >
+      {mode === 'listen' ? '🔊' : '📖'}
+    </button>
+  {/snippet}
+
   <div class="quiz">
     <h2 class="quiz-title">{meta?.icon} {meta ? $_(meta.titleKey) : ''}</h2>
 
@@ -109,21 +145,35 @@
       </p>
 
       {#if currentItem}
-        <div class="item-display">
-          <span class="big-emoji" data-testid="quiz-emoji">{currentItem.emoji}</span>
-        </div>
+        {#if mode === 'listen'}
+          <div class="listen-prompt" data-testid="listen-prompt">
+            <button class="speak-btn" data-testid="speak" aria-label={$_('listenMode')} onclick={sayWord}>
+              🔊
+            </button>
+            <p class="listen-word" data-testid="listen-word">{currentItem[lang()] || currentItem.en}</p>
+          </div>
+        {:else}
+          <div class="item-display">
+            <span class="big-emoji" data-testid="quiz-emoji">{currentItem.emoji}</span>
+          </div>
+        {/if}
 
         <div class="options">
           {#each options as opt, i (opt.name)}
             <button
               class="opt-btn"
+              class:emojify={mode === 'listen'}
               class:shake={shakeName === opt.name}
               class:correct={showConfetti && opt.correct}
               class:hint={misses >= 2 && opt.correct && !showConfetti}
               onclick={() => pick(opt)}
               data-testid={opt.correct ? 'correct-opt' : `wrong-opt-${i}`}
             >
-              {opt.name}
+              {#if mode === 'listen'}
+                <span class="opt-emoji">{opt.emoji}</span>
+              {:else}
+                {opt.name}
+              {/if}
             </button>
           {/each}
         </div>
@@ -162,6 +212,43 @@
     font-size: 22px;
     color: var(--text-hi);
   }
+  .mode-btn {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    font-size: 20px;
+    background: var(--panel-glass);
+    border: 1px solid var(--panel-border);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.12s;
+  }
+  .mode-btn:active { transform: scale(0.94); }
+  .listen-prompt {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+  }
+  .speak-btn {
+    width: 112px;
+    height: 112px;
+    border-radius: 50%;
+    font-size: 52px;
+    background: var(--btn-gradient);
+    box-shadow: 0 6px 22px rgba(91, 194, 240, 0.5);
+    transition: transform 0.12s;
+  }
+  .speak-btn:active { transform: scale(0.93); }
+  .listen-word {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--text-lo);
+    margin: 0;
+  }
+  .opt-btn.emojify { padding: 8px; }
+  .opt-emoji { font-size: 44px; line-height: 1; }
   .quiz-progress {
     font-size: 16px;
     font-weight: 600;

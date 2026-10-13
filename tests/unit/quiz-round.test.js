@@ -85,4 +85,16 @@ describe('buildOptions semantic groups (Colors & Shapes)', () => {
       }
     }
   });
+
+  it('carries each option\'s emoji so listen mode can show emoji cards', () => {
+    const animals = TOPICS.animals.items;
+    for (const count of [2, 3, 4]) {
+      const opts = buildOptions(animals[0], animals, 'en', seeded(3), count);
+      for (const opt of opts) {
+        const item = animals.find((i) => i.en === opt.name);
+        expect(item, `option ${opt.name} must come from the topic`).toBeDefined();
+        expect(opt.emoji).toBe(item.emoji);
+      }
+    }
+  });
 });

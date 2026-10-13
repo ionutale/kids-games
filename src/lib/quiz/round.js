@@ -21,10 +21,10 @@ export function buildOptions(item, items, lang, rng = Math.random, count = 3) {
     const candidate = pool[Math.floor(rng() * pool.length) % pool.length];
     const name = candidate[lang] || candidate.en;
     if (name !== (item[lang] || item.en) && !picks.some((p) => p.name === name)) {
-      picks.push({ name, correct: false });
+      picks.push({ name, emoji: candidate.emoji, correct: false });
     }
   }
-  const correct = { name: item[lang] || item.en, correct: true };
+  const correct = { name: item[lang] || item.en, emoji: item.emoji, correct: true };
   const options = [correct, ...picks];
   for (let i = options.length - 1; i > 0; i--) {
     const j = Math.floor(rng() * (i + 1)) % (i + 1);

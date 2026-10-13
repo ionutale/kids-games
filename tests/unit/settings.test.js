@@ -25,17 +25,19 @@ describe('settings store', () => {
       expect(v.soundEnabled).toBe(true);
       expect(v.ageLevel).toBe(3);
       expect(v.firstVisit).toBe(true);
+      expect(v.quizMode).toBeNull();
     });
     unsub();
   });
 
   it('restores values from localStorage', async () => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify({ soundEnabled: false, ageLevel: 5, firstVisit: false }));
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ soundEnabled: false, ageLevel: 5, firstVisit: false, quizMode: 'listen' }));
     const { settings } = await import('$lib/stores/settings');
     const unsub = settings.subscribe(v => {
       expect(v.soundEnabled).toBe(false);
       expect(v.ageLevel).toBe(5);
       expect(v.firstVisit).toBe(false);
+      expect(v.quizMode).toBe('listen');
     });
     unsub();
   });
@@ -61,5 +63,13 @@ describe('settings store', () => {
     const { settings } = await import('$lib/stores/settings');
     settings.markVisited();
     expect(JSON.parse(localStorage.getItem(STORAGE_KEY)).firstVisit).toBe(false);
+  });
+
+  it('setQuizMode persists the chosen quiz mode', async () => {
+    const { settings } = await import('$lib/stores/settings');
+    settings.setQuizMode('listen');
+    expect(JSON.parse(localStorage.getItem(STORAGE_KEY)).quizMode).toBe('listen');
+    settings.setQuizMode('read');
+    expect(JSON.parse(localStorage.getItem(STORAGE_KEY)).quizMode).toBe('read');
   });
 });

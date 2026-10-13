@@ -10,7 +10,8 @@ function createSettings() {
   const { subscribe, set, update } = writable({
     soundEnabled: stored?.soundEnabled ?? true,
     ageLevel: stored?.ageLevel ?? 3,
-    firstVisit: stored?.firstVisit ?? true
+    firstVisit: stored?.firstVisit ?? true,
+    quizMode: stored?.quizMode ?? null
   });
 
   return {
@@ -22,6 +23,11 @@ function createSettings() {
     }),
     setAge: (level) => update(s => {
       const next = { ...s, ageLevel: level };
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+      return next;
+    }),
+    setQuizMode: (mode) => update(s => {
+      const next = { ...s, quizMode: mode === 'listen' || mode === 'read' ? mode : null };
       localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
       return next;
     }),

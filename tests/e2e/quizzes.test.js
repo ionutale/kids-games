@@ -9,9 +9,17 @@ const QUIZZES = [
   { path: '/games/instrument-quiz', title: 'Instruments Quiz' }
 ];
 
+// Age 5 defaults a quiz to reading mode; younger ages get listen mode.
+const READ_MODE = () =>
+  localStorage.setItem(
+    'kids-games-settings',
+    JSON.stringify({ soundEnabled: true, ageLevel: 5, firstVisit: false })
+  );
+
 test.describe('Quiz Collection E2E', () => {
   for (const quiz of QUIZZES) {
-    test(`${quiz.path}: card, 3 options, wrong shakes, correct advances`, async ({ page }) => {
+    test(`${quiz.path}: card, options, wrong shakes, correct advances`, async ({ page }) => {
+      await page.addInitScript(READ_MODE);
       await page.goto(quiz.path);
       await expect(page.locator('.quiz-title')).toContainText(quiz.title);
       await expect(page.getByTestId('quiz-emoji')).toBeVisible();
@@ -34,6 +42,39 @@ test.describe('Quiz Collection E2E', () => {
       await expect(page.getByTestId('quiz-progress')).toHaveText(/2 \/ \d+/, { timeout: 4000 });
     });
   }
+
+  test('listen mode: the word is spoken and the child taps the matching emoji', async ({ page }) => {
+    await page.addInitScript(() => {
+      window.__spoken = [];
+      if (window.speechSynthesis) {
+        window.speechSynthesis.speak = (u) => { window.__spoken.push(u.text); };
+        window.speechSynthesis.cancel = () => {};
+      }
+    });
+    await page.goto('/games/toy-quiz');
+
+    // default age (3) → listen mode
+    await expect(page.getByTestId('listen-prompt')).toBeVisible();
+    const word = ((await page.getByTestId('listen-word').textContent()) ?? '').trim();
+    expect(word.length).toBeGreaterThan(0);
+
+    // answers are emoji cards, not words
+    for (const text of await page.locator('.opt-btn').allTextContents()) {
+      expect(text.trim()).not.toMatch(/[A-Za-z]/);
+    }
+
+    // the speaker button speaks the current word
+    await page.getByTestId('speak').click();
+    await expect.poll(() => page.evaluate(() => window.__spoken.at(-1))).toBe(word);
+
+    // answering the right emoji advances the round
+    await page.getByTestId('correct-opt').click();
+    await expect(page.getByTestId('quiz-progress')).toHaveText(/2 \/ \d+/, { timeout: 4000 });
+
+    // the header toggle switches to reading mode mid-game
+    await page.getByTestId('quiz-mode').click();
+    await expect(page.getByTestId('quiz-emoji')).toBeVisible({ timeout: 4000 });
+  });
 
   test('the quiz ladder: short round, level picker + persistence, Next Level', async ({ page }) => {
     test.setTimeout(120000);

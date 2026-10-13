@@ -7,6 +7,15 @@ const ANIMALS = TOPICS.animals.items;
 // so the displayed option names are the English ones.
 const emojiToEn = Object.fromEntries(ANIMALS.map(a => [a.emoji, a.en]));
 
+// This suite exercises the reading mode; listen mode has its own tests.
+const useReadMode = (page) =>
+  page.addInitScript(() =>
+    localStorage.setItem(
+      'kids-games-settings',
+      JSON.stringify({ soundEnabled: true, ageLevel: 5, firstVisit: false })
+    )
+  );
+
 async function correctButton(page) {
   const emoji = (await page.locator('.big-emoji').textContent({ timeout: 1000 }).catch(() => null))?.trim();
   const name = emojiToEn[emoji];
@@ -16,6 +25,7 @@ async function correctButton(page) {
 
 test.describe('Animal Quiz E2E', () => {
   test('loads and shows first animal', async ({ page }) => {
+    await useReadMode(page);
     await page.goto('/games/animal-quiz');
     await expect(page.locator('.quiz-title')).toBeVisible();
     await expect(page.locator('.big-emoji')).toBeVisible();
@@ -24,6 +34,7 @@ test.describe('Animal Quiz E2E', () => {
   });
 
   test('tapping correct answer shows confetti and highlights the button', async ({ page }) => {
+    await useReadMode(page);
     await page.goto('/games/animal-quiz');
     await page.waitForTimeout(300);
 
@@ -37,6 +48,7 @@ test.describe('Animal Quiz E2E', () => {
   });
 
   test('tapping wrong answer shakes the button', async ({ page }) => {
+    await useReadMode(page);
     await page.goto('/games/animal-quiz');
     await page.waitForTimeout(300);
 
@@ -54,6 +66,7 @@ test.describe('Animal Quiz E2E', () => {
 
   test('completing all rounds shows done screen', async ({ page }) => {
     test.setTimeout(120000);
+    await useReadMode(page);
     await page.goto('/games/animal-quiz');
 
     for (let round = 0; round < ANIMALS.length; round++) {
