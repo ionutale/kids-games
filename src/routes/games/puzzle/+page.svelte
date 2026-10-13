@@ -1,7 +1,7 @@
 <script>
   import { settings } from '$lib/stores/settings';
   import { _ } from '$lib/stores/locale';
-  import { playTap, playMatch, playWin } from '$lib/sounds/audioManager';
+  import { playTap, playMatch } from '$lib/sounds/audioManager';
   import GameShell from '$lib/components/ui/GameShell.svelte';
   import LadderBar from '$lib/ladder/LadderBar.svelte';
   import LadderActions from '$lib/ladder/LadderActions.svelte';
@@ -72,7 +72,7 @@
             mastered = true;
           }
           won = true;
-          if ($settings.soundEnabled) playWin();
+          // WinOverlay plays the single win cheer on mount.
         }, 300);
       }
     }

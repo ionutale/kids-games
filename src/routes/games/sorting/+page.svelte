@@ -1,7 +1,7 @@
 <script>
   import { settings } from '$lib/stores/settings';
   import { _ } from '$lib/stores/locale';
-  import { playTap, playMatch, playError, playWin } from '$lib/sounds/audioManager';
+  import { playTap, playMatch, playError } from '$lib/sounds/audioManager';
   import GameShell from '$lib/components/ui/GameShell.svelte';
   import LadderBar from '$lib/ladder/LadderBar.svelte';
   import LadderActions from '$lib/ladder/LadderActions.svelte';
@@ -82,7 +82,6 @@
             mastered = true;
           }
           won = true;
-          if ($settings.soundEnabled) playWin();
         }, 300);
       }
     } else {

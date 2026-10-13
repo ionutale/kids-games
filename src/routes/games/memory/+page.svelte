@@ -2,7 +2,7 @@
   import { onDestroy } from 'svelte';
   import { settings } from '$lib/stores/settings';
   import { _, locale } from '$lib/stores/locale';
-  import { playTap, playMatch, playWin, playError } from '$lib/sounds/audioManager';
+  import { playTap, playMatch, playError } from '$lib/sounds/audioManager';
   import GameShell from '$lib/components/ui/GameShell.svelte';
   import LadderBar from '$lib/ladder/LadderBar.svelte';
   import LadderActions from '$lib/ladder/LadderActions.svelte';
@@ -80,7 +80,6 @@
           showcasing = new Set();
           locked = false;
           if (matched.size === cards.length) {
-            if ($settings.soundEnabled) playWin();
             if (level >= MAX_LEVEL) {
               saveMastered('memory');
               mastered = true;
