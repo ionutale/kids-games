@@ -25,11 +25,27 @@
     if (!canvasEl || !ctx) return;
     const rect = canvasEl.parentElement.getBoundingClientRect();
     const dpr = window.devicePixelRatio || 1;
-    canvasEl.width = rect.width * dpr;
-    canvasEl.height = rect.height * dpr;
+    const nextW = Math.max(1, Math.round(rect.width * dpr));
+    const nextH = Math.max(1, Math.round(rect.height * dpr));
+
+    // Resizing a canvas resets its backing store; snapshot first so the
+    // child's artwork survives orientation changes and browser chrome moves.
+    let snapshot = null;
+    if (canvasEl.width > 0 && canvasEl.height > 0 && (canvasEl.width !== nextW || canvasEl.height !== nextH)) {
+      snapshot = document.createElement('canvas');
+      snapshot.width = canvasEl.width;
+      snapshot.height = canvasEl.height;
+      snapshot.getContext('2d').drawImage(canvasEl, 0, 0);
+    }
+
+    canvasEl.width = nextW;
+    canvasEl.height = nextH;
     canvasEl.style.width = rect.width + 'px';
     canvasEl.style.height = rect.height + 'px';
     ctx.scale(dpr, dpr);
+    if (snapshot) {
+      ctx.drawImage(snapshot, 0, 0, snapshot.width, snapshot.height, 0, 0, rect.width, rect.height);
+    }
   }
 
   onMount(() => {

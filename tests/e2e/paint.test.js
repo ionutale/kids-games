@@ -37,6 +37,40 @@ test.describe('Paint E2E', () => {
 });
 
 test.describe('Paint — touch input (legacy migration)', () => {
+  test('resizing the window keeps the drawing (canvas is not wiped)', async ({ page }) => {
+    await page.goto('/games/paint');
+    await page.waitForTimeout(400);
+    const canvas = page.locator('.draw-canvas');
+    const box = await canvas.boundingBox();
+    const cx = box.x + box.width * 0.3;
+    const cy = box.y + box.height * 0.5;
+    const tx = box.x + box.width * 0.6;
+
+    await canvas.dispatchEvent('pointerdown', { pointerId: 7, pointerType: 'touch', isPrimary: true, clientX: cx, clientY: cy, buttons: 1, bubbles: true, cancelable: true });
+    for (let i = 1; i <= 6; i++) {
+      await page.dispatchEvent(':root', 'pointermove', { pointerId: 7, pointerType: 'touch', isPrimary: true, clientX: cx + ((tx - cx) * i) / 6, clientY: cy, buttons: 1, bubbles: true, cancelable: true });
+      await page.waitForTimeout(15);
+    }
+    await page.dispatchEvent(':root', 'pointerup', { pointerId: 7, pointerType: 'touch', isPrimary: true, clientX: tx, clientY: cy, buttons: 1, bubbles: true, cancelable: true });
+    await page.waitForTimeout(150);
+
+    const inkCount = () =>
+      canvas.evaluate((el) => {
+        const ctx = el.getContext('2d');
+        const data = ctx.getImageData(0, 0, el.width, el.height).data;
+        let n = 0;
+        for (let i = 3; i < data.length; i += 40) if (data[i] > 40) n++;
+        return n;
+      });
+    expect(await inkCount()).toBeGreaterThan(0);
+
+    await page.setViewportSize({ width: 340, height: 700 });
+    await page.waitForTimeout(400);
+
+    // Old bug: resizing the canvas reset the backing store and the art was gone.
+    expect(await inkCount()).toBeGreaterThan(0);
+  });
+
   test('a touch-stroke draws visible pixels; second finger mid-stroke does not corrupt', async ({ page }) => {
     await page.goto('/games/paint');
     await page.waitForTimeout(500);
