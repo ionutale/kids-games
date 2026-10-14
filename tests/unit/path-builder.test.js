@@ -7,6 +7,7 @@ import {
   hintCell,
   neighbors
 } from '$lib/path-builder/engine.js';
+import { makeRng } from '$lib/trainers/rng.js';
 
 describe('level spec', () => {
   it('grows grid and obstacles with level, capped at 6×6 / 8', () => {
@@ -101,6 +102,19 @@ describe('validatePath', () => {
       ])
     ).toBe('invalid');
   });
+
+  it('rejects a path that reaches the Goal but continues past it', () => {
+    expect(
+      validatePath(puzzle, [
+        { r: 0, c: 0 },
+        { r: 1, c: 0 },
+        { r: 2, c: 0 },
+        { r: 2, c: 1 },
+        { r: 2, c: 2 }, // goal
+        { r: 1, c: 2 } // one step past the goal
+      ])
+    ).toBe('invalid');
+  });
 });
 
 describe('bfs & hint', () => {
@@ -134,5 +148,43 @@ describe('bfs & hint', () => {
       { r: 0, c: 1 }
     ]);
     expect(neighbors({ r: 1, c: 1 }, 3).length).toBe(4);
+  });
+
+  it('returns null from a dead end instead of a cell already on the path', () => {
+    const puzzle = {
+      grid: [
+        ['empty', 'empty', 'empty'],
+        ['empty', 'obstacle', 'empty'],
+        ['empty', 'obstacle', 'empty']
+      ],
+      start: { r: 1, c: 0 },
+      goal: { r: 0, c: 0 }
+    };
+    // player walked into the dead end at (2,0): boxed in by (1,0) behind and obstacle at (2,1)
+    expect(hintCell(puzzle, [{ r: 1, c: 0 }, { r: 2, c: 0 }])).toBeNull();
+  });
+
+  it('never hints a cell already on the path (random-walk property)', () => {
+    for (const seed of [1, 2, 3]) {
+      const puzzle = generatePuzzle(6, seed);
+      const rng = makeRng(seed * 1000 + 7);
+      const onPath = (cell) => path.some((p) => p.r === cell.r && p.c === cell.c);
+      let path = [puzzle.start];
+      let steps = 0;
+      while (steps < 200) {
+        const tip = path[path.length - 1];
+        const options = neighbors(tip, puzzle.grid.length).filter(
+          (n) => puzzle.grid[n.r][n.c] !== 'obstacle' && !onPath(n)
+        );
+        if (options.length === 0) {
+          path = [puzzle.start]; // dead end — restart the walk
+          continue;
+        }
+        path.push(options[Math.floor(rng() * options.length)]);
+        steps++;
+        const hint = hintCell(puzzle, path);
+        if (hint) expect(onPath(hint)).toBe(false);
+      }
+    }
   });
 });

@@ -21,8 +21,12 @@ function key(p) {
   return p.r * 100 + p.c;
 }
 
-/** Shortest path (BFS) from start to goal avoiding obstacles. Returns array of cells or null. */
-export function bfs(grid, start, goal) {
+/**
+ * Shortest path (BFS) from start to goal avoiding obstacles.
+ * `blocked` (optional): Set of cell keys (r * 100 + c) to skip like obstacles.
+ * Returns array of cells or null.
+ */
+export function bfs(grid, start, goal, blocked = null) {
   const size = grid.length;
   const prev = new Map();
   const seen = new Set([key(start)]);
@@ -44,6 +48,7 @@ export function bfs(grid, start, goal) {
       if (seen.has(k)) continue;
       seen.add(k);
       if (grid[nb.r][nb.c] === 'obstacle') continue;
+      if (blocked && blocked.has(k)) continue;
       prev.set(k, key(cur));
       queue.push(nb);
     }
@@ -113,19 +118,26 @@ export function validatePath(puzzle, path) {
       if (dr + dc !== 1) return 'invalid';
     }
     if (cell.r === goal.r && cell.c === goal.c) {
-      return i === path.length - 1 ? 'complete' : 'complete';
+      return i === path.length - 1 ? 'complete' : 'invalid';
     }
   }
   return 'ok';
 }
 
-/** Next optimal cell from the player's current path tip toward the Goal (hint). */
+/**
+ * Next optimal cell from the player's current path tip toward the Goal (hint).
+ * Every cell already on the path (except the tip) is treated as blocked, so a
+ * dead end yields null rather than a step backward along the player's path.
+ */
 export function hintCell(puzzle, path) {
   const tip = path.length > 0 ? path[path.length - 1] : puzzle.start;
+  const blocked = new Set();
+  for (let i = 0; i < path.length - 1; i++) blocked.add(key(path[i]));
   const route = bfs(
     puzzle.grid,
     { r: tip.r, c: tip.c },
-    { r: puzzle.goal.r, c: puzzle.goal.c }
+    { r: puzzle.goal.r, c: puzzle.goal.c },
+    blocked
   );
   if (!route || route.length < 2) return null;
   return route[1];
