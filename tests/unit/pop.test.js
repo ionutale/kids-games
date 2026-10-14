@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { levelConfig } from '$lib/pop/config.js';
+import { levelConfig, targetFor } from '$lib/pop/config.js';
 
 describe('Pop game', () => {
   it('level 1 config is easiest', () => {
@@ -66,5 +66,27 @@ describe('Pop game', () => {
   it('has popable items', () => {
     const items = ['🫧', '🐟', '🦋', '⭐', '🌟', '💫', '🌸', '🍎'];
     expect(items.length).toBe(8);
+  });
+});
+
+describe('targetFor', () => {
+  it('maps levels to the target ladder', () => {
+    expect(targetFor(1)).toBe(6);
+    expect(targetFor(5)).toBe(10);
+    expect(targetFor(10)).toBe(15);
+  });
+
+  it('is monotonic non-decreasing across levels 1..10', () => {
+    let prev = 0;
+    for (let l = 1; l <= 10; l++) {
+      const t = targetFor(l);
+      expect(t).toBeGreaterThanOrEqual(prev);
+      prev = t;
+    }
+  });
+
+  it('clamps out-of-range levels like levelConfig', () => {
+    expect(targetFor(0)).toBe(6);
+    expect(targetFor(99)).toBe(15);
   });
 });

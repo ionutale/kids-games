@@ -11,3 +11,9 @@ export function levelConfig(level) {
   const itemCount = Math.min(2 + n, 8);
   return { maxItems, spawnMs, fallSec, itemCount };
 }
+
+// Score needed to win the round with a ⭐: 6 at L1, +1 per level, capped at 15.
+export function targetFor(level) {
+  const n = Math.min(10, Math.max(1, parseInt(level, 10) || 1));
+  return Math.min(5 + n, 15);
+}

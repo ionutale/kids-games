@@ -10,7 +10,7 @@
   import WinOverlay from '$lib/components/ui/WinOverlay.svelte';
   import SoundToggle from '$lib/components/SoundToggle.svelte';
   import { loadLevel, saveLevel, loadMastered, saveMastered, MAX_LEVEL } from '$lib/ladder/progress.js';
-  import { levelConfig } from '$lib/pop/config.js';
+  import { levelConfig, targetFor } from '$lib/pop/config.js';
 
   const items = ['🫧', '🐟', '🦋', '⭐', '🌟', '💫', '🌸', '🍎'];
   let bubbles = $state([]);
@@ -20,6 +20,8 @@
   let playing = $state(false);
   let level = $state(loadLevel('pop'));
   let mastered = $state(loadMastered('pop'));
+
+  const target = $derived(targetFor(level));
 
   function spawnBubble() {
     if (!playing) return;
@@ -38,6 +40,7 @@
     if (!playing) return;
     bubbles = bubbles.filter(b => b.id !== id);
     score++;
+    if (score >= targetFor(level)) finishRound();
     if ($settings.soundEnabled) playPop();
     if (navigator.vibrate) navigator.vibrate(20);
   }
@@ -57,17 +60,24 @@
     if (interval) clearInterval(interval);
   }
 
+  function finishRound() {
+    clearInterval(interval);
+    interval = null;
+    playing = false;
+    timeLeft = 0;
+    if (level >= MAX_LEVEL) {
+      saveMastered('pop');
+      mastered = true;
+    }
+  }
+
   onMount(() => {
     startGame();
     const timer = setInterval(() => {
       if (playing) {
         timeLeft--;
         if (timeLeft <= 0) {
-          resetGame();
-          if (level >= MAX_LEVEL) {
-            saveMastered('pop');
-            mastered = true;
-          }
+          finishRound();
           // WinOverlay plays the single win cheer on mount; no second jingle here.
         }
       }
@@ -94,7 +104,7 @@
 
 <GameShell accent="#C4B5FD">
   {#snippet hudLeft()}
-    <HudPill icon="⭐" label="{$_('score')}: {score}" />
+    <HudPill icon="⭐" label="{$_('score')}: {score}/{target}" />
   {/snippet}
 
   {#snippet hudRight()}
@@ -106,7 +116,7 @@
 
   <div class="pop-game">
     {#if !playing && timeLeft <= 0}
-      <WinOverlay title={$_('greatJob')} subtitle="{$_('score')}: {score}">
+      <WinOverlay title={$_('greatJob')} subtitle="{$_('score')}: {score}/{target}{score >= target ? ' ⭐' : ''}">
         <LadderActions
           gameId="pop"
           {level}

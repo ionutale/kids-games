@@ -60,4 +60,21 @@ test.describe('Pop E2E', () => {
     await page.waitForTimeout(500);
     await expect(page.locator('.game-shell .top-bar')).toBeVisible();
   });
+
+  test('reaching the target ends the round early with a ⭐', async ({ page }) => {
+    await page.goto('/games/pop');
+    const overlay = page.locator('.win-overlay');
+    const bubble = page.locator('.bubble').first();
+    for (let i = 0; i < 90; i++) {
+      if (await overlay.isVisible()) break;
+      if (await bubble.isVisible()) {
+        await bubble.click({ force: true });
+      }
+      await page.waitForTimeout(150);
+    }
+    await expect(overlay).toBeVisible();
+    const sub = page.locator('.win-sub');
+    await expect(sub).toContainText('⭐');
+    await expect(sub).toContainText('6/6');
+  });
 });
