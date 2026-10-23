@@ -3,12 +3,26 @@
   "redirects": [
     {
       "source": "/(.*)",
-      "has": [{ "type": "host", "value": "kids-games-lac.vercel.app" }],
+      "has": [
+        {
+          "type": "host",
+          "value": "kids-games-lac.vercel.app"
+        }
+      ],
       "destination": "https://kids-2-5.aiu-media.com/$1",
-      "statusCode": 301
+      "statusCode": 301,
+      "missing": [
+        {
+          "type": "header",
+          "key": "x-aiu-proxy"
+        }
+      ]
     }
   ],
   "rewrites": [
-    { "source": "/((?!_app|icons|screenshots|favicon|robots|sw|workbox|manifest).*)", "destination": "/index.html" }
+    {
+      "source": "/((?!_app|icons|screenshots|favicon|robots|sw|workbox|manifest).*)",
+      "destination": "/index.html"
+    }
   ]
 }
