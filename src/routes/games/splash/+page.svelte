@@ -3,6 +3,7 @@
   import { settings } from '$lib/stores/settings';
   import { playSplash } from '$lib/sounds/audioManager';
   import GameShell from '$lib/components/ui/GameShell.svelte';
+  import DebugHud from '$lib/splash/DebugHud.svelte';
   import { getSplashBudget, shouldSpawn, appendWithCap } from '$lib/splash/budget.js';
 
   const colors = ['#FF6B6B', '#4FC3F7', '#81C784', '#FFD54F', '#BA68C8', '#FF8A65', '#E57373', '#64B5F6'];
@@ -15,6 +16,7 @@
   let lastSpawnX = 0;
   let lastSpawnY = 0;
   let measureStart = $state(0);
+  let debug = $state(false);
   let cleanupTimer = null;
 
   const budget = $derived(getSplashBudget($settings.ageLevel));
@@ -114,6 +116,7 @@
   }
 
   onMount(() => {
+    debug = new URLSearchParams(window.location.search).get('debug') === '1';
     document.addEventListener('visibilitychange', onVisibility);
     return () => document.removeEventListener('visibilitychange', onVisibility);
   });
@@ -145,6 +148,9 @@
       </span>
     {/each}
   </div>
+  {#if debug}
+    <DebugHud liveCount={splashes.length} cap={budget.cap} measureStart={measureStart} />
+  {/if}
 </GameShell>
 
 <style>

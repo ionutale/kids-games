@@ -108,6 +108,25 @@ test.describe('Splash E2E', () => {
     const bg = await page.locator('.game-shell').evaluate(el => getComputedStyle(el).background);
     expect(bg).toContain('gradient');
   });
+
+  test('debug HUD appears only with ?debug=1', async ({ page }) => {
+    await useAge(page, 3);
+
+    await page.goto('/games/splash');
+    await expect(page.locator('.debug-hud')).toHaveCount(0);
+
+    await page.goto('/games/splash?debug=1');
+    const hud = page.locator('.debug-hud');
+    await expect(hud).toBeVisible();
+    await expect(hud).toContainText('live 0/40');
+    await expect(hud).toContainText(/FPS —/);
+
+    await page.locator('.splash-game').click({ position: { x: 150, y: 300 } });
+
+    await expect(hud).toContainText('live 3/40');
+    await expect(hud).toContainText('peak 3/40');
+    await expect(hud).toContainText(/FPS \d/);
+  });
 });
 
 test.describe('Splash — touch input', () => {
