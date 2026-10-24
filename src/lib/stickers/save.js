@@ -3,6 +3,15 @@ import { clampPercent } from './geometry.js';
 export const SAVE_KEY = 'kids-games-stickers';
 export const SAVE_VERSION = 1;
 
+export function getStorage() {
+  try {
+    return typeof localStorage === 'undefined' ? null : localStorage;
+  } catch {
+    // Blocked cookies or a sandboxed view can throw on the accessor itself.
+    return null;
+  }
+}
+
 function emptySave() {
   return { version: SAVE_VERSION, worlds: {} };
 }

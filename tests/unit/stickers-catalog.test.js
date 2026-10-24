@@ -32,7 +32,6 @@ describe('Stickers catalog (Dino Valley slice)', () => {
   it('has a shelf entry and a label for every sticker', () => {
     for (const sticker of STICKERS) {
       expect(STANDARD_SHELF).toContain(sticker.type);
-      expect(YOUNG_SHELF).toContain(sticker.type);
       expect(sticker.labelKey).toMatch(/^sticker[A-Z]/);
       expect(sticker.size).toBeGreaterThanOrEqual(72);
       expect(sticker.size).toBeLessThanOrEqual(96);

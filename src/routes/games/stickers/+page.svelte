@@ -16,7 +16,7 @@
     getSticker,
     getPlacedSize
   } from '$lib/stickers/catalog.js';
-  import { loadWorld, saveWorld } from '$lib/stickers/save.js';
+  import { getStorage, loadWorld, saveWorld } from '$lib/stickers/save.js';
   import {
     isOverShelf,
     clampPlacement,
@@ -40,6 +40,8 @@
   let resetButtonEl = $state(null);
   let resetConfirmEl = $state(null);
   let resetCancelEl = $state(null);
+  let resetCardEl = $state(null);
+  let storage = null;
 
   let pending = null;
   let playRect = null;
@@ -53,7 +55,8 @@
   const isFull = $derived(placed.length >= SOFT_CAP);
 
   onMount(() => {
-    placed = loadWorld(localStorage, WORLD.id, (type) => Boolean(getSticker(type)));
+    storage = getStorage();
+    placed = loadWorld(storage, WORLD.id, (type) => Boolean(getSticker(type)));
     measure();
     placed = clampForPlayArea(placed);
     saveNow();
@@ -75,7 +78,7 @@
   });
 
   function saveNow() {
-    saveWorld(localStorage, WORLD.id, placed);
+    saveWorld(storage, WORLD.id, placed);
   }
 
   function clampForPlayArea(placements) {
@@ -111,6 +114,7 @@
   }
 
   async function openReset() {
+    if (active || pending) return;
     if ($settings.soundEnabled) playTap();
     resetOpen = true;
     await tick();
@@ -146,10 +150,13 @@
     const last = resetCancelEl;
     if (!first || !last) return;
 
-    if (event.shiftKey && document.activeElement === first) {
+    const activeElement = document.activeElement;
+    const onCard = activeElement === resetCardEl;
+
+    if (event.shiftKey && (activeElement === first || onCard)) {
       event.preventDefault();
       last.focus();
-    } else if (!event.shiftKey && document.activeElement === last) {
+    } else if (!event.shiftKey && (activeElement === last || onCard)) {
       event.preventDefault();
       first.focus();
     }
@@ -326,12 +333,12 @@
 
     if (!area || !world) return;
 
-    // A tap on a placed sticker only brings it to the front.
+    // A tap on a placed sticker only brings it to the front. The pointerdown
+    // already played the soft tap.
     if (
       current.source === 'canvas' &&
       Math.hypot(event.clientX - current.startX, event.clientY - current.startY) <= 4
     ) {
-      if ($settings.soundEnabled) playTap();
       return;
     }
 
@@ -476,6 +483,7 @@
         aria-labelledby="reset-title"
         data-testid="reset-card"
         tabindex="-1"
+        bind:this={resetCardEl}
         onkeydown={onResetKeydown}
       >
         <p id="reset-title">{$_('stickerResetConfirm')}</p>

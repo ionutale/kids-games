@@ -131,18 +131,41 @@ test.describe('Stickers — drag, save, reset', () => {
     expect(Math.abs(box.y + box.height / 2 - target.y)).toBeLessThan(20);
   });
 
-  test('a tap on a placed sticker keeps its position', async ({ page }) => {
+  test('a 3px tap on a placed sticker keeps its position', async ({ page }) => {
     await page.goto('/games/stickers');
     await dragShelfSticker(page, 'trex', await canvasPoint(page, 0.5, 0.5));
 
     const sticker = page.locator('.placed-sticker').first();
     const before = await sticker.boundingBox();
-    await touchTap(page, sticker);
+    const from = await center(sticker);
+    await touchDrag(page, sticker, { x: from.x + 3, y: from.y });
     const after = await sticker.boundingBox();
 
     expect(Math.abs(after.x - before.x)).toBeLessThan(1);
     expect(Math.abs(after.y - before.y)).toBeLessThan(1);
     await expect(page.locator('.placed-sticker')).toHaveCount(1);
+  });
+
+  test('clamps an out-of-range saved position on load', async ({ page }) => {
+    await page.addInitScript(({ key }) => {
+      localStorage.setItem(key, JSON.stringify({
+        version: 1,
+        worlds: {
+          'dino-valley': {
+            placed: [{ id: 'edge', type: 'trex', x: 0, y: 100 }]
+          }
+        }
+      }));
+    }, { key: SAVE_KEY });
+
+    await page.goto('/games/stickers');
+    const play = await page.locator('.play-area').boundingBox();
+    const box = await page.locator('.placed-sticker').first().boundingBox();
+
+    expect(box.x).toBeGreaterThanOrEqual(play.x - 1);
+    expect(box.x + box.width).toBeLessThanOrEqual(play.x + play.width + 1);
+    expect(box.y).toBeGreaterThanOrEqual(play.y - 1);
+    expect(box.y + box.height).toBeLessThanOrEqual(play.y + play.height + 1);
   });
 
   test('clamps a sticker fully inside the play area at the edge', async ({ page }) => {

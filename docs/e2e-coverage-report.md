@@ -27,7 +27,7 @@ Per-game e2e coverage matrix (2026-08-24 audit). Legend: ✅ covered · ⚠️ p
 | speed-match | ✅ | ✅ level | ✅ blur | ❌ | ✅ touch | 4 |
 | splash | ✅ | ❌ | ❌ | ❌ | ✅ touch tap/drag | 11 |
 | spot-the-difference | ✅ | ❌ | ❌ | ❌ | ⚠️ | 4 |
-| stickers | ✅ | ✅ | ❌ | ❌ | ✅ touch drag + CDP swipe | 19 |
+| stickers | ✅ | ✅ | ❌ | ❌ | ✅ touch drag + CDP swipe | 20 |
 | tetris | ✅ | ✅ best/diff | ✅ pause | ❌ | ⚠️ | 4 |
 | tower-defense | ✅ | ❌ | ❌ | ❌ | ✅ touch place | 8 |
 | what-comes-next | ✅ | ✅ level | ❌ | ❌ | ⚠️ | 4 |
