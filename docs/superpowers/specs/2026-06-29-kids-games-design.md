@@ -127,7 +127,7 @@ All games share a thin shell:
 - **Mechanics:** Tap anywhere → explosion of color/stars/rainbows + sound. No rules, no goal. Pure sensory play.
 - **Age scaling:**
   - 2yo: big slow bursts, single tap
-  - 5yo: trails follow finger, hold for continuous effect, pattern variations
+  - 5yo: trails follow finger while dragging; a still finger is not a trail (2026-10: 8px movement gate), pattern variations
 - **No failure, no end state**
 
 ## PWA

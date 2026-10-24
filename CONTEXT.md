@@ -205,6 +205,16 @@ The following games have been proposed but not yet designed or implemented. Each
 - **Pattern Arc**: The fixed pedagogical ordering by level: AB → AAB/AABB → ABC/AABC → growing blocks `[A×k][B]`. Every level 1–10 is a distinct step (unit, strip length, distractor similarity, block count); L11+ plateaus at max difficulty (7 growing blocks).
 - **Prompt Strip**: The visible emoji sequence with exactly one ❓ slot; answered from 3 options.
 
+## Splash Game
+
+- **Splash**: A free-play game where tapping or dragging on the surface emits celebratory emoji.
+- **Particle**: One emoji emitted by Splash that appears, animates, and disappears.
+- **Burst**: The group of particles emitted by one spawn event.
+- **Live Count**: The number of particles currently animating.
+- **Splash Budget**: The cap, cadence, and lifetime that bound Splash's particles.
+- **Trail**: The stream of Bursts that follows a moving finger; a still finger is not a Trail.
+- **Fluid**: Splash meets the iPhone XR acceptance bar: during a 10-second drag, average frame rate is at least 30fps, the 95th-percentile frame is at most 50ms, and no frame exceeds 200ms.
+
 ## Assets
 
 - **Free Assets Guide** (`docs/free-assets.md`): complete inventory of all sounds in the repo (mp3 files + synthesized Web Audio tones, with code pointers and known gaps) plus curated free-license source sites for audio, music, images, icons, sprites, and 3D meshes.
