@@ -4,7 +4,7 @@
   import { playSplashChirp } from '$lib/sounds/audioManager';
   import GameShell from '$lib/components/ui/GameShell.svelte';
   import DebugHud from '$lib/splash/DebugHud.svelte';
-  import { getSplashBudget, shouldSpawn, appendWithCap } from '$lib/splash/budget.js';
+  import { getSplashBudget, shouldSpawn, appendWithCap, filterExpired } from '$lib/splash/budget.js';
 
   const colors = ['#FF6B6B', '#4FC3F7', '#81C784', '#FFD54F', '#BA68C8', '#FF8A65', '#E57373', '#64B5F6'];
   const emojis = ['⭐', '🌸', '🦋', '💫', '🎈', '🌈', '✨', '❤️'];
@@ -16,6 +16,7 @@
   let lastSpawnX = 0;
   let lastSpawnY = 0;
   let measureStart = $state(0);
+  let dragging = $state(false);
   let debug = $state(false);
   let cleanupTimer = null;
 
@@ -25,7 +26,7 @@
     if (cleanupTimer !== null) return;
     cleanupTimer = setInterval(() => {
       const now = performance.now();
-      const next = splashes.filter((s) => s.expiresAt > now);
+      const next = filterExpired(splashes, now);
       if (next.length !== splashes.length) splashes = next;
       if (splashes.length === 0) {
         clearInterval(cleanupTimer);
@@ -68,6 +69,7 @@
   function down(e) {
     if (activePointer !== null) return;
     activePointer = e.pointerId;
+    dragging = true;
     surfaceRect = e.currentTarget.getBoundingClientRect(); // cache: window moves lack currentTarget
     e.preventDefault?.();
     if (measureStart === 0) measureStart = performance.now();
@@ -100,6 +102,7 @@
 
   function resetInput() {
     activePointer = null;
+    dragging = false;
     window.removeEventListener('pointermove', move);
     window.removeEventListener('pointerup', up);
     window.removeEventListener('pointercancel', up);
@@ -149,7 +152,12 @@
     {/each}
   </div>
   {#if debug}
-    <DebugHud liveCount={splashes.length} cap={budget.cap} measureStart={measureStart} />
+    <DebugHud
+      liveCount={splashes.length}
+      cap={budget.cap}
+      measureStart={measureStart}
+      dragging={dragging}
+    />
   {/if}
 </GameShell>
 

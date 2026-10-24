@@ -1,11 +1,10 @@
 <script>
   import { onMount } from 'svelte';
+  import { addFrame, frameStats } from '$lib/splash/metrics.js';
 
-  let { liveCount = 0, cap = 0, measureStart = 0 } = $props();
+  let { liveCount = 0, cap = 0, measureStart = 0, dragging = false } = $props();
 
-  const WINDOW_MS = 10000;
   const PAINT_MS = 250;
-  const IGNORE_FRAME_MS = 1000;
 
   let fps = $state(0);
   let p95 = $state(0);
@@ -16,36 +15,35 @@
   let startSeen = 0;
   let lastPaint = 0;
   let last = 0;
-
-  function pushFrame(now, dt) {
-    if (dt <= 0 || dt > IGNORE_FRAME_MS) {
-      frames = [];
-      return;
-    }
-    frames.push({ t: now, dt });
-    while (frames.length && now - frames[0].t > WINDOW_MS) frames.shift();
-  }
-
-  function paint(now) {
-    if (!frames.length) return;
-
-    let sum = 0;
-    for (const frame of frames) sum += frame.dt;
-    const avgMs = sum / frames.length;
-    const sorted = frames.map((frame) => frame.dt).sort((a, b) => a - b);
-
-    fps = avgMs > 0 ? 1000 / avgMs : 0;
-    p95 = sorted[Math.floor(sorted.length * 0.95)] ?? 0;
-    lastPaint = now;
-  }
+  let hidden = false;
 
   onMount(() => {
     last = performance.now();
     let raf;
 
+    function onVisibility() {
+      if (!document.hidden) return;
+      hidden = true;
+      frames = [];
+    }
+
     function tick(now) {
       const dt = now - last;
       last = now;
+
+      // rAF pauses while the tab is hidden. Skip exactly one frame after it
+      // returns: that gap is a tab switch, not a game frame. Every other gap,
+      // however large, counts toward FPS, p95, and worst.
+      if (hidden) {
+        if (document.hidden) {
+          raf = requestAnimationFrame(tick);
+          return;
+        }
+        hidden = false;
+        frames = [];
+        raf = requestAnimationFrame(tick);
+        return;
+      }
 
       if (measureStart > 0) {
         if (measureStart !== startSeen) {
@@ -56,21 +54,32 @@
           lastPaint = 0;
         }
 
-        if (dt > 0 && dt <= IGNORE_FRAME_MS) {
-          pushFrame(now, dt);
+        // Record only while the finger is down, then freeze. The tester can
+        // release and read the drag's numbers without idle frames flattering them.
+        if (dragging && dt > 0) {
+          frames = addFrame(frames, now, dt);
           if (dt > worst) worst = dt;
           if (liveCount > peak) peak = liveCount;
-          if (now - lastPaint >= PAINT_MS) paint(now);
-        } else if (dt > IGNORE_FRAME_MS) {
-          frames = [];
+
+          if (now - lastPaint >= PAINT_MS) {
+            const stats = frameStats(frames);
+            fps = stats.fps;
+            p95 = stats.p95;
+            lastPaint = now;
+          }
         }
       }
 
       raf = requestAnimationFrame(tick);
     }
 
+    document.addEventListener('visibilitychange', onVisibility);
     raf = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(raf);
+
+    return () => {
+      cancelAnimationFrame(raf);
+      document.removeEventListener('visibilitychange', onVisibility);
+    };
   });
 
   const fpsText = $derived(fps > 0 ? fps.toFixed(1) : '—');

@@ -34,6 +34,10 @@ export function appendWithCap(current, incoming, cap) {
   return next.length <= limit ? next : next.slice(next.length - limit);
 }
 
+export function filterExpired(particles, now) {
+  return particles.filter((particle) => particle.expiresAt > now);
+}
+
 export function estimatedLive({ perBurst, intervalMs, lifetimeMs }) {
   return (perBurst / intervalMs) * lifetimeMs;
 }

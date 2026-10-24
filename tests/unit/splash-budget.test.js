@@ -3,6 +3,7 @@ import {
   getSplashBudget,
   shouldSpawn,
   appendWithCap,
+  filterExpired,
   estimatedLive
 } from '$lib/splash/budget.js';
 
@@ -76,6 +77,23 @@ describe('shouldSpawn', () => {
 
   it('treats exactly 8px as enough movement', () => {
     expect(shouldSpawn({ ...base, x: 100, y: 108 })).toBe(true);
+  });
+});
+
+describe('filterExpired', () => {
+  it('keeps future particles and drops expired ones', () => {
+    const particles = [
+      { id: 1, expiresAt: 100 },
+      { id: 2, expiresAt: 200 }
+    ];
+
+    expect(filterExpired(particles, 150)).toEqual([{ id: 2, expiresAt: 200 }]);
+    expect(filterExpired(particles, 200)).toEqual([]);
+  });
+
+  it('keeps every particle before any expiry', () => {
+    const particles = [{ id: 1, expiresAt: 100 }, { id: 2, expiresAt: 200 }];
+    expect(filterExpired(particles, 50)).toEqual(particles);
   });
 });
 

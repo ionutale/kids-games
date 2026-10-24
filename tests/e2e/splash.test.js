@@ -91,6 +91,42 @@ test.describe('Splash E2E', () => {
     expect(count).toBeGreaterThanOrEqual(Math.floor(budget.cap * 0.6));
   });
 
+  test('a fast jitter does not bypass the cadence gate', async ({ page }) => {
+    const budget = getSplashBudget(3);
+    await useAge(page, 3);
+    await page.goto('/games/splash');
+
+    const area = page.locator('.splash-game');
+    const box = await area.boundingBox();
+    const x = box.x + box.width * 0.5;
+    const y = box.y + box.height * 0.5;
+
+    await page.evaluate(({ x, y }) => {
+      const areaEl = document.querySelector('.splash-game');
+      if (!areaEl) throw new Error('splash surface not found');
+      const root = document.documentElement;
+
+      areaEl.dispatchEvent(new PointerEvent('pointerdown', {
+        pointerId: 9, pointerType: 'touch', isPrimary: true,
+        clientX: x, clientY: y, buttons: 1, bubbles: true, cancelable: true
+      }));
+
+      for (let i = 1; i <= 10; i++) {
+        root.dispatchEvent(new PointerEvent('pointermove', {
+          pointerId: 9, pointerType: 'touch', isPrimary: true,
+          clientX: x + i * 1.5, clientY: y, buttons: 1, bubbles: true, cancelable: true
+        }));
+      }
+
+      root.dispatchEvent(new PointerEvent('pointerup', {
+        pointerId: 9, pointerType: 'touch', isPrimary: true,
+        clientX: x + 15, clientY: y, buttons: 0, bubbles: true, cancelable: true
+      }));
+    }, { x, y });
+
+    await expect(page.locator('.splash')).toHaveCount(budget.perBurst);
+  });
+
   test('particles disappear after their lifetime', async ({ page }) => {
     const budget = getSplashBudget(3);
     await useAge(page, 3);
@@ -121,11 +157,11 @@ test.describe('Splash E2E', () => {
     await expect(hud).toContainText('live 0/40');
     await expect(hud).toContainText(/FPS —/);
 
-    await page.locator('.splash-game').click({ position: { x: 150, y: 300 } });
+    await touchDrag(page, { steps: 6, stepMs: 50 });
 
-    await expect(hud).toContainText('live 3/40');
-    await expect(hud).toContainText('peak 3/40');
     await expect(hud).toContainText(/FPS \d/);
+    await expect(hud).toContainText(/peak [1-9]\d*\/40/);
+    await expect(hud).toContainText(/live \d+\/40/);
   });
 });
 
