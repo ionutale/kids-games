@@ -24,9 +24,15 @@ test.describe('G1 — hub navigation sweep', () => {
       } else {
         await page.goto(`/games/${game}`);
       }
-      await expect(page.locator('.game-shell')).toBeVisible({ timeout: 10000 });
-      // back to hub via the shell's back button
-      await page.locator('.back-btn').first().click();
+      if (game === 'stickers') {
+        // Full-bleed route: no GameShell; it owns its floating back control.
+        await expect(page.locator('.stickers-world')).toBeVisible({ timeout: 10000 });
+        await page.getByTestId('back').click();
+      } else {
+        await expect(page.locator('.game-shell')).toBeVisible({ timeout: 10000 });
+        // back to hub via the shell's back button
+        await page.locator('.back-btn').first().click();
+      }
       await expect(page.locator('.hub')).toBeVisible({ timeout: 8000 });
     });
   }

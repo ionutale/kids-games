@@ -18,7 +18,12 @@ test.describe('Direct navigation', () => {
       const resp = await page.goto(`/games/${game.id}`, { waitUntil: 'networkidle' });
       expect(resp.status()).toBe(200);
       await expect(page).toHaveURL(`/games/${game.id}`);
-      await expect(page.locator('.back-btn')).toBeVisible();
+      if (game.id === 'stickers') {
+        await expect(page.locator('.stickers-world')).toBeVisible();
+        await expect(page.getByTestId('back')).toBeVisible();
+      } else {
+        await expect(page.locator('.back-btn')).toBeVisible();
+      }
     });
   }
 });
