@@ -22,7 +22,19 @@ export const STICKER_BY_TYPE = Object.freeze(
 );
 
 export const STANDARD_SHELF = Object.freeze(STICKERS.map((sticker) => sticker.type));
-export const YOUNG_SHELF = Object.freeze([...STANDARD_SHELF]);
+
+// Keep this explicit: the 3-5 shelf grows to 18, while the age-2 palette stays
+// these eight (4 dinos / 2 camp / 2 nature).
+export const YOUNG_SHELF = Object.freeze([
+  'trex',
+  'triceratops',
+  'stegosaurus',
+  'pteranodon',
+  'tent',
+  'campfire',
+  'fern',
+  'sun'
+]);
 
 export const SOFT_CAP = 80;
 export const SHELF_BUTTON_SIZE = Object.freeze({ standard: 64, young: 72 });

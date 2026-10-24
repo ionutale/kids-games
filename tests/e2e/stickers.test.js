@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
+import { center, touchDrag, touchTap } from './helpers/touch.js';
 
-const SETTINGS_KEY = 'kids-games-settings';
 const SAVE_KEY = 'kids-games-stickers';
 
 async function useAge(page, age = 3) {
@@ -10,19 +10,6 @@ async function useAge(page, age = 3) {
       ageLevel: level
     }));
   }, age);
-}
-
-function pointer(pointerId, x, y, buttons) {
-  return {
-    pointerId,
-    pointerType: 'touch',
-    isPrimary: true,
-    clientX: x,
-    clientY: y,
-    buttons,
-    bubbles: true,
-    cancelable: true
-  };
 }
 
 async function canvasPoint(page, fx = 0.5, fy = 0.5) {
@@ -36,25 +23,11 @@ async function shelfPoint(page) {
 }
 
 async function dragShelfSticker(page, type, point) {
-  const button = page.locator(`.shelf-sticker[data-sticker-type="${type}"]`);
-  const box = await button.boundingBox();
-  const x = box.x + box.width / 2;
-  const y = box.y + box.height / 2;
-
-  await button.dispatchEvent('pointerdown', pointer(21, x, y, 1));
-  await page.dispatchEvent(':root', 'pointermove', pointer(21, x, y - 12, 1));
-  await page.dispatchEvent(':root', 'pointermove', pointer(21, point.x, point.y, 1));
-  await page.dispatchEvent(':root', 'pointerup', pointer(21, point.x, point.y, 0));
+  await touchDrag(page, page.locator(`.shelf-sticker[data-sticker-type="${type}"]`), point);
 }
 
 async function dragPlacedSticker(page, point, placed = page.locator('.placed-sticker').first()) {
-  const box = await placed.boundingBox();
-  const x = box.x + box.width / 2;
-  const y = box.y + box.height / 2;
-
-  await placed.dispatchEvent('pointerdown', pointer(22, x, y, 1));
-  await page.dispatchEvent(':root', 'pointermove', pointer(22, point.x, point.y, 1));
-  await page.dispatchEvent(':root', 'pointerup', pointer(22, point.x, point.y, 0));
+  await touchDrag(page, placed, point);
 }
 
 test.beforeEach(async ({ page }) => {
@@ -88,6 +61,30 @@ test.describe('Stickers — Dino Valley slice', () => {
     await expect(page.locator('.placed-sticker')).toHaveCount(1);
     await expect(page.locator('.placed-sticker')).toHaveAttribute('data-sticker-type', 'trex');
   });
+
+  test('keeps one placement when saved ids collide', async ({ page }) => {
+    await page.addInitScript(({ key }) => {
+      localStorage.setItem(key, JSON.stringify({
+        version: 1,
+        worlds: {
+          'dino-valley': {
+            placed: [
+              { id: 'dup', type: 'trex', x: 40, y: 60 },
+              { id: 'dup', type: 'fern', x: 20, y: 80 }
+            ]
+          }
+        }
+      }));
+    }, { key: SAVE_KEY });
+
+    const pageErrors = [];
+    page.on('pageerror', (error) => pageErrors.push(error.message));
+
+    await page.goto('/games/stickers');
+
+    await expect(page.locator('.placed-sticker')).toHaveCount(1);
+    expect(pageErrors).toEqual([]);
+  });
 });
 
 test.describe('Stickers — drag, save, reset', () => {
@@ -106,7 +103,17 @@ test.describe('Stickers — drag, save, reset', () => {
   test('tapping the shelf does not place a sticker', async ({ page }) => {
     await page.goto('/games/stickers');
 
-    await page.locator('.shelf-sticker[data-sticker-type="trex"]').click();
+    await touchTap(page, page.locator('.shelf-sticker[data-sticker-type="trex"]'));
+
+    await expect(page.locator('.placed-sticker')).toHaveCount(0);
+  });
+
+  test('a shelf nudge under the threshold does not place a sticker', async ({ page }) => {
+    await page.goto('/games/stickers');
+    const button = page.locator('.shelf-sticker[data-sticker-type="trex"]');
+    const from = await center(button);
+
+    await touchDrag(page, button, { x: from.x, y: from.y - 5 });
 
     await expect(page.locator('.placed-sticker')).toHaveCount(0);
   });
@@ -122,6 +129,36 @@ test.describe('Stickers — drag, save, reset', () => {
     const box = await page.locator('.placed-sticker').boundingBox();
     expect(Math.abs(box.x + box.width / 2 - target.x)).toBeLessThan(20);
     expect(Math.abs(box.y + box.height / 2 - target.y)).toBeLessThan(20);
+  });
+
+  test('a tap on a placed sticker keeps its position', async ({ page }) => {
+    await page.goto('/games/stickers');
+    await dragShelfSticker(page, 'trex', await canvasPoint(page, 0.5, 0.5));
+
+    const sticker = page.locator('.placed-sticker').first();
+    const before = await sticker.boundingBox();
+    await touchTap(page, sticker);
+    const after = await sticker.boundingBox();
+
+    expect(Math.abs(after.x - before.x)).toBeLessThan(1);
+    expect(Math.abs(after.y - before.y)).toBeLessThan(1);
+    await expect(page.locator('.placed-sticker')).toHaveCount(1);
+  });
+
+  test('clamps a sticker fully inside the play area at the edge', async ({ page }) => {
+    await page.goto('/games/stickers');
+    const play = await page.locator('.play-area').boundingBox();
+
+    await dragShelfSticker(page, 'trex', {
+      x: play.x + 2,
+      y: play.y + play.height - 2
+    });
+
+    const box = await page.locator('.placed-sticker').first().boundingBox();
+    expect(box.x).toBeGreaterThanOrEqual(play.x - 1);
+    expect(box.x + box.width).toBeLessThanOrEqual(play.x + play.width + 1);
+    expect(box.y).toBeGreaterThanOrEqual(play.y - 1);
+    expect(box.y + box.height).toBeLessThanOrEqual(play.y + play.height + 1);
   });
 
   test('drags a placed sticker back to the shelf to peel it', async ({ page }) => {
@@ -162,6 +199,41 @@ test.describe('Stickers — drag, save, reset', () => {
 
     await page.reload();
     await expect(page.locator('.placed-sticker')).toHaveCount(0);
+  });
+
+  test('reset card takes focus, cycles, and Escape keeps the scene', async ({ page }) => {
+    await page.goto('/games/stickers');
+    await dragShelfSticker(page, 'trex', await canvasPoint(page, 0.5, 0.5));
+
+    const reset = page.getByTestId('reset');
+    await reset.focus();
+    await page.keyboard.press('Enter');
+
+    await expect(page.getByTestId('reset-card')).toBeVisible();
+    await expect(page.getByTestId('reset-confirm')).toBeFocused();
+
+    await page.keyboard.press('Tab');
+    await expect(page.getByTestId('reset-cancel')).toBeFocused();
+    await page.keyboard.press('Tab');
+    await expect(page.getByTestId('reset-confirm')).toBeFocused();
+
+    await page.keyboard.press('Escape');
+    await expect(page.getByTestId('reset-card')).toBeHidden();
+    await expect(page.locator('.placed-sticker')).toHaveCount(1);
+    await expect(reset).toBeFocused();
+  });
+
+  test('tapping the reset backdrop keeps the scene', async ({ page }) => {
+    await page.goto('/games/stickers');
+    await dragShelfSticker(page, 'trex', await canvasPoint(page, 0.5, 0.5));
+
+    await page.getByTestId('reset').click();
+    await expect(page.getByTestId('reset-card')).toBeVisible();
+
+    await page.locator('.reset-backdrop').click({ position: { x: 10, y: 10 } });
+
+    await expect(page.getByTestId('reset-card')).toBeHidden();
+    await expect(page.locator('.placed-sticker')).toHaveCount(1);
   });
 
   test('back saves and returns to the hub', async ({ page }) => {
@@ -223,5 +295,49 @@ test.describe('Stickers — drag, save, reset', () => {
     await dragShelfSticker(page, 'trex', await canvasPoint(page, 0.5, 0.5));
     await expect(page.locator('.placed-sticker')).toHaveCount(80);
     await expect(page.getByTestId('shelf-full')).toBeVisible();
+  });
+
+  test('a horizontal shelf swipe scrolls and places nothing', async ({ page }) => {
+    await page.goto('/games/stickers');
+
+    const shelf = page.locator('.shelf-scroll');
+    const box = await shelf.boundingBox();
+    const start = { x: box.x + box.width - 30, y: box.y + box.height / 2 };
+    const end = { x: box.x + 30, y: start.y };
+    const cdp = await page.context().newCDPSession(page);
+
+    await cdp.send('Input.dispatchTouchEvent', {
+      type: 'touchStart',
+      touchPoints: [{ x: start.x, y: start.y }]
+    });
+    for (let i = 1; i <= 8; i++) {
+      await cdp.send('Input.dispatchTouchEvent', {
+        type: 'touchMove',
+        touchPoints: [{ x: start.x + ((end.x - start.x) * i) / 8, y: start.y }]
+      });
+      await page.waitForTimeout(16);
+    }
+    await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+
+    await expect.poll(() => shelf.evaluate((el) => el.scrollLeft)).toBeGreaterThan(0);
+    await expect(page.locator('.placed-sticker')).toHaveCount(0);
+  });
+
+  test('places and peels without page or console errors', async ({ page }) => {
+    const errors = [];
+    page.on('pageerror', (error) => errors.push(`pageerror: ${error.message}`));
+    page.on('console', (message) => {
+      if (message.type() === 'error') errors.push(`console: ${message.text()}`);
+    });
+
+    await page.goto('/games/stickers');
+    await dragShelfSticker(page, 'trex', await canvasPoint(page, 0.5, 0.55));
+    await dragShelfSticker(page, 'fern', await canvasPoint(page, 0.3, 0.4));
+    await expect(page.locator('.placed-sticker')).toHaveCount(2);
+
+    await dragPlacedSticker(page, await shelfPoint(page), page.locator('.placed-sticker').first());
+    await expect(page.locator('.placed-sticker')).toHaveCount(1);
+
+    expect(errors).toEqual([]);
   });
 });

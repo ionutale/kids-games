@@ -34,6 +34,8 @@ export function loadWorld(storage, worldId, isKnownType = () => true) {
   const placed = data.worlds?.[worldId]?.placed;
   if (!Array.isArray(placed)) return [];
 
+  const seen = new Set();
+
   return placed
     .filter(
       (placement) =>
@@ -49,24 +51,37 @@ export function loadWorld(storage, worldId, isKnownType = () => true) {
       type: placement.type,
       x: clampPercent(placement.x),
       y: clampPercent(placement.y)
-    }));
+    }))
+    // A duplicate id would crash Svelte's keyed each block. Keep the first
+    // occurrence and drop the rest instead of losing the whole scene.
+    .filter((placement) => {
+      if (seen.has(placement.id)) return false;
+      seen.add(placement.id);
+      return true;
+    });
 }
 
 export function saveWorld(storage, worldId, placed) {
-  if (!storage?.setItem) return;
+  if (!storage?.setItem) return false;
 
-  const data = readAll(storage);
-  data.worlds = {
-    ...data.worlds,
-    [worldId]: {
-      placed: placed.map((placement) => ({
-        id: placement.id,
-        type: placement.type,
-        x: clampPercent(placement.x),
-        y: clampPercent(placement.y)
-      }))
-    }
-  };
+  try {
+    const data = readAll(storage);
+    data.worlds = {
+      ...data.worlds,
+      [worldId]: {
+        placed: placed.map((placement) => ({
+          id: placement.id,
+          type: placement.type,
+          x: clampPercent(placement.x),
+          y: clampPercent(placement.y)
+        }))
+      }
+    };
 
-  storage.setItem(SAVE_KEY, JSON.stringify(data));
+    storage.setItem(SAVE_KEY, JSON.stringify(data));
+    return true;
+  } catch {
+    // Quota, private mode, or a hostile storage shim: the canvas stays usable.
+    return false;
+  }
 }

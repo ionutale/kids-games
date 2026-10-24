@@ -90,9 +90,40 @@ describe('Stickers save', () => {
     ]);
   });
 
+  it('keeps the first placement when saved ids collide', () => {
+    const storage = memoryStorage();
+    storage.setItem(SAVE_KEY, JSON.stringify({
+      version: SAVE_VERSION,
+      worlds: {
+        'dino-valley': {
+          placed: [
+            { id: 'dup', type: 'trex', x: 40, y: 60 },
+            { id: 'dup', type: 'fern', x: 20, y: 80 }
+          ]
+        }
+      }
+    }));
+
+    expect(loadWorld(storage, 'dino-valley', () => true)).toEqual([
+      { id: 'dup', type: 'trex', x: 40, y: 60 }
+    ]);
+  });
+
   it('does not throw without storage', () => {
     expect(() => saveWorld(null, 'dino-valley', [trex])).not.toThrow();
     expect(loadWorld(null, 'dino-valley')).toEqual([]);
+  });
+
+  it('reports a failed write without throwing', () => {
+    const storage = {
+      getItem: () => null,
+      setItem: () => {
+        throw new Error('QuotaExceededError');
+      }
+    };
+
+    expect(() => saveWorld(storage, 'dino-valley', [trex])).not.toThrow();
+    expect(saveWorld(storage, 'dino-valley', [trex])).toBe(false);
   });
 
   it('round-trips an empty world', () => {

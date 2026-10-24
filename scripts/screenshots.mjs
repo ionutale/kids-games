@@ -24,6 +24,25 @@ try {
 }
 
 for (const game of games) {
+  // Seed before the app boots. Setting this after load would be overwritten by
+  // the pagehide save when the page reloads.
+  if (game.id === 'stickers') {
+    await page.addInitScript(() => {
+      if (location.pathname !== '/games/stickers') return;
+      const placed = [
+        { id: 'shot-trex', type: 'trex', x: 34, y: 47 },
+        { id: 'shot-triceratops', type: 'triceratops', x: 55, y: 64 },
+        { id: 'shot-stegosaurus', type: 'stegosaurus', x: 68, y: 44 },
+        { id: 'shot-pteranodon', type: 'pteranodon', x: 46, y: 30 },
+        { id: 'shot-tent', type: 'tent', x: 72, y: 72 }
+      ];
+      localStorage.setItem('kids-games-stickers', JSON.stringify({
+        version: 1,
+        worlds: { 'dino-valley': { placed } }
+      }));
+    });
+  }
+
   try {
     await page.goto(`http://localhost:4173/games/${game.id}`, { waitUntil: 'load', timeout: 10000 });
   } catch {
@@ -37,13 +56,6 @@ for (const game of games) {
     const cards = page.locator('.card');
     const count = await cards.count();
     if (count > 0) await cards.first().click();
-    await page.waitForTimeout(500);
-  }
-
-  // For stickers, place one
-  if (game.id === 'stickers') {
-    const stickerBtn = page.locator('.sticker-btn').first();
-    if (await stickerBtn.isVisible()) await stickerBtn.click();
     await page.waitForTimeout(500);
   }
 

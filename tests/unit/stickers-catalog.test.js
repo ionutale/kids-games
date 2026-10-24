@@ -40,6 +40,20 @@ describe('Stickers catalog (Dino Valley slice)', () => {
     }
   });
 
+  it('keeps the age-2 palette explicit at 8 types and a 4/2/2 mix', () => {
+    expect(YOUNG_SHELF).toHaveLength(8);
+    expect(new Set(YOUNG_SHELF).size).toBe(8);
+    expect(YOUNG_SHELF.every((type) => STANDARD_SHELF.includes(type))).toBe(true);
+
+    const groups = YOUNG_SHELF.reduce((counts, type) => {
+      const group = getSticker(type).group;
+      counts[group] = (counts[group] ?? 0) + 1;
+      return counts;
+    }, {});
+
+    expect(groups).toEqual({ dino: 4, camp: 2, nature: 2 });
+  });
+
   it('uses 64px shelf targets for ages 3-5 and 72px for age 2', () => {
     expect(getShelfButtonSize(2)).toBe(72);
     expect(getShelfButtonSize(3)).toBe(64);

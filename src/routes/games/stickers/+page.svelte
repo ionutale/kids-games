@@ -1,5 +1,5 @@
 <script>
-  import { onMount, onDestroy } from 'svelte';
+  import { onMount, onDestroy, tick } from 'svelte';
   import { goto } from '$app/navigation';
   import { settings } from '$lib/stores/settings';
   import { _ } from '$lib/stores/locale';
@@ -17,7 +17,11 @@
     getPlacedSize
   } from '$lib/stickers/catalog.js';
   import { loadWorld, saveWorld } from '$lib/stickers/save.js';
-  import { isOverShelf, clampPlacement } from '$lib/stickers/geometry.js';
+  import {
+    isOverShelf,
+    clampPlacement,
+    pointToPercent
+  } from '$lib/stickers/geometry.js';
   import {
     addPlacement,
     bringToFront,
@@ -33,6 +37,9 @@
   let playAreaEl;
   let shelfEl;
   let worldEl;
+  let resetButtonEl = $state(null);
+  let resetConfirmEl = $state(null);
+  let resetCancelEl = $state(null);
 
   let pending = null;
   let playRect = null;
@@ -47,11 +54,17 @@
 
   onMount(() => {
     placed = loadWorld(localStorage, WORLD.id, (type) => Boolean(getSticker(type)));
+    measure();
+    placed = clampForPlayArea(placed);
+    saveNow();
+
     window.addEventListener('pagehide', saveNow);
+    window.addEventListener('blur', onWindowBlur);
     document.addEventListener('visibilitychange', onVisibility);
 
     return () => {
       window.removeEventListener('pagehide', saveNow);
+      window.removeEventListener('blur', onWindowBlur);
       document.removeEventListener('visibilitychange', onVisibility);
     };
   });
@@ -65,8 +78,26 @@
     saveWorld(localStorage, WORLD.id, placed);
   }
 
+  function clampForPlayArea(placements) {
+    if (!playRect) return placements;
+
+    return placements.map((placement) => {
+      const size = getPlacedSize(placement.type, $settings.ageLevel);
+      return {
+        ...placement,
+        ...clampPlacement(placement, size, playRect.width, playRect.height)
+      };
+    });
+  }
+
   function onVisibility() {
-    if (document.hidden) saveNow();
+    if (!document.hidden) return;
+    cancelGesture();
+    saveNow();
+  }
+
+  function onWindowBlur() {
+    cancelGesture();
   }
 
   function newId() {
@@ -79,21 +110,49 @@
     goto('/');
   }
 
-  function openReset() {
+  async function openReset() {
     if ($settings.soundEnabled) playTap();
     resetOpen = true;
+    await tick();
+    resetConfirmEl?.focus();
   }
 
-  function cancelReset() {
+  async function cancelReset() {
     resetOpen = false;
     if ($settings.soundEnabled) playTap();
+    await tick();
+    resetButtonEl?.focus();
   }
 
-  function confirmReset() {
+  async function confirmReset() {
     placed = [];
     saveNow();
     resetOpen = false;
     if ($settings.soundEnabled) playPop();
+    await tick();
+    resetButtonEl?.focus();
+  }
+
+  function onResetKeydown(event) {
+    if (event.key === 'Escape') {
+      event.preventDefault();
+      cancelReset();
+      return;
+    }
+
+    if (event.key !== 'Tab') return;
+
+    const first = resetConfirmEl;
+    const last = resetCancelEl;
+    if (!first || !last) return;
+
+    if (event.shiftKey && document.activeElement === first) {
+      event.preventDefault();
+      last.focus();
+    } else if (!event.shiftKey && document.activeElement === last) {
+      event.preventDefault();
+      first.focus();
+    }
   }
 
   function measure() {
@@ -125,6 +184,22 @@
     playRect = null;
     worldRect = null;
     shelfTop = 0;
+  }
+
+  function cancelGesture() {
+    if (pending) {
+      cleanupDrag();
+      return;
+    }
+
+    if (!active) return;
+
+    const current = active;
+    cleanupDrag();
+    if (current.source === 'canvas') {
+      placed = movePlacement(placed, current.id, current.origin.x, current.origin.y);
+      saveNow();
+    }
   }
 
   function startShelfGesture(event, type) {
@@ -166,6 +241,8 @@
       size: getPlacedSize(placement.type, $settings.ageLevel),
       source: 'canvas',
       pointerId: event.pointerId,
+      startX: event.clientX,
+      startY: event.clientY,
       offsetX,
       offsetY,
       visualX: event.clientX - worldRect.left - offsetX,
@@ -235,32 +312,47 @@
     if (pending) {
       if (event.pointerId !== pending.pointerId) return;
       cleanupDrag();
+      if ($settings.soundEnabled) playTap();
       return;
     }
 
     if (!active || event.pointerId !== active.pointerId) return;
     updateActive(event);
 
-    if (!playRect || !worldRect) {
-      cleanupDrag();
+    const current = active;
+    const area = playRect;
+    const world = worldRect;
+    cleanupDrag();
+
+    if (!area || !world) return;
+
+    // A tap on a placed sticker only brings it to the front.
+    if (
+      current.source === 'canvas' &&
+      Math.hypot(event.clientX - current.startX, event.clientY - current.startY) <= 4
+    ) {
+      if ($settings.soundEnabled) playTap();
       return;
     }
-
-    const current = active;
 
     if (current.overShelf) {
       if (current.source === 'canvas') {
         placed = removePlacement(placed, current.id);
         saveNow();
         if ($settings.soundEnabled) playPop();
+      } else if ($settings.soundEnabled) {
+        playTap();
       }
-      cleanupDrag();
       return;
     }
 
-    const x = ((current.visualX + worldRect.left - playRect.left) / playRect.width) * 100;
-    const y = ((current.visualY + worldRect.top - playRect.top) / playRect.height) * 100;
-    const point = clampPlacement({ x, y });
+    const raw = pointToPercent(
+      current.visualX + world.left,
+      current.visualY + world.top,
+      area
+    );
+    const size = getPlacedSize(current.type, $settings.ageLevel);
+    const point = clampPlacement(raw, size, area.width, area.height);
 
     if (current.source === 'shelf') {
       placed = addPlacement(
@@ -274,44 +366,41 @@
 
     saveNow();
     if ($settings.soundEnabled) playPop();
-    cleanupDrag();
   }
 
   function onDragCancel(event) {
     if (pending) {
+      if (event.pointerId !== pending.pointerId) return;
       cleanupDrag();
       return;
     }
 
     if (!active || event.pointerId !== active.pointerId) return;
-
-    if (active.source === 'canvas') {
-      placed = movePlacement(placed, active.id, active.origin.x, active.origin.y);
-      saveNow();
-    }
-    cleanupDrag();
+    cancelGesture();
   }
 </script>
 
 <div class="stickers-world" bind:this={worldEl}>
-  <div class="world-art">
-    <DinoValley />
-  </div>
-  <StickerDefs />
-
-  <div class="top-controls">
-    <button class="round-control" type="button" data-testid="back" onclick={leave} aria-label={$_('back')}>←</button>
-    <div class="top-right">
-      <SoundToggle />
-      <button
-        class="round-control reset-control"
-        type="button"
-        data-testid="reset"
-        onclick={openReset}
-        aria-label={$_('stickerReset')}
-      >🧹</button>
+  <div class="scene" inert={resetOpen} aria-hidden={resetOpen}>
+    <div class="world-art">
+      <DinoValley />
     </div>
-  </div>
+    <StickerDefs />
+
+    <div class="top-controls">
+      <button class="round-control" type="button" data-testid="back" onclick={leave} aria-label={$_('back')}>←</button>
+      <div class="top-right">
+        <SoundToggle />
+        <button
+          class="round-control reset-control"
+          type="button"
+          data-testid="reset"
+          bind:this={resetButtonEl}
+          onclick={openReset}
+          aria-label={$_('stickerReset')}
+        >🧹</button>
+      </div>
+    </div>
 
   <div class="play-area" bind:this={playAreaEl}>
     {#each placed as placement (placement.id)}
@@ -355,20 +444,21 @@
     </div>
   </div>
 
-  {#if active}
-    <div class="drag-layer" aria-hidden="true">
-      <div
-        class="drag-sticker"
-        class:peel={active.overShelf}
-        style:left="{active.visualX}px"
-        style:top="{active.visualY}px"
-        style:width="{active.size}px"
-        style:height="{active.size}px"
-      >
-        <StickerIcon type={active.type} size={active.size} />
+    {#if active}
+      <div class="drag-layer" aria-hidden="true">
+        <div
+          class="drag-sticker"
+          class:peel={active.overShelf}
+          style:--drag-x="{active.visualX}px"
+          style:--drag-y="{active.visualY}px"
+          style:width="{active.size}px"
+          style:height="{active.size}px"
+        >
+          <StickerIcon type={active.type} size={active.size} />
+        </div>
       </div>
-    </div>
-  {/if}
+    {/if}
+  </div>
 
   {#if resetOpen}
     <div class="reset-layer">
@@ -379,13 +469,22 @@
         aria-label={$_('stickerResetCancel')}
         onclick={cancelReset}
       ></button>
-      <div class="reset-card" role="dialog" aria-modal="true" aria-labelledby="reset-title" data-testid="reset-card">
+      <div
+        class="reset-card"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="reset-title"
+        data-testid="reset-card"
+        tabindex="-1"
+        onkeydown={onResetKeydown}
+      >
         <p id="reset-title">{$_('stickerResetConfirm')}</p>
         <div class="reset-actions">
           <button
             class="reset-yes"
             type="button"
             data-testid="reset-confirm"
+            bind:this={resetConfirmEl}
             onclick={confirmReset}
             aria-label={$_('stickerReset')}
           >✓</button>
@@ -393,6 +492,7 @@
             class="reset-no"
             type="button"
             data-testid="reset-cancel"
+            bind:this={resetCancelEl}
             onclick={cancelReset}
             aria-label={$_('stickerResetCancel')}
           >✕</button>
@@ -404,11 +504,17 @@
 
 <style>
   .stickers-world {
+    --shelf-h: 116px;
     position: absolute;
     inset: 0;
     overflow: hidden;
     background: #67c4ef;
     font-family: var(--font-display);
+  }
+
+  .scene {
+    position: absolute;
+    inset: 0;
   }
 
   .world-art {
@@ -419,7 +525,7 @@
 
   .play-area {
     position: absolute;
-    inset: 0 0 calc(116px + var(--safe-bottom)) 0;
+    inset: 0 0 calc(var(--shelf-h) + var(--safe-bottom)) 0;
     pointer-events: none;
   }
 
@@ -447,7 +553,7 @@
     left: 0;
     right: 0;
     bottom: 0;
-    height: calc(116px + var(--safe-bottom));
+    height: calc(var(--shelf-h) + var(--safe-bottom));
     padding-bottom: var(--safe-bottom);
     z-index: 20;
     border-top: 4px solid #b9a38a;
@@ -470,7 +576,7 @@
     display: flex;
     align-items: center;
     gap: 8px;
-    height: 116px;
+    height: var(--shelf-h);
     padding: 10px 14px;
     overflow-x: auto;
     overflow-y: hidden;
@@ -588,13 +694,18 @@
 
   .drag-sticker {
     position: absolute;
-    transform: translate(-50%, -50%);
+    left: 0;
+    top: 0;
+    transform: translate3d(var(--drag-x, 0px), var(--drag-y, 0px), 0)
+      translate(-50%, -50%) scale(1.06);
     filter: drop-shadow(0 10px 12px rgba(23, 37, 55, 0.35));
-    transition: transform 0.08s ease-out, opacity 0.08s ease-out;
+    transition: opacity 0.08s ease-out;
+    will-change: transform;
   }
 
   .drag-sticker.peel {
-    transform: translate(-50%, -50%) scale(0.72);
+    transform: translate3d(var(--drag-x, 0px), var(--drag-y, 0px), 0)
+      translate(-50%, -50%) scale(0.72);
     opacity: 0.7;
   }
 

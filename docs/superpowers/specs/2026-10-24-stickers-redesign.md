@@ -68,7 +68,7 @@ The current Stickers game is a reskinned prototype, not a designed game:
 
 **Nature/sky (6):** Fern, Pine tree, Boulder, Dino egg, Sun, Cloud.
 
-- Each sticker is an original SVG with a white die-cut border (~3px at 64px) and a soft drop shadow. Friendly, rounded low-poly shapes; no teeth or gore; bright colors.
+- Each sticker is an original SVG with a white die-cut border (~6px at 64px) and a soft drop shadow. Friendly, rounded low-poly shapes; no teeth or gore; bright colors.
 - Placed sticker sizes: 72-96px (age 2: 88-112px). Size can vary by silhouette so a T-Rex and a sun both read well.
 - The shelf and the canvas use the same SVG symbol per type, so the art is defined once.
 - The cast is illustrative; the 6/6/6 mix and the Dino Valley theme are the constraints.
@@ -80,7 +80,7 @@ The current Stickers game is a reskinned prototype, not a designed game:
   - **Back** (top-left): saves and returns to `/`. Use the existing back-button style or a matched glass chip.
   - **Sound** (top-right): the existing `SoundToggle`.
   - **Reset** (top-right, next to sound): a small chip with a reset glyph; opens the two-step reset card.
-- The controls are dark translucent chips with light icons for legibility on the bright scene. 48px targets; above the scene, below the drag layer.
+- The controls are cream/glass chips with dark icons, matching the app's floating controls and staying legible on the bright scene. 48px targets; above the scene, below the drag layer.
 - The shelf sits at the bottom, above `--safe-bottom`. The canvas play area ends at the shelf top. The background art continues behind the shelf (covered), so there is no seam.
 - The reset card: centered, compact, big icons — a green check (clear) and a red X (cancel) — with a short localized line for a parent. The scene dims; tapping the backdrop cancels. The first reset tap only opens the card.
 - No title over the scene; the game title is on the hub. The hub card may keep its current icon or switch to a dinosaur when the art lands (minor).
@@ -152,7 +152,7 @@ The current Stickers game is a reskinned prototype, not a designed game:
   - `src/lib/stickers/save.js` — schema load/save/clear/validate.
   - `src/lib/stickers/geometry.js` — pure clamp/percent/over-shelf helpers for unit tests.
 - Define each sticker once as an SVG `<symbol>`; the shelf and the canvas use `<use href="#sticker-trex">` with a transform. This keeps 80 placed stickers light.
-- Die-cut border: a white outline path behind the colored shape, not a CSS stroke on the shape, so the border stays even. About 3px at 64px, scaled with the sticker. Soft shadow via CSS `filter: drop-shadow(0 4px 6px rgba(23,37,55,.28))`; avoid heavy blur on every sticker while dragging.
+- Die-cut border: a white outline path behind the colored shape, not a CSS stroke on the shape, so the border stays even. About 6px at 64px, scaled with the sticker. Soft shadow via CSS `filter: drop-shadow(0 4px 6px rgba(23,37,55,.28))`; avoid heavy blur on every sticker while dragging.
 - Background: one SVG with flat polygons and subtle gradients — sky, distant mountains, volcano, midground hills, lake, foreground foliage and path. No filters or blur. Keep the center calm.
 - The shelf: an SVG/CSS ledge with a warm rock/earth texture; no image texture files. It must read as a physical shelf.
 - No text in the art; no brand marks. The world name is metadata, not painted on the canvas.
@@ -179,7 +179,7 @@ The current Stickers game is a reskinned prototype, not a designed game:
 ## 11. Testing
 
 - **Vitest unit:** catalog has 18 entries with 6/6/6 groups; age palettes (18 at 64px, 8 at 72px); save schema round-trip, unknown version, malformed JSON, unknown sticker type, and clamping; geometry clamp/over-shelf/percentage; cap gating; z-order move-to-end; reset clear.
-- **Playwright e2e:** loads the full-bleed world and 18 shelf stickers; the shelf row scrolls; drag a sticker from the shelf to the canvas produces one placed sticker; drag a placed sticker changes its position; drag back to the shelf removes it; reload restores the placed stickers; back returns to the hub and re-entering restores; reset opens the card, cancel keeps, confirm clears; age 2 shows 8 shelf stickers; the soft cap shows a full cue and a peel makes room; no console errors; a screenshot baseline at 390x844.
+- **Playwright e2e:** loads the full-bleed world and the slice shelf (18 at full v1, 8 at age 2); the shelf row scrolls without placing; a tap or a sub-threshold nudge places nothing; drag a sticker from the shelf to the canvas produces one placed sticker; drag a placed sticker changes its position; a tap on a placed sticker keeps its position; drag back to the shelf removes it; edge drops are clamped fully inside the play area; reload restores the placed stickers; duplicate saved ids keep the first instead of crashing; back returns to the hub and re-entering restores; reset opens the card, cancel/backdrop keeps, confirm clears, and the card traps focus with a working Escape; age 2 shows 8 shelf stickers; the soft cap shows a full cue and a peel makes room; no page or console errors; a committed 390x844 screenshot at the hub is reviewed manually.
 - The e2e drag uses pointer events with a `pointerId` and a small vertical move to pass the 8px gesture threshold, like the Splash tests.
 - **Performance:** a manual XR run using the protocol above; record the numbers in the ADR/spec. Not a CI test.
 - **Visual:** inspect at 390x844 for the old blank-page, center-stacking, and clear-overlap regressions. Replace the stale `static/screenshots/stickers.png` after the redesign.
