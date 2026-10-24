@@ -67,7 +67,8 @@ All live in `src/lib/sounds/audioManager.js` — no files needed, generated via 
 | `playWin()` | win scale | C5-D5-E5-G5-A5-C6, 6 notes × 80 ms |
 | `playWinCheer()` | kids cheer | plays `kids-cheer.mp3`; falls back to `playWin()` if load fails |
 | `playError()` | error buzz | 200 Hz sawtooth, 200 ms (used sparingly — repo policy is positive-only audio) |
-| `playSplash()` | water splash | 5 random bubbles, 300–700 Hz sine |
+| `playSplash()` | water splash | 5 random bubbles, 300–700 Hz sine (used by Paint) |
+| `playSplashChirp()` | splash chirp | 2 random bubbles, 480–840 Hz sine, 120 ms throttle (used by Splash) |
 | `playGoal()` | goal fanfare | `playWin()` + high triangle note |
 
 Also exports `vibrate(pattern)` for haptic feedback (guarded).
