@@ -80,6 +80,9 @@ All games share a thin shell:
 - **Layout:** canvas fills game area. Toolbar at bottom with color swatches + brush sizes + stamp tray.
 
 ### 2. Stickers
+
+> **Superseded 2026-10-24.** The redesign replaces this section. See [2026-10-24-stickers-redesign.md](2026-10-24-stickers-redesign.md). Stickers is now one full-bleed Dino Valley canvas with a bottom shelf; the scene selector, pinch/rotate, scrollable/unlimited tray, and long-press clear no longer apply.
+
 - **Mechanics:** Background scene selector (farm, ocean, space, jungle). Bottom tray of themed stickers. Drag onto scene. Pinch to resize. Tap to rotate.
 - **Age scaling:**
   - 2yo: 4 stickers visible at a time

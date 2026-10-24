@@ -215,6 +215,20 @@ The following games have been proposed but not yet designed or implemented. Each
 - **Trail**: The stream of Bursts that follows a moving finger; a still finger is not a Trail.
 - **Fluid**: Splash meets the iPhone XR acceptance bar: during a 10-second drag, average frame rate is at least 30fps, the 95th-percentile frame is at most 50ms, and no frame exceeds 200ms.
 
+## Stickers Game
+
+- **Canvas**: The single full-bleed play surface for a World; it holds the World art and all Placed Stickers. V1 has one Canvas, Dino Valley.
+- **World**: The themed illustrated setting painted on a Canvas. Dino Valley ships first; Coral Bay, Space Camp, and Moonlit Meadow are future worlds.
+- **Scene**: The child's saved arrangement of Placed Stickers on a Canvas. Each World has one Scene.
+- **Play Area**: The part of the Canvas above the Shelf where Placed Stickers live.
+- **Sticker**: A die-cut illustrated object on the Shelf. A Sticker type can be placed many times.
+- **Placed Sticker**: One instance of a Sticker on the Canvas. It can be moved or peeled off; the last touched is on top.
+- **Shelf**: The horizontal strip at the bottom of the Canvas holding the World's Sticker types. It scrolls and is not an inventory.
+- **Peel**: Dragging a Placed Sticker back to the Shelf to remove it.
+- **Soft Cap**: The 80-Placed-Sticker ceiling; the Shelf shows a full cue and new placements pause until a sticker is peeled.
+- **Reset**: The two-step action that clears all Placed Stickers from the Canvas.
+- **Scene Picker**: The future screen for choosing a World; not in v1.
+
 ## Assets
 
 - **Free Assets Guide** (`docs/free-assets.md`): complete inventory of all sounds in the repo (mp3 files + synthesized Web Audio tones, with code pointers and known gaps) plus curated free-license source sites for audio, music, images, icons, sprites, and 3D meshes.
