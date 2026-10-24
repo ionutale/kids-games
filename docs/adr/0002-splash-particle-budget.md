@@ -17,4 +17,10 @@ Splash used to spawn three or six emoji on every pointermove and keep each one f
 
 ## Measurement
 
-Build the production app (`pnpm build`), deploy a Vercel preview, and open `/games/splash?debug=1` on a real iPhone XR with sound on. Cold-load, use age 3, then drag continuously for the full 10 seconds. Release and read the HUD: FPS, p95, worst, and peak freeze at pointer-up; live continues to drain. Pass: FPS >= 30, p95 <= 50ms, worst <= 200ms, peak <= cap. Repeat at age 2. If age 3 passes, shorten the interval to target 50 live and re-measure, then 60, keeping the highest passing target. Update this ADR with the final values and change the status to accepted.
+Build the production app (`pnpm build`), deploy a Vercel preview, and open `/games/splash?debug=1` on a real iPhone XR with sound on. Cold-load, use age 3, then drag continuously for the full 10 seconds. Release and read the HUD: FPS, p95, worst, and peak freeze at pointer-up; live continues to drain. Pass: FPS >= 30, p95 <= 50ms, worst <= 200ms, peak <= cap. Repeat at age 2.
+
+If age 3 passes at 40, try 50 live with 3 per 80ms at 1300ms (age 2: 2 per 145ms at 1800ms), then 60 live with 3 per 65ms at 1300ms (age 2: 2 per 120ms at 1800ms); keep the highest passing target.
+
+If 40 misses, remove `filter: drop-shadow` and re-measure; then target 30 live with 3 per 130ms at 1300ms (age 2: 2 per 240ms at 1800ms); then pause the Starfield during the drag in Splash only. If all three fail, stop and revisit rendering as a new decision.
+
+Update this ADR with the final values and change the status to accepted.
