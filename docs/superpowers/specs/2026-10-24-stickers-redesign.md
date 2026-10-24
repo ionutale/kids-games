@@ -173,7 +173,7 @@ The current Stickers game is a reskinned prototype, not a designed game:
 - Each shelf sticker button has an accessible name from `labelKey` (for example, "T-Rex sticker"). The art itself is decorative.
 - Placed stickers are not focusable; drag is the interaction. The reset card is button/keyboard accessible.
 - Color is not the only cue: the full state has a badge/icon; the peel cue has a shelf glow and a sticker shrink.
-- i18n keys: `stickers.reset`, `stickers.resetConfirm`, `stickers.resetCancel`, `stickers.full`, `stickers.world.dinoValley`, and one label per sticker or group. Add them to all six locale files. Fall back to a readable English name if a label is missing.
+- i18n keys: `stickerReset`, `stickerResetConfirm`, `stickerResetCancel`, `stickerFull`, `stickerWorldDinoValley`, and one label per sticker (`stickerTrex`, ...). The existing `stickers` key is the game title, so the new keys use the singular `sticker` prefix. Add them to all six locale files. Fall back to a readable English name if a label is missing.
 - The reset card uses icons plus text: a pre-reader can recognize the green check/red X, and a parent can read the line.
 
 ## 11. Testing

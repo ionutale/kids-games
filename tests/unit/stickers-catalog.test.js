@@ -14,7 +14,7 @@ import {
 describe('Stickers catalog (Dino Valley slice)', () => {
   it('has one world', () => {
     expect(WORLD.id).toBe('dino-valley');
-    expect(WORLD.nameKey).toBe('stickers.worldDinoValley');
+    expect(WORLD.nameKey).toBe('stickerWorldDinoValley');
   });
 
   it('has 8 unique sticker types in a 4/2/2 mix', () => {
@@ -33,7 +33,7 @@ describe('Stickers catalog (Dino Valley slice)', () => {
     for (const sticker of STICKERS) {
       expect(STANDARD_SHELF).toContain(sticker.type);
       expect(YOUNG_SHELF).toContain(sticker.type);
-      expect(sticker.labelKey).toMatch(/^stickers\./);
+      expect(sticker.labelKey).toMatch(/^sticker[A-Z]/);
       expect(sticker.size).toBeGreaterThanOrEqual(72);
       expect(sticker.size).toBeLessThanOrEqual(96);
       expect(getSticker(sticker.type)).toBe(sticker);

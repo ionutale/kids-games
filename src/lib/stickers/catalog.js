@@ -1,19 +1,20 @@
 export const WORLD = Object.freeze({
   id: 'dino-valley',
-  nameKey: 'stickers.worldDinoValley'
+  nameKey: 'stickerWorldDinoValley'
 });
 
 // Slice catalog: the 8 stickers that also make up the age-2 palette. The full
 // age 3-5 shelf grows to 18 in the next slice; the young palette stays these 8.
+// Keys use the singular `sticker` prefix because `stickers` is the game title.
 export const STICKERS = Object.freeze([
-  { type: 'trex', labelKey: 'stickers.trex', group: 'dino', size: 92 },
-  { type: 'triceratops', labelKey: 'stickers.triceratops', group: 'dino', size: 88 },
-  { type: 'stegosaurus', labelKey: 'stickers.stegosaurus', group: 'dino', size: 92 },
-  { type: 'pteranodon', labelKey: 'stickers.pteranodon', group: 'dino', size: 84 },
-  { type: 'tent', labelKey: 'stickers.tent', group: 'camp', size: 88 },
-  { type: 'campfire', labelKey: 'stickers.campfire', group: 'camp', size: 80 },
-  { type: 'fern', labelKey: 'stickers.fern', group: 'nature', size: 76 },
-  { type: 'sun', labelKey: 'stickers.sun', group: 'nature', size: 76 }
+  { type: 'trex', labelKey: 'stickerTrex', group: 'dino', size: 92 },
+  { type: 'triceratops', labelKey: 'stickerTriceratops', group: 'dino', size: 88 },
+  { type: 'stegosaurus', labelKey: 'stickerStegosaurus', group: 'dino', size: 92 },
+  { type: 'pteranodon', labelKey: 'stickerPteranodon', group: 'dino', size: 84 },
+  { type: 'tent', labelKey: 'stickerTent', group: 'camp', size: 88 },
+  { type: 'campfire', labelKey: 'stickerCampfire', group: 'camp', size: 80 },
+  { type: 'fern', labelKey: 'stickerFern', group: 'nature', size: 76 },
+  { type: 'sun', labelKey: 'stickerSun', group: 'nature', size: 76 }
 ].map((sticker) => Object.freeze(sticker)));
 
 export const STICKER_BY_TYPE = Object.freeze(
