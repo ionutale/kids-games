@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 
 function stubLocalStorage() {
   const store = { 'kids-games-settings': JSON.stringify({ soundEnabled: true }) };
@@ -36,6 +36,11 @@ beforeEach(() => {
   stubLocalStorage();
 });
 
+afterEach(() => {
+  vi.useRealTimers();
+  vi.restoreAllMocks();
+});
+
 describe('audioManager', () => {
   it('exports all expected functions', async () => {
     const mod = await import('$lib/sounds/audioManager');
@@ -45,6 +50,7 @@ describe('audioManager', () => {
     expect(typeof mod.playWin).toBe('function');
     expect(typeof mod.playError).toBe('function');
     expect(typeof mod.playSplash).toBe('function');
+    expect(typeof mod.playSplashChirp).toBe('function');
     expect(typeof mod.playGoal).toBe('function');
     expect(typeof mod.vibrate).toBe('function');
   });
@@ -62,7 +68,30 @@ describe('audioManager', () => {
     expect(() => mod.playWin()).not.toThrow();
     expect(() => mod.playError()).not.toThrow();
     expect(() => mod.playSplash()).not.toThrow();
+    expect(() => mod.playSplashChirp()).not.toThrow();
     expect(() => mod.playGoal()).not.toThrow();
+  });
+
+  it('plays at most one two-tone splash chirp per 120ms', async () => {
+    const ctx = stubAudioContext();
+    let now = 1000;
+    vi.spyOn(performance, 'now').mockImplementation(() => now);
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+
+    const mod = await import('$lib/sounds/audioManager');
+
+    mod.playSplashChirp();
+    expect(ctx.createOscillator).toHaveBeenCalledTimes(1);
+
+    mod.playSplashChirp();
+    expect(ctx.createOscillator).toHaveBeenCalledTimes(1);
+
+    vi.advanceTimersByTime(60);
+    expect(ctx.createOscillator).toHaveBeenCalledTimes(2);
+
+    now += 120;
+    mod.playSplashChirp();
+    expect(ctx.createOscillator).toHaveBeenCalledTimes(3);
   });
 
   it('synthesized sounds stay silent while muted and play after unmute', async () => {

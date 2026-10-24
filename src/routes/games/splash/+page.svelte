@@ -1,7 +1,7 @@
 <script>
   import { onMount, onDestroy } from 'svelte';
   import { settings } from '$lib/stores/settings';
-  import { playSplash } from '$lib/sounds/audioManager';
+  import { playSplashChirp } from '$lib/sounds/audioManager';
   import GameShell from '$lib/components/ui/GameShell.svelte';
   import DebugHud from '$lib/splash/DebugHud.svelte';
   import { getSplashBudget, shouldSpawn, appendWithCap } from '$lib/splash/budget.js';
@@ -60,7 +60,7 @@
     lastSpawnX = clientX;
     lastSpawnY = clientY;
     startCleanup();
-    if ($settings.soundEnabled) playSplash();
+    if ($settings.soundEnabled) playSplashChirp();
   }
 
   // Pointer Events: single unified input path (mouse + touch), pointer-id locked,

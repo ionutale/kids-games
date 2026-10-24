@@ -111,6 +111,17 @@ export function playSplash() {
   }
 }
 
+let lastSplashChirpAt = -Infinity;
+
+export function playSplashChirp() {
+  if (muted()) return;
+  const now = performance.now();
+  if (now - lastSplashChirpAt < 120) return;
+  lastSplashChirpAt = now;
+  playTone(480 + Math.random() * 120, 0.1, 'sine', 0.08);
+  setTimeout(() => playTone(720 + Math.random() * 120, 0.12, 'sine', 0.06), 55);
+}
+
 export function playGoal() {
   playWin();
   setTimeout(() => playTone(1047, 0.4, 'triangle', 0.3), 400);
