@@ -47,8 +47,7 @@ async function dragShelfSticker(page, type, point) {
   await page.dispatchEvent(':root', 'pointerup', pointer(21, point.x, point.y, 0));
 }
 
-async function dragPlacedSticker(page, point) {
-  const placed = page.locator('.placed-sticker').first();
+async function dragPlacedSticker(page, point, placed = page.locator('.placed-sticker').first()) {
   const box = await placed.boundingBox();
   const x = box.x + box.width / 2;
   const y = box.y + box.height / 2;
@@ -175,5 +174,54 @@ test.describe('Stickers — drag, save, reset', () => {
 
     await page.goto('/games/stickers');
     await expect(page.locator('.placed-sticker')).toHaveCount(1);
+  });
+
+  test('age 2 uses the larger shelf and placed sizes', async ({ page }) => {
+    await useAge(page, 2);
+    await page.goto('/games/stickers');
+
+    await expect(page.locator('.shelf-sticker')).toHaveCount(8);
+    const shelfWidth = await page
+      .locator('.shelf-sticker')
+      .first()
+      .evaluate((el) => Math.round(el.getBoundingClientRect().width));
+    expect(shelfWidth).toBe(72);
+
+    await dragShelfSticker(page, 'trex', await canvasPoint(page, 0.5, 0.5));
+    await expect(page.locator('.placed-sticker')).toHaveCount(1);
+
+    const placedWidth = await page
+      .locator('.placed-sticker')
+      .first()
+      .evaluate((el) => Math.round(el.getBoundingClientRect().width));
+    expect(placedWidth).toBe(110);
+  });
+
+  test('the soft cap shows a full cue and peeling makes room', async ({ page }) => {
+    await page.addInitScript(({ key }) => {
+      const placed = Array.from({ length: 80 }, (_, index) => ({
+        id: `p${index}`,
+        type: 'trex',
+        x: 20 + (index % 10) * 6,
+        y: 20 + Math.floor(index / 10) * 7
+      }));
+      localStorage.setItem(key, JSON.stringify({ version: 1, worlds: { 'dino-valley': { placed } } }));
+    }, { key: SAVE_KEY });
+
+    await page.goto('/games/stickers');
+
+    await expect(page.locator('.placed-sticker')).toHaveCount(80);
+    await expect(page.getByTestId('shelf-full')).toBeVisible();
+
+    await dragShelfSticker(page, 'trex', await canvasPoint(page, 0.5, 0.5));
+    await expect(page.locator('.placed-sticker')).toHaveCount(80);
+
+    await dragPlacedSticker(page, await shelfPoint(page), page.locator('.placed-sticker').last());
+    await expect(page.locator('.placed-sticker')).toHaveCount(79);
+    await expect(page.getByTestId('shelf-full')).toBeHidden();
+
+    await dragShelfSticker(page, 'trex', await canvasPoint(page, 0.5, 0.5));
+    await expect(page.locator('.placed-sticker')).toHaveCount(80);
+    await expect(page.getByTestId('shelf-full')).toBeVisible();
   });
 });

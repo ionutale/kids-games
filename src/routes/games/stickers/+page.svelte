@@ -43,6 +43,7 @@
 
   const shelf = $derived(getShelf($settings.ageLevel));
   const shelfButtonSize = $derived(getShelfButtonSize($settings.ageLevel));
+  const isFull = $derived(placed.length >= SOFT_CAP);
 
   onMount(() => {
     placed = loadWorld(localStorage, WORLD.id, (type) => Boolean(getSticker(type)));
@@ -333,7 +334,10 @@
     {/each}
   </div>
 
-  <div class="shelf" class:peel-ready={active?.overShelf} bind:this={shelfEl}>
+  <div class="shelf" class:peel-ready={active?.overShelf} class:full={isFull} bind:this={shelfEl}>
+    {#if isFull}
+      <div class="shelf-full" data-testid="shelf-full" role="status">{$_('stickerFull')}</div>
+    {/if}
     <div class="shelf-scroll">
       {#each shelf as type}
         <button
@@ -473,12 +477,37 @@
     touch-action: pan-x;
     scroll-snap-type: x proximity;
     scrollbar-width: none;
+    transition: opacity 0.15s ease-out;
     -webkit-mask-image: linear-gradient(to right, transparent 0, #000 10px, #000 calc(100% - 10px), transparent 100%);
     mask-image: linear-gradient(to right, transparent 0, #000 10px, #000 calc(100% - 10px), transparent 100%);
   }
 
   .shelf-scroll::-webkit-scrollbar {
     display: none;
+  }
+
+  .shelf.full .shelf-scroll {
+    opacity: 0.55;
+  }
+
+  .shelf-full {
+    position: absolute;
+    bottom: calc(100% + 8px);
+    left: 50%;
+    z-index: 2;
+    width: max-content;
+    max-width: calc(100% - 32px);
+    padding: 6px 12px;
+    border-radius: 999px;
+    transform: translateX(-50%);
+    background: rgba(255, 253, 245, 0.95);
+    color: #2b2118;
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 1.25;
+    text-align: center;
+    box-shadow: 0 4px 12px rgba(27, 37, 55, 0.2);
+    pointer-events: none;
   }
 
   .shelf-sticker {
@@ -521,6 +550,11 @@
     display: flex;
     align-items: center;
     gap: 8px;
+  }
+
+  .top-right :global(.sound-btn) {
+    background: rgba(255, 253, 245, 0.94);
+    box-shadow: 0 4px 0 rgba(93, 76, 61, 0.2), 0 8px 18px rgba(27, 37, 55, 0.18);
   }
 
   .round-control {
