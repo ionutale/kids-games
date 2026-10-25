@@ -57,7 +57,7 @@ Controls, left to right:
 2. **Brush** — the active painting tool; tapping cycles small → medium → big. The icon shows the current stroke width. 48px (56px age 2). A tiny three-dot size indicator sits under the brush so the current size is visible without opening anything.
 3. **Bucket** — coloring sheets only. Tap a region to fill it. Hidden on blank paper and on age 2 blank paper.
 4. **Stamp** — opens the Stamp Tray; the current stamp is shown on the button. Stamps place at the next tap.
-5. **Eraser** — drag to rub out paint and stamps; tap a filled region to clear that fill. 48px/56px.
+5. **Eraser** — drag to rub out paint; tap a filled region to clear that fill. 48px/56px. Stamps are decorations; undo removes the last stamp and clear resets the sheet.
 6. **Undo** — pops the last action. Disabled when the history is empty. No redo in v1.
 
 The dock is one row when it fits (390px baseline: 6 controls at 48px plus gaps). On a narrow screen or the age-2 palette it may wrap to two rows; the paper remains full-bleed behind it. The clear chip is deliberately outside the toddler dock.
@@ -107,7 +107,7 @@ The dock is one row when it fits (390px baseline: 6 controls at 48px plus gaps).
 - **Bucket:** tap a region; the region fills with the current color. Tapping a filled region with another color replaces it. Tapping outside any region does nothing. The fill sits under brush strokes and stamps.
 - **Brush:** a stroke clips to the region under its start point. Crossing a line stops the stroke at the boundary; the child can start a new stroke in the next region. A tap with the brush makes a clipped dot. The line art itself is never a paint target.
 - **Stamps:** place anywhere, including over lines, as discrete stickers. They sit above paint and fills.
-- **Eraser:** drag erases brush strokes and stamps. A tap (≤4px) on a filled region clears that region's fill and leaves the lines. A tap outside a fill does nothing.
+- **Eraser:** drag erases brush strokes. A tap (≤4px) on a filled region clears that region's fill and leaves the lines. A tap outside a fill does nothing. Stamps are not erased by the eraser; undo removes the last stamp, and clear resets the sheet.
 - **Undo** reverses the last fill, stroke, stamp, region clear, or clear-all; the line art is never undone. The history is per active sheet, in memory; switching sheets or reloading resets it.
 - **Clear** clears only the current sheet after the two-step card. The other sheets are untouched. Clear is undoable until the child leaves the sheet.
 
@@ -163,7 +163,7 @@ The dock is one row when it fits (390px baseline: 6 controls at 48px plus gaps).
 - `src/lib/paint/geometry.js` — normalized coordinates, tap threshold, region hit-testing and viewport mapping helpers.
 - `src/lib/paint/paper/DinoValleyPage.svelte`, `ButterflyGardenPage.svelte`, `UnderTheSeaPage.svelte` — original line art with region paths and fill paths.
 - `src/lib/paint/StampDefs.svelte`, `src/lib/paint/PaintStamp.svelte` — four original SVG stamps and the reusable renderer.
-- The canvas is one 2D paint layer plus SVG overlays: fills below the paint, line art above the paint, and stamps above the line art. Brushes draw on the canvas; brush strokes are clipped. Stamps are vector decorations and may cover lines; the eraser removes a stamp it touches. The paint canvas is capped at DPR 2 for memory; line art and stamps stay vector-crisp.
+- The canvas is one 2D paint layer plus SVG overlays: fills below the paint, line art above the paint, and stamps above the line art. Brushes draw on the canvas; brush strokes are clipped. Stamps are vector decorations and may cover lines. The eraser is a paint action: it draws a destination-out stroke on the canvas and never touches the line art or stamps. The paint canvas is capped at DPR 2 for memory; line art and stamps stay vector-crisp.
 - No new dependencies. Do not reuse the Stickers world art as coloring line art; Dino Valley is a new companion composition.
 
 ## Accessibility & i18n

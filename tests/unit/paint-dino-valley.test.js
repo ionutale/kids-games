@@ -31,6 +31,50 @@ const EXPECTED_IDS = [
   'path'
 ];
 
+/** Lowest art each character may reach: the age-2 app dock starts around y=644. */
+const DOCK_SAFE_Y = 620;
+
+/**
+ * Sample a path's cubic segments and return the lowest y it touches.
+ * Only the commands the character paths use are handled (M/L/C/Z).
+ */
+function pathMaxY(d) {
+  const tokens = d.match(/[MLCZ]|-?\d+(?:\.\d+)?/g) ?? [];
+  let index = 0;
+  let current = { x: 0, y: 0 };
+  let start = { x: 0, y: 0 };
+  let maxY = 0;
+  const num = () => Number(tokens[index++]);
+
+  while (index < tokens.length) {
+    const command = tokens[index++];
+    if (command === 'M' || command === 'L') {
+      current = { x: num(), y: num() };
+      if (command === 'M') start = current;
+      maxY = Math.max(maxY, current.y);
+    } else if (command === 'C') {
+      const p1 = { x: num(), y: num() };
+      const p2 = { x: num(), y: num() };
+      const p3 = { x: num(), y: num() };
+      for (let step = 0; step <= 40; step += 1) {
+        const t = step / 40;
+        const mt = 1 - t;
+        const y =
+          mt ** 3 * current.y +
+          3 * mt * mt * t * p1.y +
+          3 * mt * t * t * p2.y +
+          t ** 3 * p3.y;
+        maxY = Math.max(maxY, y);
+      }
+      current = p3;
+    } else if (command === 'Z') {
+      current = start;
+    }
+  }
+
+  return maxY;
+}
+
 describe('Dino Valley coloring page', () => {
   it('is a 390x844 portrait artboard', () => {
     expect(DINO_VALLEY_VIEWBOX).toEqual({ width: 390, height: 844 });
@@ -74,5 +118,14 @@ describe('Dino Valley coloring page', () => {
       expect(dot.r).toBeGreaterThan(0);
     }
     expect(DINO_VALLEY_SMILES.length).toBe(2);
+  });
+
+  it('keeps every character above the floating dock (age-2 top ~y=644)', () => {
+    // 4.5px stroke is centered on the path, so leave room for half of it.
+    const inkMargin = 2.5;
+    for (const id of ['brachiosaurus', 'triceratops', 'tent']) {
+      const region = DINO_VALLEY_REGIONS.find((candidate) => candidate.id === id);
+      expect(pathMaxY(region.d) + inkMargin).toBeLessThanOrEqual(DOCK_SAFE_Y);
+    }
   });
 });

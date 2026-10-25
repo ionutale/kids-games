@@ -8,16 +8,23 @@
   } from './dinoValley.js';
 
   /**
-   * @type {{ fills?: Record<string, string>, layer?: 'all' | 'fills' | 'ink' }}
-   * `fills` maps region id -> paint color. Regions without a fill stay paper-colored.
-   * `layer` lets the studio place the fills below the paint canvas and the ink
-   * above it, so brush strokes never cover the line art.
+   * @type {{
+   *   fills?: Record<string, string>,
+   *   layer?: 'all' | 'fills' | 'ink'
+   * }}
+   * `fills` maps region id -> paint color; unfilled regions stay paper-white so
+   * a bucket fill never bleeds into a neighbouring shape.
+   * `layer` lets the studio stack the colour fills under the paint canvas and
+   * the ink line art above it. `'all'` (default) draws both, e.g. thumbnails.
    */
   let { fills = {}, layer = 'all' } = $props();
 
   const INK = '#3A2E28';
-  const PAPER = '#FFFDF5';
   const STROKE = 4.5;
+  // Every unfilled shape stays paper-white, so a bucket fill never bleeds into
+  // a neighbour (e.g. filling the sky leaves the clouds white). Matches the
+  // studio paper colour used by the Paint page.
+  const PAPER = '#FFFEFA';
 </script>
 
 <svg
@@ -27,8 +34,8 @@
   aria-hidden="true"
   focusable="false"
 >
-  <!-- Fills sit under the ink so the lines stay crisp. -->
   {#if layer !== 'ink'}
+    <!-- Fills sit under the ink so the lines stay crisp. -->
     <g class="dv-fills">
       {#each DINO_VALLEY_REGIONS as region (region.id)}
         <path d={region.d} fill={fills?.[region.id] ?? PAPER} data-region={region.id} />
