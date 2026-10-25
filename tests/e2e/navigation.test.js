@@ -18,8 +18,13 @@ test.describe('Direct navigation', () => {
       const resp = await page.goto(`/games/${game.id}`, { waitUntil: 'networkidle' });
       expect(resp.status()).toBe(200);
       await expect(page).toHaveURL(`/games/${game.id}`);
-      if (game.id === 'stickers') {
-        await expect(page.locator('.stickers-world')).toBeVisible();
+      const FULL_BLEED_ROOTS = {
+        stickers: '.stickers-world',
+        paint: '.studio'
+      };
+      const fullBleedRoot = FULL_BLEED_ROOTS[game.id];
+      if (fullBleedRoot) {
+        await expect(page.locator(fullBleedRoot)).toBeVisible();
         await expect(page.getByTestId('back')).toBeVisible();
       } else {
         await expect(page.locator('.back-btn')).toBeVisible();

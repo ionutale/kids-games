@@ -16,7 +16,7 @@ Per-game e2e coverage matrix (2026-08-24 audit). Legend: ✅ covered · ⚠️ p
 | focus-tap | ✅ | ✅ level | ✅ blur | ✅ IT (regressions) | ✅ touch | 4 |
 | glossary-puzzle | ✅ | ✅ progress (+ per-placement save) | ❌ | ✅ labels | ✅ touch pickup | 12 |
 | memory | ✅ | ✅ level | ❌ | ❌ | ⚠️ | 5 |
-| paint | ✅ | ❌ | ❌ | ❌ | ✅ touch stroke | 7 |
+| paint | ✅ | ✅ per-sheet (blank + Dino) | ❌ | ✅ 6 label sets | ✅ touch stroke/fill/erase/stamp | 11 |
 | path-builder | ✅ | ✅ level | ❌ | ❌ | ✅ | 3 |
 | pop | ✅ | ❌ | ❌ | ❌ | ⚠️ | 7 |
 | puzzle | ✅ | ✅ progress | ❌ | ❌ | ⚠️ mouse | 7 |
@@ -37,9 +37,9 @@ Per-game e2e coverage matrix (2026-08-24 audit). Legend: ✅ covered · ⚠️ p
 ## Inventories
 
 - **24/24 games** have an e2e file (+ `navigation`, `regressions`)
-- ~160 e2e tests total; unit 28 files + behavioral 13 files
+- ~164 e2e tests total; unit 28 files + behavioral 13 files
 - Input style: legacy games migrated to Pointer Events (Phase A) and their specs now cover touch; remaining ⚠️ = tap games exercised via `click()` (mouse protocol) — acceptable for tap-only UIs, flagged for review when touch specs are mandated repo-wide
-- Persistence gaps: animal-quiz, paint, pop, sequence-memory, soccer, sorting, splash, tower-defense (most are mastery/scoreless by design — see game specs; sequence-memory best-score IS a gap worth closing, done in G2)
+- Persistence gaps: animal-quiz, pop, sequence-memory, soccer, sorting, splash, tower-defense (most are mastery/scoreless by design — see game specs; sequence-memory best-score IS a gap worth closing, done in G2)
 
 ## Gap-fill backlog (executed with this report)
 

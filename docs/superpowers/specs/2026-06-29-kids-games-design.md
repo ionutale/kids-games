@@ -73,7 +73,7 @@ All games share a thin shell:
 
 ### 1. Paint
 
-> **Approved replacement 2026-10-25.** See [2026-10-25-paint-redesign.md](2026-10-25-paint-redesign.md). The redesign makes Paint a full-bleed art studio with blank and coloring sheets, protected line art, per-sheet save, and a floating tool dock. The section below remains the shipped behavior until the redesign is built.
+> **Superseded 2026-10-25.** See [2026-10-25-paint-redesign.md](2026-10-25-paint-redesign.md). Paint is now a full-bleed art studio with blank and Dino Valley coloring sheets, protected line art, per-sheet save, and a floating tool dock. The section below is the historical design.
 
 - **Mechanics:** Finger drawing on canvas. Select brush size (big/medium/small) + color palette. Stamp mode (star, heart, animals) places at tap location.
 - **Age scaling:**

@@ -13,6 +13,11 @@ test.describe('G1 — hub navigation sweep', () => {
     'what-comes-next'
   ];
 
+  const FULL_BLEED_ROOTS = {
+    stickers: '.stickers-world',
+    paint: '.studio'
+  };
+
   for (const game of GAMES) {
     test(`hub → ${game} → back`, async ({ page }) => {
       await page.goto('/');
@@ -24,9 +29,10 @@ test.describe('G1 — hub navigation sweep', () => {
       } else {
         await page.goto(`/games/${game}`);
       }
-      if (game === 'stickers') {
-        // Full-bleed route: no GameShell; it owns its floating back control.
-        await expect(page.locator('.stickers-world')).toBeVisible({ timeout: 10000 });
+      const fullBleedRoot = FULL_BLEED_ROOTS[game];
+      if (fullBleedRoot) {
+        // Full-bleed routes have no GameShell; each owns its floating back control.
+        await expect(page.locator(fullBleedRoot)).toBeVisible({ timeout: 10000 });
         await page.getByTestId('back').click();
       } else {
         await expect(page.locator('.game-shell')).toBeVisible({ timeout: 10000 });
