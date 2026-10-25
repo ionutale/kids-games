@@ -1,7 +1,7 @@
 # Paint — Full-bleed Cozy Art Studio redesign
 
 **Date:** 2026-10-25
-**Status:** Draft for approval (grill-with-docs session)
+**Status:** Approved design (grill-with-docs session, 2026-10-25)
 **Game:** Paint — free-play drawing and coloring (`/games/paint`)
 **Audience:** ages 3-5 first; age 2 gets a reduced, larger-touch studio. Portrait phones, PWA, offline.
 **Reference:** the live Paint page at `https://kids-2-5.aiu-media.com/games/paint` and the owner's request for a bigger, full-bleed canvas. The redesign keeps finger painting as the core; all art is original.
@@ -231,4 +231,4 @@ The dock is one row when it fits (390px baseline: 6 controls at 48px plus gaps).
 
 ## Open questions
 
-None. The grill settled the studio, both modes, the picker, protected line art, stamps, eraser, save model, age variant, and slice. The spec is ready for approval.
+None. The grill settled the studio, both modes, the picker, protected line art, stamps, eraser, save model, age variant, and slice. The design was approved on 2026-10-25; ADR 0004 stays proposed until the Dino Valley slice passes the feel/performance review.
