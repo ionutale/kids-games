@@ -49,7 +49,7 @@
       </button>
     </div>
 
-    <div class="cards">
+    <div class="cards" class:three={sheets.length === 3}>
       {#each sheets as sheet (sheet.id)}
         <button
           class="card"
@@ -145,6 +145,14 @@
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 12px;
+  }
+
+  /* Age 2 drops Butterfly Garden: three cards read as a 2+1 collection, with
+     the last paper centred under the first row at the same card width. */
+  .cards.three .card:last-child {
+    grid-column: 1 / -1;
+    width: calc(50% - 6px);
+    justify-self: center;
   }
 
   .card {

@@ -5,8 +5,6 @@
   import { _ } from '$lib/stores/locale';
   import { playTap, playPop, playSplash } from '$lib/sounds/audioManager';
   import SoundToggle from '$lib/components/SoundToggle.svelte';
-  import DinoValleyPage from '$lib/paint/paper/DinoValleyPage.svelte';
-  import { DINO_VALLEY_REGIONS, DINO_VALLEY_VIEWBOX } from '$lib/paint/paper/dinoValley.js';
   import StampDefs from '$lib/paint/StampDefs.svelte';
   import PaintStamp from '$lib/paint/PaintStamp.svelte';
   import PaintDock from '$lib/paint/PaintDock.svelte';
@@ -16,19 +14,17 @@
   import PaintClearCard from '$lib/paint/PaintClearCard.svelte';
   import PaintPaperThumb from '$lib/paint/PaintPaperThumb.svelte';
   import { getSheet, getSheets } from '$lib/paint/sheets.js';
+  import { getSheetArt, SHEET_REGION_IDS } from '$lib/paint/sheetArt.js';
   import { getToolsForAge } from '$lib/paint/tools.js';
   import { createPaintDocument } from '$lib/paint/document.js';
   import { getStorage, loadPaint, savePaint } from '$lib/paint/save.js';
   import {
     isTap,
     toNormalized,
-    MIN_POINT_DISTANCE_PX
+    MIN_POINT_DISTANCE_PX,
+    DEFAULT_ARTBOARD
   } from '$lib/paint/geometry.js';
 
-  // Slice 1 ships two built-in sheets. The catalog keeps the future sheets, so
-  // the tray filters to the ones whose art exists.
-  const SLICE_SHEET_IDS = ['blank', 'dino-valley'];
-  const DINO_REGION_IDS = DINO_VALLEY_REGIONS.map((region) => region.id);
   // Eraser passes live in the sheet as regular strokes with this sentinel
   // colour, so they save, reload and undo with the rest of the artwork. The
   // palette is hex-only, so it can never collide with a real paint colour.
@@ -38,9 +34,7 @@
     Number.isFinite($settings.ageLevel) && $settings.ageLevel <= 2
   );
   const tools = $derived(getToolsForAge($settings.ageLevel));
-  const sheetList = $derived(
-    getSheets($settings.ageLevel).filter((sheet) => SLICE_SHEET_IDS.includes(sheet.id))
-  );
+  const sheetList = $derived(getSheets($settings.ageLevel));
 
   let rootEl = $state(null);
   let canvasEl = $state(null);
@@ -68,12 +62,13 @@
     scale: 1,
     offsetX: 0,
     offsetY: 0,
-    artW: DINO_VALLEY_VIEWBOX.width,
-    artH: DINO_VALLEY_VIEWBOX.height,
+    artW: DEFAULT_ARTBOARD.width,
+    artH: DEFAULT_ARTBOARD.height,
     dpr: 1
   });
 
   const isColoring = $derived(getSheet(sheetId)?.kind === 'coloring');
+  const activeArt = $derived(getSheetArt(sheetId));
   const activeSheetMeta = $derived(getSheet(sheetId) ?? getSheet('blank'));
   const currentColor = $derived(
     tools.colors.find((color) => color.id === colorId) ?? tools.colors[0]
@@ -151,17 +146,28 @@
     if (getSheet(id)?.kind !== 'coloring' && tool === 'bucket') {
       tool = 'brush';
     }
+    buildRegions();
+    buildClipSets();
     sync();
   }
 
+  // Regions come from the active sheet's registry entry, so hit-testing and
+  // clipping always follow the same back-to-front list the line art draws.
+  let activeRegions = [];
+
   function buildRegions() {
     regionPaths = new Map();
-    for (const region of DINO_VALLEY_REGIONS) {
+    hitCtx = null;
+    const art = getSheetArt(sheetId);
+    activeRegions = art?.regions ?? [];
+    if (!art) return;
+
+    for (const region of activeRegions) {
       regionPaths.set(region.id, new Path2D(region.d));
     }
     const hitCanvas = document.createElement('canvas');
-    hitCanvas.width = DINO_VALLEY_VIEWBOX.width;
-    hitCanvas.height = DINO_VALLEY_VIEWBOX.height;
+    hitCanvas.width = art.viewbox.width;
+    hitCanvas.height = art.viewbox.height;
     hitCtx = hitCanvas.getContext('2d');
   }
 
@@ -175,11 +181,11 @@
   function buildClipSets() {
     clipSets = new Map();
     const span = 100000;
-    for (let index = 0; index < DINO_VALLEY_REGIONS.length; index += 1) {
-      const start = regionPaths.get(DINO_VALLEY_REGIONS[index].id);
+    for (let index = 0; index < activeRegions.length; index += 1) {
+      const start = regionPaths.get(activeRegions[index].id);
       const holes = [];
-      for (let higher = index + 1; higher < DINO_VALLEY_REGIONS.length; higher += 1) {
-        const path = regionPaths.get(DINO_VALLEY_REGIONS[higher].id);
+      for (let higher = index + 1; higher < activeRegions.length; higher += 1) {
+        const path = regionPaths.get(activeRegions[higher].id);
         if (!path) continue;
         // Large rect + region path, clipped even-odd: the complement of the
         // region inside the rect, i.e. everything except that foreground shape.
@@ -188,7 +194,7 @@
         mask.addPath(path);
         holes.push(mask);
       }
-      clipSets.set(DINO_VALLEY_REGIONS[index].id, { start, holes });
+      clipSets.set(activeRegions[index].id, { start, holes });
     }
   }
 
@@ -206,8 +212,8 @@
   /** Top-most region under an artboard point (document order is back-to-front). */
   function hitRegion(artX, artY) {
     if (!hitCtx) return null;
-    for (let index = DINO_VALLEY_REGIONS.length - 1; index >= 0; index -= 1) {
-      const region = DINO_VALLEY_REGIONS[index];
+    for (let index = activeRegions.length - 1; index >= 0; index -= 1) {
+      const region = activeRegions[index];
       const path = regionPaths.get(region.id);
       if (path && hitCtx.isPointInPath(path, artX, artY)) return region;
     }
@@ -244,7 +250,7 @@
     if (!rect.width || !rect.height) return;
 
     const dpr = Math.min(2, Math.max(1, window.devicePixelRatio || 1));
-    const coloring = getSheet(sheetId)?.kind === 'coloring';
+    const art = getSheetArt(sheetId);
 
     let artW = rect.width;
     let artH = rect.height;
@@ -252,9 +258,9 @@
     let offsetX = 0;
     let offsetY = 0;
 
-    if (coloring) {
-      artW = DINO_VALLEY_VIEWBOX.width;
-      artH = DINO_VALLEY_VIEWBOX.height;
+    if (art) {
+      artW = art.viewbox.width;
+      artH = art.viewbox.height;
       scale = Math.max(rect.width / artW, rect.height / artH);
       offsetX = (rect.width - artW * scale) / 2;
       offsetY = (rect.height - artH * scale) / 2;
@@ -792,7 +798,7 @@
 
   function selectSheet(id) {
     if (activePointer !== null) return;
-    if (!SLICE_SHEET_IDS.includes(id)) return;
+    if (!sheetList.some((entry) => entry.id === id)) return;
     if (id === sheetId) {
       closePaperTray();
       return;
@@ -874,19 +880,16 @@
 
   onMount(() => {
     storage = getStorage();
-    const saved = loadPaint(storage, {
-      regions: { 'dino-valley': DINO_REGION_IDS }
-    });
+    // Every coloring sheet validates its fills and clipped strokes against its
+    // own region ids, so switching or reloading never drops another sheet's art.
+    const saved = loadPaint(storage, { regions: SHEET_REGION_IDS });
     allSheets = saved.sheets;
 
-    const initialId = SLICE_SHEET_IDS.includes(saved.activeSheet)
-      ? saved.activeSheet
-      : 'blank';
+    const available = sheetList.some((entry) => entry.id === saved.activeSheet);
+    const initialId = available ? saved.activeSheet : 'blank';
     const mediumIndex = tools.brushSizes.findIndex((size) => size.id === 'medium');
     if (mediumIndex >= 0) brushIndex = mediumIndex;
 
-    buildRegions();
-    buildClipSets();
     openSheet(initialId);
     measure();
     redraw();
@@ -917,9 +920,10 @@
   <div class="scene" inert={clearOpen || paperTrayOpen}>
     <div class="paper" aria-hidden="true"></div>
 
-    {#if isColoring}
+    {#if activeArt}
+      {@const SheetPage = activeArt.Page}
       <div class="fills" aria-hidden="true">
-        <DinoValleyPage layer="fills" fills={sheet.fills ?? {}} />
+        <SheetPage layer="fills" fills={sheet.fills ?? {}} />
       </div>
     {/if}
 
@@ -930,9 +934,10 @@
       onpointerdown={onPointerDown}
     ></canvas>
 
-    {#if isColoring}
+    {#if activeArt}
+      {@const SheetPage = activeArt.Page}
       <div class="ink" aria-hidden="true">
-        <DinoValleyPage layer="ink" />
+        <SheetPage layer="ink" />
       </div>
     {/if}
 

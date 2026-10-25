@@ -1,47 +1,58 @@
 <script>
-  import {
-    DINO_VALLEY_VIEWBOX,
-    DINO_VALLEY_REGIONS,
-    DINO_VALLEY_LINES,
-    DINO_VALLEY_DOTS,
-    DINO_VALLEY_SMILES
-  } from './paper/dinoValley.js';
+  import { DINO_VALLEY_VIEWBOX } from './paper/dinoValley.js';
+  import { getSheetArt } from './sheetArt.js';
 
   /** @type {{ sheetId?: string }} */
   let { sheetId = 'blank' } = $props();
 
-  const viewBox = `0 0 ${DINO_VALLEY_VIEWBOX.width} ${DINO_VALLEY_VIEWBOX.height}`;
+  const art = $derived(getSheetArt(sheetId));
+  const blankViewBox = `0 0 ${DINO_VALLEY_VIEWBOX.width} ${DINO_VALLEY_VIEWBOX.height}`;
+  const PAPER = '#FFFDF6';
+  const INK = '#3A2E28';
 </script>
 
-<svg
-  class="paper-thumb"
-  viewBox={viewBox}
-  preserveAspectRatio="xMidYMid meet"
-  aria-hidden="true"
-  focusable="false"
->
-  <rect width={DINO_VALLEY_VIEWBOX.width} height={DINO_VALLEY_VIEWBOX.height} fill="#FFFDF6" />
-
-  {#if sheetId === 'dino-valley'}
-    <g fill="#FFFDF6" stroke="#3A2E28" stroke-width="9" stroke-linejoin="round">
-      {#each DINO_VALLEY_REGIONS as region (region.id)}
+{#if art}
+  <!-- A clean miniature of the sheet's ink layer: paper-white shapes with the
+       charcoal outlines, drawn from the same registry the studio paints on. -->
+  <svg
+    class="paper-thumb"
+    viewBox={`0 0 ${art.viewbox.width} ${art.viewbox.height}`}
+    preserveAspectRatio="xMidYMid meet"
+    aria-hidden="true"
+    focusable="false"
+  >
+    <rect width={art.viewbox.width} height={art.viewbox.height} fill={PAPER} />
+    <g fill={PAPER} stroke={INK} stroke-width="9" stroke-linejoin="round">
+      {#each art.regions as region (region.id)}
         <path d={region.d} />
       {/each}
     </g>
-    <g fill="none" stroke="#3A2E28" stroke-width="4" stroke-linecap="round">
-      {#each DINO_VALLEY_LINES as line}
+    <g fill="none" stroke={INK} stroke-width="4" stroke-linecap="round">
+      {#each art.regions as region (region.id)}
+        <path d={region.d} />
+      {/each}
+      {#each art.lines as line}
         <path d={line.d} />
       {/each}
-      {#each DINO_VALLEY_SMILES as smile}
+      {#each art.smiles as smile}
         <path d={smile.d} />
       {/each}
     </g>
-    <g fill="#3A2E28">
-      {#each DINO_VALLEY_DOTS as dot}
+    <g fill={INK}>
+      {#each art.dots as dot}
         <circle cx={dot.cx} cy={dot.cy} r={dot.r} />
       {/each}
     </g>
-  {:else}
+  </svg>
+{:else}
+  <svg
+    class="paper-thumb"
+    viewBox={blankViewBox}
+    preserveAspectRatio="xMidYMid meet"
+    aria-hidden="true"
+    focusable="false"
+  >
+    <rect width={DINO_VALLEY_VIEWBOX.width} height={DINO_VALLEY_VIEWBOX.height} fill={PAPER} />
     <g fill="none" stroke-linecap="round">
       <path
         d="M 62 512 C 118 402 168 562 232 462 C 276 394 318 482 338 432"
@@ -64,13 +75,14 @@
       <rect x="272" y="584" width="56" height="18" fill="#FFF3D1" opacity="0.9" />
       <path d="M 272 674 H 328 L 300 716 Z" fill="#FF6B6B" />
     </g>
-  {/if}
-</svg>
+  </svg>
+{/if}
 
 <style>
   .paper-thumb {
     display: block;
     width: 100%;
     height: 100%;
+    background: #fffdf6;
   }
 </style>
