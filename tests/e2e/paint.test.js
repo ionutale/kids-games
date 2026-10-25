@@ -151,6 +151,25 @@ async function fillRegion(page, artX, artY, width, height) {
   await tapAt(page, artToClient(artX, artY, width, height));
 }
 
+/** Geometry of the visible paper cards, in DOM order. */
+async function trayCardBoxes(page) {
+  return page.locator('.cards button').evaluateAll((nodes) =>
+    nodes.map((node) => {
+      const rect = node.getBoundingClientRect();
+      return {
+        id: node.dataset.testid,
+        x: Math.round(rect.x),
+        y: Math.round(rect.y),
+        width: Math.round(rect.width),
+        height: Math.round(rect.height)
+      };
+    })
+  );
+}
+
+const ALL_SHEET_IDS = ['blank', 'dino-valley', 'butterfly-garden', 'under-the-sea'];
+const AGE2_SHEET_IDS = ['blank', 'dino-valley', 'under-the-sea'];
+
 test.describe('Paint — full-bleed studio', () => {
   test.beforeEach(async ({ page }) => {
     await useAge(page);
@@ -327,13 +346,41 @@ test.describe('Paint — full-bleed studio', () => {
     const paperChip = page.getByTestId('paper-chip');
     await paperChip.click();
     await expect(page.getByTestId('paper-tray')).toBeVisible();
-    await expect(page.locator('[data-testid="paper-blank"], [data-testid="paper-dino-valley"]')).toHaveCount(2);
-    await expect(page.getByTestId('paper-butterfly-garden')).toHaveCount(0);
-    await expect(page.getByTestId('paper-under-the-sea')).toHaveCount(0);
+
+    // The standard studio ships the full collection: Blank, Dino Valley,
+    // Butterfly Garden and Under the Sea, as a 2x2 grid of large cards.
+    const cards = await trayCardBoxes(page);
+    expect(cards.map((card) => card.id)).toEqual(
+      ALL_SHEET_IDS.map((id) => `paper-${id}`)
+    );
+    expect(cards[0].y).toBe(cards[1].y);
+    expect(cards[2].y).toBe(cards[3].y);
+    expect(cards[2].y).toBeGreaterThan(cards[0].y);
+    expect(cards[0].x).toBe(cards[2].x);
+    expect(cards[1].x).toBe(cards[3].x);
+    expect(cards[1].x).toBeGreaterThan(cards[0].x);
+    for (const card of cards) {
+      expect(card.width).toBeGreaterThanOrEqual(120);
+      expect(card.x + card.width).toBeLessThanOrEqual(390);
+      await expect(page.getByTestId(card.id)).toBeVisible();
+    }
+
     await expect(page.getByTestId('paper-blank')).toHaveAttribute('aria-pressed', 'true');
     await expect(page.locator('[data-testid="paper-blank"] .check')).toHaveCount(1);
-    await expect(page.getByTestId('paper-dino-valley')).toHaveAttribute('aria-pressed', 'false');
+    await expect(page.getByTestId('paper-blank')).toHaveAttribute('aria-label', 'Blank paper');
+    await expect(page.getByTestId('paper-dino-valley')).toHaveAttribute(
+      'aria-pressed',
+      'false'
+    );
     await expect(page.locator('[data-testid="paper-dino-valley"] .check')).toHaveCount(0);
+    await expect(page.getByTestId('paper-butterfly-garden')).toHaveAttribute(
+      'aria-label',
+      'Butterfly Garden'
+    );
+    await expect(page.getByTestId('paper-under-the-sea')).toHaveAttribute(
+      'aria-label',
+      'Under the Sea'
+    );
 
     await page.keyboard.press('Escape');
     await expect(page.getByTestId('paper-tray')).toBeHidden();
@@ -434,6 +481,92 @@ test.describe('Paint — full-bleed studio', () => {
     expect(saved.sheets['dino-valley'].stamps).toHaveLength(1);
   });
 
+  test('Butterfly Garden and Under the Sea fill, clip, and save alongside all four sheets', async ({ page }) => {
+    const errors = [];
+    page.on('pageerror', (error) => errors.push(`pageerror: ${error.message}`));
+    page.on('console', (message) => {
+      if (message.type() === 'error') errors.push(`console: ${message.text()}`);
+    });
+
+    const canvas = await openPaint(page);
+
+    // Butterfly Garden: its own line art, a bucket fill, and a clipped stroke.
+    await pickSheet(page, 'butterfly-garden');
+    await expect(page.locator('[data-outline="flower-left"]')).toBeVisible();
+    await expect(page.locator('[data-outline]')).toHaveCount(16);
+    await expect(page.getByTestId('paint-bucket')).toBeVisible();
+
+    await fillRegion(page, 70, 385);
+    await expect(page.locator('[data-region="flower-left"]')).toHaveAttribute('fill', '#FF6B6B');
+
+    // A sky stroke dragged down into the meadow paints above the shared line
+    // and stops there: the meadow plane is never a paint target of this stroke.
+    await page.getByTestId('paint-brush').click();
+    await touchStroke(page, canvas, artToClient(365, 100), artToClient(365, 500));
+    await expect.poll(() => alphaAt(canvas, artToClient(365, 170))).toBeGreaterThan(0);
+    await expect.poll(() => alphaAt(canvas, artToClient(365, 315))).toBeGreaterThan(0);
+    expect(await alphaAt(canvas, artToClient(365, 340))).toBe(0);
+    expect(await alphaAt(canvas, artToClient(365, 500))).toBe(0);
+
+    // Under the Sea: its own line art, one fish filled.
+    await pickSheet(page, 'under-the-sea');
+    await expect(page.locator('[data-outline="fish"]')).toBeVisible();
+    await expect(page.locator('[data-outline]')).toHaveCount(12);
+    await fillRegion(page, 220, 340);
+    await expect(page.locator('[data-region="fish"]')).toHaveAttribute('fill', '#FF6B6B');
+
+    // Dino Valley keeps its own sheet too, so all four papers hold art.
+    await pickSheet(page, 'dino-valley');
+    await expect(page.locator('[data-outline="volcano"]')).toBeVisible();
+    await fillRegion(page, 303, 118);
+    await expect(page.locator('[data-region="sun"]')).toHaveAttribute('fill', '#FF6B6B');
+
+    // Back to Butterfly Garden: the fill and the clipped stroke survived the
+    // two sheet switches, and the active paper is remembered.
+    await pickSheet(page, 'butterfly-garden');
+    await expect(page.getByTestId('paper-chip')).toHaveAttribute(
+      'aria-label',
+      'Paper: Butterfly Garden'
+    );
+    await expect(page.locator('[data-region="flower-left"]')).toHaveAttribute('fill', '#FF6B6B');
+    await expect(page.locator('[data-region="fish"]')).toHaveCount(0);
+    await expect.poll(() => alphaAt(canvas, artToClient(365, 170))).toBeGreaterThan(0);
+    expect(await alphaAt(canvas, artToClient(365, 500))).toBe(0);
+
+    let saved = await readPaint(page);
+    expect(saved.version).toBe(1);
+    expect(saved.activeSheet).toBe('butterfly-garden');
+    expect(Object.keys(saved.sheets).sort()).toEqual([...ALL_SHEET_IDS].sort());
+    expect(saved.sheets['butterfly-garden'].fills).toEqual({ 'flower-left': '#FF6B6B' });
+    expect(saved.sheets['butterfly-garden'].strokes).toHaveLength(1);
+    expect(saved.sheets['butterfly-garden'].strokes[0].region).toBe('sky');
+    expect(saved.sheets['under-the-sea'].fills).toEqual({ fish: '#FF6B6B' });
+    expect(saved.sheets['dino-valley'].fills).toEqual({ sun: '#FF6B6B' });
+
+    // Reload restores the active sheet first, with its fill and stroke intact.
+    await page.reload();
+    const restored = page.getByTestId('paint-canvas');
+    await expect(page.getByTestId('paper-chip')).toHaveAttribute(
+      'aria-label',
+      'Paper: Butterfly Garden'
+    );
+    await expect(page.locator('[data-outline="flower-left"]')).toBeVisible();
+    await expect(page.locator('[data-region="flower-left"]')).toHaveAttribute('fill', '#FF6B6B');
+    await expect.poll(() => alphaAt(restored, artToClient(365, 170))).toBeGreaterThan(0);
+    expect(await alphaAt(restored, artToClient(365, 500))).toBe(0);
+
+    // Then each other sheet reopens with its own artwork.
+    await pickSheet(page, 'under-the-sea');
+    await expect(page.locator('[data-region="fish"]')).toHaveAttribute('fill', '#FF6B6B');
+    await pickSheet(page, 'dino-valley');
+    await expect(page.locator('[data-region="sun"]')).toHaveAttribute('fill', '#FF6B6B');
+
+    saved = await readPaint(page);
+    expect(saved.activeSheet).toBe('dino-valley');
+    expect(Object.keys(saved.sheets).sort()).toEqual([...ALL_SHEET_IDS].sort());
+    expect(errors).toEqual([]);
+  });
+
   test('age 2 reduces the studio and keeps bucket and brush working', async ({ page }) => {
     await useAge(page, 2);
     const canvas = await openPaint(page);
@@ -459,9 +592,24 @@ test.describe('Paint — full-bleed studio', () => {
 
     await page.getByTestId('paper-chip').click();
     await expect(page.getByTestId('paper-tray')).toBeVisible();
-    await expect(page.locator('[data-testid="paper-blank"], [data-testid="paper-dino-valley"]')).toHaveCount(2);
-    await expect(page.getByTestId('paper-under-the-sea')).toHaveCount(0);
+    const age2Cards = await trayCardBoxes(page);
+    expect(age2Cards.map((card) => card.id)).toEqual(
+      AGE2_SHEET_IDS.map((id) => `paper-${id}`)
+    );
+    // Age 2 drops Butterfly Garden and reads as a 2+1 collection: Blank and
+    // Dino Valley on the first row, Under the Sea centred underneath.
+    await expect(page.getByTestId('paper-butterfly-garden')).toHaveCount(0);
+    expect(age2Cards[0].y).toBe(age2Cards[1].y);
+    expect(age2Cards[2].y).toBeGreaterThan(age2Cards[0].y);
+    expect(age2Cards[2].width).toBe(age2Cards[0].width);
+    const secondRowCenter = age2Cards[2].x + age2Cards[2].width / 2;
+    expect(Math.abs(secondRowCenter - 195)).toBeLessThan(8);
+    for (const card of age2Cards) {
+      expect(card.width).toBeGreaterThanOrEqual(120);
+      await expect(page.getByTestId(card.id)).toBeVisible();
+    }
     await page.keyboard.press('Escape');
+    await expect(page.getByTestId('paper-tray')).toBeHidden();
 
     await pickSheet(page, 'dino-valley');
 
@@ -482,6 +630,18 @@ test.describe('Paint — full-bleed studio', () => {
     await touchStroke(page, canvas, artToClient(220, 120), artToClient(220, 330));
     await expect.poll(() => alphaAt(canvas, artToClient(220, 170))).toBeGreaterThan(0);
     expect(await alphaAt(canvas, artToClient(220, 300))).toBe(0);
+
+    // Age 2 still gets Under the Sea, with the same bucket behavior, and each
+    // sheet keeps its own fills when the studio switches papers.
+    await pickSheet(page, 'under-the-sea');
+    await expect(page.locator('[data-outline="fish"]')).toBeVisible();
+    await fillRegion(page, 220, 340);
+    await expect(page.locator('[data-region="fish"]')).toHaveAttribute('fill', '#FF6B6B');
+
+    const age2Saved = await readPaint(page);
+    expect(age2Saved.activeSheet).toBe('under-the-sea');
+    expect(age2Saved.sheets['under-the-sea'].fills).toEqual({ fish: '#FF6B6B' });
+    expect(age2Saved.sheets['dino-valley'].fills).toEqual({ sun: '#FF6B6B' });
   });
 
   test('resizing 390x844 to 340x700 keeps the blank paint', async ({ page }) => {
@@ -536,6 +696,8 @@ test.describe('Paint — full-bleed studio', () => {
         paper: 'Paper',
         blank: 'Blank paper',
         dino: 'Dino Valley',
+        butterfly: 'Butterfly Garden',
+        sea: 'Under the Sea',
         coral: 'Coral',
         star: 'Star'
       },
@@ -546,6 +708,8 @@ test.describe('Paint — full-bleed studio', () => {
         paper: 'Carta',
         blank: 'Foglio bianco',
         dino: 'Valle dei Dinosauri',
+        butterfly: 'Giardino delle Farfalle',
+        sea: 'Sotto il mare',
         coral: 'Corallo',
         star: 'Stella'
       },
@@ -556,6 +720,8 @@ test.describe('Paint — full-bleed studio', () => {
         paper: 'Hârtie',
         blank: 'Foaie albă',
         dino: 'Valea Dinozaurilor',
+        butterfly: 'Grădina Fluturilor',
+        sea: 'Sub mare',
         coral: 'Coral',
         star: 'Stea'
       },
@@ -566,6 +732,8 @@ test.describe('Paint — full-bleed studio', () => {
         paper: 'Papier',
         blank: 'Leeres Papier',
         dino: 'Dino-Tal',
+        butterfly: 'Schmetterlingsgarten',
+        sea: 'Unter dem Meer',
         coral: 'Koralle',
         star: 'Stern'
       },
@@ -576,6 +744,8 @@ test.describe('Paint — full-bleed studio', () => {
         paper: 'Papier',
         blank: 'Feuille blanche',
         dino: 'Vallée des dinosaures',
+        butterfly: 'Jardin des papillons',
+        sea: 'Sous la mer',
         coral: 'Corail',
         star: 'Étoile'
       },
@@ -586,6 +756,8 @@ test.describe('Paint — full-bleed studio', () => {
         paper: '纸张',
         blank: '白纸',
         dino: '恐龙谷',
+        butterfly: '蝴蝶花园',
+        sea: '海底世界',
         coral: '珊瑚',
         star: '星星'
       }
@@ -614,6 +786,14 @@ test.describe('Paint — full-bleed studio', () => {
       await page.getByTestId('paper-chip').click();
       await expect(page.getByTestId('paper-blank')).toHaveAttribute('aria-label', locale.blank);
       await expect(page.getByTestId('paper-dino-valley')).toHaveAttribute('aria-label', locale.dino);
+      await expect(page.getByTestId('paper-butterfly-garden')).toHaveAttribute(
+        'aria-label',
+        locale.butterfly
+      );
+      await expect(page.getByTestId('paper-under-the-sea')).toHaveAttribute(
+        'aria-label',
+        locale.sea
+      );
       await page.keyboard.press('Escape');
       await expect(page.getByTestId('paper-tray')).toBeHidden();
     }
