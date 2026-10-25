@@ -23,7 +23,9 @@ async function shelfPoint(page) {
 }
 
 async function dragShelfSticker(page, type, point) {
-  await touchDrag(page, page.locator(`.shelf-sticker[data-sticker-type="${type}"]`), point);
+  const item = page.locator(`.shelf-sticker[data-sticker-type="${type}"]`);
+  await item.scrollIntoViewIfNeeded();
+  await touchDrag(page, item, point);
 }
 
 async function dragPlacedSticker(page, point, placed = page.locator('.placed-sticker').first()) {
@@ -35,13 +37,27 @@ test.beforeEach(async ({ page }) => {
 });
 
 test.describe('Stickers — Dino Valley slice', () => {
-  test('loads the full-bleed canvas and the 8-sticker shelf', async ({ page }) => {
+  test('loads the full-bleed canvas and the 24-sticker shelf', async ({ page }) => {
     await page.goto('/games/stickers');
 
     await expect(page.locator('.stickers-world')).toBeVisible();
     await expect(page.locator('.dino-valley')).toBeVisible();
-    await expect(page.locator('.shelf-sticker')).toHaveCount(8);
+    await expect(page.locator('.shelf-sticker')).toHaveCount(24);
     await expect(page.locator('.placed-sticker')).toHaveCount(0);
+  });
+
+  test('the full 24-sticker shelf scrolls to the last sticker', async ({ page }) => {
+    await page.goto('/games/stickers');
+    const shelf = page.locator('.shelf-scroll');
+
+    const scrollWidth = await shelf.evaluate((el) => el.scrollWidth);
+    const clientWidth = await shelf.evaluate((el) => el.clientWidth);
+    expect(scrollWidth).toBeGreaterThan(clientWidth);
+
+    const last = page.locator('.shelf-sticker').last();
+    await last.scrollIntoViewIfNeeded();
+    await expect(last).toBeInViewport();
+    await expect(last).toHaveAttribute('data-sticker-type', 'dump-truck');
   });
 
   test('loads a saved scene from localStorage', async ({ page }) => {

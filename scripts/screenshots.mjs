@@ -30,11 +30,11 @@ for (const game of games) {
     await page.addInitScript(() => {
       if (location.pathname !== '/games/stickers') return;
       const placed = [
-        { id: 'shot-trex', type: 'trex', x: 34, y: 47 },
-        { id: 'shot-triceratops', type: 'triceratops', x: 55, y: 64 },
-        { id: 'shot-stegosaurus', type: 'stegosaurus', x: 68, y: 44 },
-        { id: 'shot-pteranodon', type: 'pteranodon', x: 46, y: 30 },
-        { id: 'shot-tent', type: 'tent', x: 72, y: 72 }
+        { id: 'shot-brachiosaurus', type: 'brachiosaurus', x: 32, y: 44 },
+        { id: 'shot-triceratops', type: 'triceratops', x: 55, y: 62 },
+        { id: 'shot-pteranodon', type: 'pteranodon', x: 46, y: 28 },
+        { id: 'shot-fire-truck', type: 'fire-truck', x: 70, y: 75 },
+        { id: 'shot-excavator', type: 'excavator', x: 45, y: 78 }
       ];
       localStorage.setItem('kids-games-stickers', JSON.stringify({
         version: 1,

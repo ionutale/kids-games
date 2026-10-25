@@ -1,7 +1,7 @@
 # Stickers — Full-bleed Dino Valley redesign
 
 **Date:** 2026-10-24
-**Status:** Approved design (grill-with-docs session)
+**Status:** Approved design (grill-with-docs session; vehicle group added 2026-10-25)
 **Game:** Stickers — free-play sticker scene (`/games/stickers`)
 **Audience:** ages 3-5 first; age 2 gets a reduced palette. Portrait phones, PWA, offline.
 **Reference:** the owner's photos of the McDonald's in-store sticker scene (2026-10-24). We copy the model — one full-bleed world, a bottom shelf, drag to place — not the characters, arches, or branding.
@@ -27,7 +27,7 @@ The current Stickers game is a reskinned prototype, not a designed game:
 2. **One full-bleed canvas.** No album, no pages, no dark `GameShell` frame. The world fills the screen.
 3. **Original low-poly SVG art in the repo.** White die-cut sticker borders, soft shadows, bright late-afternoon light. No McDonald's characters, arches, or branding.
 4. **Drag-only.** Drag from the shelf, drag placed stickers, drag back to the shelf to peel. No pinch, no rotate, no per-sticker menu.
-5. **18 stickers in one horizontal shelf row** — roughly 6 dinos, 6 camp/props, 6 nature/sky — at 64px. Age 2 gets 8 stickers at 72px.
+5. **24 stickers in one horizontal shelf row** — 6 dinos, 6 camp/props, 6 nature/sky, 6 vehicles — at 64px. Age 2 gets 8 stickers at 72px.
 6. **Infinite copies, soft cap 80.** The shelf is a palette, not an inventory. At 80, the shelf signals "full"; peel one off to make room. No eviction.
 7. **Auto-save one canvas; two-step reset.** Back saves and returns to the hub. Reset asks once before clearing.
 8. **Docs:** this spec, `CONTEXT.md` terms, ADR 0003, and a pointer from the old Stickers section.
@@ -50,7 +50,7 @@ The current Stickers game is a reskinned prototype, not a designed game:
 ## 2. The shelf
 
 - A bottom strip, full width, 116px plus `--safe-bottom`. It looks like a rocky/earth ledge that belongs to the world, not a UI panel.
-- 18 sticker types in one horizontal scroll row: roughly 6 dinos, 6 camp/props, 6 nature/sky.
+- 24 sticker types in one horizontal scroll row: 6 dinos, 6 camp/props, 6 nature/sky, 6 vehicles.
 - 64px sticker buttons with an 8px gap; every target is at least 48px. Each button has an `aria-label`.
 - Scroll: `overflow-x: auto`, `touch-action: pan-x`, hidden scrollbar, snap proximity. A horizontal swipe scrolls; a vertical drag of 8px starts a sticker drag. The gesture is disambiguated by direction, so a scroll does not place a sticker.
 - The shelf is a palette: infinite copies. A sticker button does not disappear or dim when placed.
@@ -60,7 +60,7 @@ The current Stickers game is a reskinned prototype, not a designed game:
 
 ## 3. Sticker cast
 
-18 types in a 6/6/6 mix. The exact art can be tuned; the mix is the rule.
+24 types in a 6/6/6/6 mix. The exact art can be tuned; the mix is the rule.
 
 **Dinos (6):** T-Rex, Triceratops, Stegosaurus, Brachiosaurus, Pteranodon, Ankylosaurus.
 
@@ -68,10 +68,12 @@ The current Stickers game is a reskinned prototype, not a designed game:
 
 **Nature/sky (6):** Fern, Pine tree, Boulder, Dino egg, Sun, Cloud.
 
+**Vehicles (6):** Fire truck, Police car, Ambulance, Bulldozer, Excavator, Dump truck. Emergency and work vehicles share one group; they park around the campsite/path and do not add a new World.
+
 - Each sticker is an original SVG with a white die-cut border (~6px at 64px) and a soft drop shadow. Friendly, rounded low-poly shapes; no teeth or gore; bright colors.
 - Placed sticker sizes: 72-96px (age 2: 88-112px). Size can vary by silhouette so a T-Rex and a sun both read well.
 - The shelf and the canvas use the same SVG symbol per type, so the art is defined once.
-- The cast is illustrative; the 6/6/6 mix and the Dino Valley theme are the constraints.
+- The cast is illustrative; the 6/6/6/6 mix and the Dino Valley theme are the constraints.
 
 ## 4. Layout & chrome
 
@@ -136,7 +138,7 @@ The current Stickers game is a reskinned prototype, not a designed game:
 
 ## 7. Age scaling
 
-- **Ages 3-5:** the full 18-sticker shelf at 64px; soft cap 80.
+- **Ages 3-5:** the full 24-sticker shelf at 64px; soft cap 80.
 - **Age 2:** 8 stickers (4 dinos, 2 camp, 2 nature/sky) at 72px; the same canvas, art, save, and two-step reset. Soft cap 80.
 - The age is read on mount. The app's age selector is on the hub, so it cannot change mid-scene.
 - If the age changes and a saved scene has more stickers than the new palette, keep the saved stickers. Never delete a child's work on an age change; the palette and cap gate only new placements.
@@ -145,7 +147,7 @@ The current Stickers game is a reskinned prototype, not a designed game:
 
 - All art is original SVG in the repo. No external image requests; no McDonald's assets.
 - Suggested structure:
-  - `src/lib/stickers/catalog.js` — world id/name, 18 sticker entries (`id`, `labelKey`, `group`, size, art symbol), age palettes.
+  - `src/lib/stickers/catalog.js` — world id/name, 24 sticker entries (`id`, `labelKey`, `group`, size, art symbol), age palettes.
   - `src/lib/stickers/art/DinoValley.svelte` — the full-bleed background as inline SVG.
   - `src/lib/stickers/art/stickers/` — one SVG symbol per type, or one sprite with an id per type.
   - `src/lib/stickers/StickerLayer.svelte`, `Shelf.svelte`, `ResetConfirm.svelte`, and the route `+page.svelte`.
@@ -160,7 +162,7 @@ The current Stickers game is a reskinned prototype, not a designed game:
 
 ## 9. Performance
 
-- Budget: one static background SVG, up to 80 placed `<use>` stickers, and 18 shelf items. No particle timers, no canvas, no layout-changing animations.
+- Budget: one static background SVG, up to 80 placed `<use>` stickers, and 24 shelf items. No particle timers, no canvas, no layout-changing animations.
 - Drag uses `transform: translate3d()` on the active sticker. No `left`/`top` animation, no transition on position, and `will-change: transform` only while dragging.
 - Soft cap 80. No eviction.
 - Acceptance on iPhone XR: during a 10-second continuous drag with 40 placed stickers, average FPS at least 30, p95 frame at most 50ms, worst frame at most 200ms; no console errors. Test at 80 placed as a stress check. Reuse the Splash measurement approach if a debug HUD is added; otherwise measure with Chrome DevTools and the XR.
@@ -178,8 +180,8 @@ The current Stickers game is a reskinned prototype, not a designed game:
 
 ## 11. Testing
 
-- **Vitest unit:** catalog has 18 entries with 6/6/6 groups; age palettes (18 at 64px, 8 at 72px); save schema round-trip, unknown version, malformed JSON, unknown sticker type, and clamping; geometry clamp/over-shelf/percentage; cap gating; z-order move-to-end; reset clear.
-- **Playwright e2e:** loads the full-bleed world and the slice shelf (18 at full v1, 8 at age 2); the shelf row scrolls without placing; a tap or a sub-threshold nudge places nothing; drag a sticker from the shelf to the canvas produces one placed sticker; drag a placed sticker changes its position; a tap on a placed sticker keeps its position; drag back to the shelf removes it; edge drops and loaded out-of-range positions are clamped fully inside the play area; reload restores the placed stickers; duplicate saved ids keep the first instead of crashing; back returns to the hub and re-entering restores; reset opens the card, cancel/backdrop keeps, confirm clears, and the card traps focus with a working Escape; age 2 shows 8 shelf stickers; the soft cap shows a full cue and a peel makes room; no page or console errors; a committed 390x844 screenshot at the hub is reviewed manually.
+- **Vitest unit:** catalog has 24 entries with 6/6/6/6 groups; age palettes (24 at 64px, 8 at 72px); save schema round-trip, unknown version, malformed JSON, unknown sticker type, and clamping; geometry clamp/over-shelf/percentage; cap gating; z-order move-to-end; reset clear.
+- **Playwright e2e:** loads the full-bleed world and the full shelf (24 at full v1, 8 at age 2); the shelf row scrolls without placing; a tap or a sub-threshold nudge places nothing; drag a sticker from the shelf to the canvas produces one placed sticker; drag a placed sticker changes its position; a tap on a placed sticker keeps its position; drag back to the shelf removes it; edge drops and loaded out-of-range positions are clamped fully inside the play area; reload restores the placed stickers; duplicate saved ids keep the first instead of crashing; back returns to the hub and re-entering restores; reset opens the card, cancel/backdrop keeps, confirm clears, and the card traps focus with a working Escape; age 2 shows 8 shelf stickers; the soft cap shows a full cue and a peel makes room; no page or console errors; a committed 390x844 screenshot at the hub is reviewed manually.
 - The e2e drag uses pointer events with a `pointerId` and a small vertical move to pass the 8px gesture threshold, like the Splash tests.
 - **Performance:** a manual XR run using the protocol above; record the numbers in the ADR/spec. Not a CI test.
 - **Visual:** inspect at 390x844 for the old blank-page, center-stacking, and clear-overlap regressions. Replace the stale `static/screenshots/stickers.png` after the redesign.
@@ -189,10 +191,10 @@ The current Stickers game is a reskinned prototype, not a designed game:
 - A 3-year-old can drag a sticker from the shelf to the canvas without instruction; the sticker follows the finger and stays where dropped.
 - The canvas fills the screen and reads as Dino Valley; no blank cream page and no dark `GameShell` frame.
 - A placed sticker can be moved; the last touched is on top; a sticker dragged back to the shelf peels off.
-- The shelf scrolls horizontally and all 18 stickers are reachable; the reset and sound controls never overlap the shelf.
+- The shelf scrolls horizontally and all 24 stickers are reachable; the reset and sound controls never overlap the shelf.
 - Reloading, backing out, or returning restores the scene; reset requires a second confirmation.
 - At 80 placed, the shelf shows a friendly full state; peeling makes room.
-- Age 2 shows 8 larger stickers; ages 3-5 show 18.
+- Age 2 shows 8 larger stickers; ages 3-5 show 24.
 - On the XR: 30fps floor, p95 at most 50ms, worst at most 200ms with 40 placed stickers; no console errors.
 - All tests pass; no McDonald's characters, arches, or branding.
 
@@ -207,9 +209,9 @@ The current Stickers game is a reskinned prototype, not a designed game:
 
 ## 14. Future worlds
 
-- The catalog and save schema are keyed by world. Adding a world means a background SVG, 18 sticker entries, a shelf texture, and a picker card; the canvas, interaction, and save code stay the same.
+- The catalog and save schema are keyed by world. Adding a world means a background SVG, 24 sticker entries, a shelf texture, and a picker card; the canvas, interaction, and save code stay the same.
 - A future Scene Picker shows large postcard cards. Back from a world returns to the picker; the picker's back returns to the hub.
-- Keep the same 6/6/6 mix per world: characters, props, nature/sky.
+- Keep the same 6/6/6/6 mix per world: characters, props, nature/sky, vehicles.
 
 ## Glossary Terms (added to CONTEXT.md)
 

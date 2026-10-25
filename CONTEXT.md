@@ -224,6 +224,7 @@ The following games have been proposed but not yet designed or implemented. Each
 - **Sticker**: A die-cut illustrated object on the Shelf. A Sticker type can be placed many times.
 - **Placed Sticker**: One instance of a Sticker on the Canvas. It can be moved or peeled off; the last touched is on top.
 - **Shelf**: The horizontal strip at the bottom of the Canvas holding the World's Sticker types. It scrolls and is not an inventory.
+- **Vehicle Sticker**: A Sticker in the vehicle group — emergency (fire truck, police car, ambulance) or work (bulldozer, excavator, dump truck). Vehicles share the Dino Valley Shelf; they do not add a World.
 - **Peel**: Dragging a Placed Sticker back to the Shelf to remove it.
 - **Soft Cap**: The 80-Placed-Sticker ceiling; the Shelf shows a full cue and new placements pause until a sticker is peeled.
 - **Reset**: The two-step action that clears all Placed Stickers from the Canvas.
