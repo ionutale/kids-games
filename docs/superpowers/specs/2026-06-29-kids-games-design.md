@@ -72,6 +72,9 @@ All games share a thin shell:
 ## Game Designs
 
 ### 1. Paint
+
+> **Proposed replacement 2026-10-25.** See [2026-10-25-paint-redesign.md](2026-10-25-paint-redesign.md). The redesign makes Paint a full-bleed art studio with blank and coloring sheets, protected line art, per-sheet save, and a floating tool dock. The section below remains the shipped behavior until the redesign is approved and built.
+
 - **Mechanics:** Finger drawing on canvas. Select brush size (big/medium/small) + color palette. Stamp mode (star, heart, animals) places at tap location.
 - **Age scaling:**
   - 2yo: 3 colors + big brush only + stamps

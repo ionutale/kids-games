@@ -230,6 +230,25 @@ The following games have been proposed but not yet designed or implemented. Each
 - **Reset**: The two-step action that clears all Placed Stickers from the Canvas.
 - **Scene Picker**: The future screen for choosing a World; not in v1.
 
+## Paint Game
+
+- **Paint Studio**: The full-bleed paper place in Paint; a fresh white sheet with a floating dock and corner chips, no `GameShell`.
+- **Sheet**: One paper in the Paint Studio — either a Blank Sheet or a Coloring Sheet. One Sheet is active at a time.
+- **Blank Sheet**: A free-paint sheet with no line art; brushes, stamps, and eraser work anywhere.
+- **Coloring Sheet**: A Sheet with original line art and named Regions; the bucket and clipped brush color it.
+- **Region**: One closed, named shape in a Coloring Sheet's line art (sky, volcano, dino body, etc.) that can be filled or painted.
+- **Line Art**: The charcoal SVG outlines above a Coloring Sheet; paint never covers them.
+- **Bucket**: The tap-to-fill tool that colors one Region with the current color.
+- **Clipped Stroke**: A brush stroke confined to the Region under its start point; crossing a line ends the stroke.
+- **Stamp**: A discrete SVG decoration (star, heart, butterfly, flower) placed on a Sheet; it may overlap line art like a real sticker.
+- **Studio Dock**: The floating bottom tool tray: current color, brush sizes, bucket, stamp, eraser, undo.
+- **Paint Palette**: The eight-pot color tray opened from the current color well.
+- **Stamp Tray**: The four-stamp picker opened from the stamp tool.
+- **Paper Tray**: The paper-card picker opened from the current-paper chip; switching saves the current Sheet.
+- **Sheet Document**: The saved fills, strokes, and stamps for one Sheet, stored per sheet under `kids-games-paint` v1.
+- **Undo**: The 20-action in-memory history for the active Sheet; it resets on switch or reload.
+- **Clear**: The parent-facing, two-step action that clears only the current Sheet; the other Sheets are untouched.
+
 ## Assets
 
 - **Free Assets Guide** (`docs/free-assets.md`): complete inventory of all sounds in the repo (mp3 files + synthesized Web Audio tones, with code pointers and known gaps) plus curated free-license source sites for audio, music, images, icons, sprites, and 3D meshes.
