@@ -35,6 +35,8 @@ pnpm dev
 | `pnpm test:e2e` | E2E tests (Playwright, headless) |
 | `pnpm test:e2e:headed` | E2E tests with browser visible |
 | `pnpm test:all` | All tests |
+| `pnpm deploy` | Deploy to production **and** repoint the branded alias |
+| `pnpm alias:brand` | Only repoint `kids-games-lac.vercel.app` at the newest production deploy |
 
 ## Stack
 
@@ -43,6 +45,18 @@ pnpm dev
 - **Audio:** Web Audio API (synth sounds)
 - **Testing:** Vitest + Playwright
 - **Deploy:** Vercel (static export)
+
+### Deploying
+
+Use `pnpm deploy`, not a bare `vercel --prod`.
+
+The child-facing domain `kids-2-5.aiu-media.com` is served through a Cloudflare
+proxy that fetches `kids-games-lac.vercel.app` with an `x-aiu-proxy` header.
+That alias is a *manual* Vercel alias: a new production deployment moves only the
+automatic aliases (`kids-games-ion-utales-projects.vercel.app`,
+`kids-games-git-main-…`), so the branded domain would keep serving the old build
+until the alias is re-pointed. `scripts/pin-brand-alias.mjs` does that step and
+warns when the newest deployment is not your local `HEAD`.
 
 ## Age Scaling
 

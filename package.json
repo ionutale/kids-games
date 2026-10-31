@@ -13,6 +13,8 @@
 		"test:e2e": "playwright test",
 		"test:e2e:headed": "HEADED=true playwright test",
 		"test:all": "vitest run tests/unit tests/behavioral && playwright test",
+		"deploy": "pnpm dlx vercel@latest --prod --yes && node scripts/pin-brand-alias.mjs",
+		"alias:brand": "node scripts/pin-brand-alias.mjs",
 		"prepare": "svelte-kit sync || echo ''"
 	},
 	"devDependencies": {
