@@ -1,47 +1,49 @@
 <script>
-  import { onMount } from 'svelte';
+  import { onDestroy } from 'svelte';
+  import { settings } from '$lib/stores/settings';
   import { _ } from '$lib/stores/locale';
+  import { playTap, playMatch } from '$lib/sounds/audioManager';
   import GameShell from '$lib/components/ui/GameShell.svelte';
-  import '$lib/trainers/fx.css';
   import HudPill from '$lib/components/ui/HudPill.svelte';
   import WinOverlay from '$lib/components/ui/WinOverlay.svelte';
   import LadderBar from '$lib/ladder/LadderBar.svelte';
   import LadderActions from '$lib/ladder/LadderActions.svelte';
   import { loadLevel, saveLevel, loadMastered, saveMastered, MAX_LEVEL } from '$lib/ladder/progress.js';
-  import { playMatch, playWin } from '$lib/sounds/audioManager.js';
-  import { buildRound, correctBin } from '$lib/category-sort/categories.js';
+  import { buildRound } from '$lib/category-sort/categories.js';
+  import CategoryArt from '$lib/category-sort/CategoryArt.svelte';
+
+  function withUids(round) {
+    return { ...round, items: round.items.map((item, uid) => ({ ...item, uid })) };
+  }
 
   const initialLevel = loadLevel('category-sort');
   let level = $state(initialLevel);
   let mastered = $state(loadMastered('category-sort'));
-  let round = $state(buildRound(initialLevel));
-  let itemIdx = $state(0);
+  let round = $state(withUids(buildRound(initialLevel)));
+  let placed = $state({});
+  let selected = $state(null);
+  let over = $state(null);
+  let wrong = $state(-1);
+  let popping = $state(-1);
   let correctTotal = $state(0);
   let won = $state(false);
 
-  // area geometry (reactive → resize-safe home slot)
-  let areaW = $state(0);
-  let areaH = $state(0);
-  const homeX = $derived(areaW / 2);
-  const homeY = $derived(areaH * 0.6);
-
-  let dragging = $state(false);
-  let dragX = $state(0);
-  let dragY = $state(0);
-  let hoverBin = $state(-1);
-  let wrongBin = $state(-1);
-  let returning = $state(false);
-  let flying = $state(null); // { emoji, x, y } ghost flying into a bin
-
-  // tap-to-place state
-  let selected = $state(false);
-
-  let binEls = [];
-  let areaEl;
-  let activePointerId = null;
-  let dragStart = null;
-  let dragMoved = false;
+  // drag = { item, x, y, startX, startY, moved, mode: 'drag' | 'return' | 'drop' }
+  let drag = $state(null);
+  let dragOrigin = null;
+  let activePointer = null;
+  let zoneEls = [];
   let timers = [];
+
+  const placedCount = $derived(Object.values(placed).reduce((n, list) => n + list.length, 0));
+  const totalItems = $derived(placedCount + round.items.length);
+  const selectedItem = $derived(
+    selected === null ? null : round.items.find((item) => item.uid === selected) ?? null
+  );
+  const showHelper = $derived(level === 1 && correctTotal < 5);
+  const draggedCorrectly = $derived(
+    drag && over !== null && drag.item.categoryId === round.bins[over]?.id
+  );
 
   function later(fn, ms) {
     timers.push(setTimeout(fn, ms));
@@ -51,24 +53,41 @@
     timers = [];
   }
 
-  function rel(e) {
-    const r = areaEl.getBoundingClientRect();
-    return { x: e.clientX - r.left, y: e.clientY - r.top };
+  function zoneAt(x, y) {
+    const el = document.elementFromPoint(x, y);
+    const target = el?.closest?.('[data-basket]');
+    return target ? Number(target.getAttribute('data-basket')) : null;
+  }
+
+  function zoneCenter(i) {
+    const el = zoneEls[i];
+    if (!el) return null;
+    const r = el.getBoundingClientRect();
+    return { x: r.left + r.width / 2, y: r.top + r.height * 0.55 };
+  }
+
+  function stopPointer() {
+    window.removeEventListener('pointermove', onMove);
+    window.removeEventListener('pointerup', onUp);
+    window.removeEventListener('pointercancel', onUp);
+    activePointer = null;
   }
 
   function startLevel(l) {
     clearTimers();
+    stopPointer();
     level = l;
     saveLevel('category-sort', l);
-    round = buildRound(l);
-    itemIdx = 0;
+    round = withUids(buildRound(l));
+    placed = {};
+    selected = null;
+    over = null;
+    wrong = -1;
+    popping = -1;
+    correctTotal = 0;
     won = false;
-    selected = false;
-    dragging = false;
-    returning = false;
-    hoverBin = -1;
-    wrongBin = -1;
-    flying = null;
+    drag = null;
+    dragOrigin = null;
   }
 
   function nextLevel(e) {
@@ -81,217 +100,238 @@
     startLevel(level);
   }
 
-  const currentItem = $derived(round?.items[itemIdx] ?? null);
-  const correctBinId = $derived(currentItem?.categoryId ?? null);
-  // training wheels: bin-side green hints only for the first 5 placements of level 1
-  const showBinHelper = $derived(level === 1 && correctTotal < 5);
-
-  function binCenter(i) {
-    const el = binEls[i];
-    if (!el) return null;
-    const r = el.getBoundingClientRect();
-    return { x: (r.left + r.right) / 2, y: (r.top + r.bottom) / 2 };
+  function startDrag(e, item) {
+    if (won || drag || activePointer !== null) return;
+    if (e.pointerType === 'mouse' && e.button !== 0) return;
+    activePointer = e.pointerId;
+    const r = e.currentTarget.getBoundingClientRect();
+    dragOrigin = { x: r.left + r.width / 2, y: r.top + r.height / 2 };
+    drag = {
+      item,
+      x: e.clientX,
+      y: e.clientY,
+      startX: e.clientX,
+      startY: e.clientY,
+      moved: false,
+      mode: 'drag'
+    };
+    selected = null;
+    window.addEventListener('pointermove', onMove);
+    window.addEventListener('pointerup', onUp);
+    window.addEventListener('pointercancel', onUp);
+    e.preventDefault();
+    if ($settings.soundEnabled) playTap();
   }
 
-  // ---- drag ------------------------------------------------------------
-  function beginDrag(e) {
-    if (!currentItem || won || dragging) return;
-    if (returning) returning = false; // kid re-grabs mid-bounce-back: cancel it
-    if (activePointerId !== null) return; // single-touch lock
-    activePointerId = e.pointerId;
-    selected = false;
-    dragging = true;
-    const p = rel(e);
-    dragX = p.x;
-    dragY = p.y;
-    dragStart = { x: p.x, y: p.y };
-    dragMoved = false;
-    window.addEventListener('pointermove', duringDrag);
-    window.addEventListener('pointerup', endDrag);
-    window.addEventListener('pointercancel', endDrag);
-    e.preventDefault?.();
+  function onMove(e) {
+    if (!drag || e.pointerId !== activePointer) return;
+    drag.x = e.clientX;
+    drag.y = e.clientY;
+    if (Math.hypot(e.clientX - drag.startX, e.clientY - drag.startY) > 8) drag.moved = true;
+    over = zoneAt(e.clientX, e.clientY);
   }
 
-  function duringDrag(e) {
-    if (!dragging || e.pointerId !== activePointerId) return;
-    const p = rel(e);
-    dragX = p.x;
-    dragY = p.y;
-    if (dragStart && Math.hypot(p.x - dragStart.x, p.y - dragStart.y) > 8) dragMoved = true;
-    hoverBin = hitBin(e.clientX, e.clientY);
-  }
+  function onUp(e) {
+    if (!drag || e.pointerId !== activePointer) return;
+    const moved = drag.moved;
+    const zone = zoneAt(e.clientX, e.clientY);
+    stopPointer();
+    over = null;
 
-  function endDrag(e) {
-    window.removeEventListener('pointermove', duringDrag);
-    window.removeEventListener('pointerup', endDrag);
-    window.removeEventListener('pointercancel', endDrag);
-    if (!dragging || (e.pointerId !== undefined && e.pointerId !== activePointerId)) return;
-    activePointerId = null;
-    dragging = false;
-    hoverBin = -1; // always clear, even when dropped outside (L1)
-    if (!dragMoved) {
-      // a stationary touch is a TAP: lift or cancel the selected item
-      selected = !selected;
+    if (!moved) {
+      const item = drag.item;
+      drag = null;
+      toggleSelect(item);
       return;
     }
-    const binIdx = hitBin(e.clientX, e.clientY);
-    if (binIdx === -1) return; // dropped outside — bounce back silently
 
-    const bin = round.bins[binIdx];
-    const target = correctBin(currentItem, round.bins);
-    if (bin && target && bin.id === target.id) {
-      placeItem(binIdx);
+    if (zone === null) {
+      returnToOrigin();
+    } else if (drag.item.categoryId === round.bins[zone]?.id) {
+      dropInto(zone);
     } else {
-      wrongBin = binIdx; // gentle silent rejection — emoji bounces back
-      later(() => (wrongBin = -1), 400);
-      bounceBack(e);
+      reject(zone);
     }
   }
 
-  function bounceBack(e) {
-    const p = rel(e);
-    returning = true;
-    dragX = p.x;
-    dragY = p.y;
+  function returnToOrigin() {
+    if (!drag || !dragOrigin) return;
+    const ghost = drag;
+    const home = dragOrigin;
+    drag.mode = 'return';
     requestAnimationFrame(() => {
-      dragX = homeX;
-      dragY = homeY;
-      later(() => (returning = false), 300);
+      if (drag !== ghost) return;
+      drag.x = home.x;
+      drag.y = home.y;
     });
+    later(() => {
+      if (drag === ghost) drag = null;
+    }, 340);
   }
 
-  function hitBin(clientX, clientY) {
-    for (let i = 0; i < binEls.length; i++) {
-      const el = binEls[i];
-      if (!el) continue;
-      const r = el.getBoundingClientRect();
-      if (clientX >= r.left && clientX <= r.right && clientY >= r.top && clientY <= r.bottom) return i;
-    }
-    return -1;
-  }
-
-  function placeItem(binIdx) {
-    playMatch();
-    correctTotal += 1;
-    // ghost flies into the bin while logic advances instantly (juice + determinism)
-    const center = binCenter(binIdx);
+  function dropInto(zone) {
+    if (!drag) return;
+    const center = zoneCenter(zone);
+    const ghost = drag;
+    drag.mode = 'drop';
     if (center) {
-      flying = { emoji: currentItem.emoji, x: center.x - areaEl.getBoundingClientRect().left, y: center.y - areaEl.getBoundingClientRect().top };
-      later(() => (flying = null), 300);
+      requestAnimationFrame(() => {
+        if (drag !== ghost) return;
+        drag.x = center.x;
+        drag.y = center.y;
+      });
     }
-    advance();
+    later(() => {
+      if (drag !== ghost) return;
+      commit(ghost.item, zone);
+      drag = null;
+    }, 260);
   }
 
-  function advance() {
-    if (itemIdx + 1 >= round.items.length) {
-      playWin();
-      if (level >= MAX_LEVEL) {
-        saveMastered('category-sort');
-        mastered = true;
-      }
-      won = true;
+  function reject(zone) {
+    wrong = zone;
+    returnToOrigin();
+    later(() => (wrong = -1), 500);
+  }
+
+  function commit(item, zone) {
+    placed = { ...placed, [zone]: [...(placed[zone] ?? []), item.emoji] };
+    const remaining = round.items.filter((it) => it.uid !== item.uid);
+    round = { ...round, items: remaining };
+    selected = null;
+    correctTotal += 1;
+    popping = zone;
+    later(() => (popping = -1), 450);
+    if ($settings.soundEnabled) playMatch();
+    if (remaining.length === 0) {
+      later(() => {
+        if (level >= MAX_LEVEL) {
+          saveMastered('category-sort');
+          mastered = true;
+        }
+        won = true;
+      }, 280);
+    }
+  }
+
+  function tapZone(i) {
+    if (!selectedItem || won) return;
+    if (selectedItem.categoryId === round.bins[i]?.id) {
+      commit(selectedItem, i);
     } else {
-      itemIdx += 1;
+      wrong = i;
+      later(() => (wrong = -1), 500);
     }
   }
 
-  // ---- tap-to-place ----------------------------------------------------
-  function onItemTap() {
-    if (!currentItem || won || returning || dragging) return;
-    if (!selected) {
-      selected = true; // lift the item
-      return;
-    }
-    // tapping again cancels selection
-    selected = false;
+  function toggleSelect(item) {
+    if (won) return;
+    selected = selected === item.uid ? null : item.uid;
+    if ($settings.soundEnabled) playTap();
   }
 
-  function onBinTap(i) {
-    if (!selected || won) return;
-    const bin = round.bins[i];
-    const target = correctBin(currentItem, round.bins);
-    if (bin && target && bin.id === target.id) {
-      selected = false;
-      placeItem(i);
-    } else {
-      wrongBin = i;
-      later(() => (wrongBin = -1), 400);
-    }
-  }
-
-  onMount(() => () => {
-    window.removeEventListener('pointermove', duringDrag);
-    window.removeEventListener('pointerup', endDrag);
-    window.removeEventListener('pointercancel', endDrag);
+  onDestroy(() => {
     clearTimers();
+    stopPointer();
   });
 </script>
 
-<GameShell accent="#F0ABFC">
+<GameShell accent="#F6B26B">
   {#snippet hudLeft()}
-    <HudPill icon="✅" label={String(correctTotal)} />
+    <HudPill icon="✅" label={String(placedCount)} />
     <HudPill icon="🚩" label={String(level)} />
-    <HudPill icon="🎯" label={`${itemIdx}/${round.items.length}`} />
+    <HudPill icon="🎯" label={`${placedCount}/${totalItems}`} />
   {/snippet}
 
-  <div class="sort" data-testid="sort-root">
-    <div class="bins" data-testid="bins">
-      {#each round.bins as bin, i}
-        <div
-          class="bin"
-          class:hover={hoverBin === i}
-          class:hover-correct={showBinHelper && hoverBin === i && bin.id === correctBinId}
-          class:hover-wrong={hoverBin === i && bin.id !== correctBinId}
-          class:wobbling={wrongBin === i}
-          class:selected-target={showBinHelper && selected && bin.id === correctBinId}
-          bind:this={binEls[i]}
-          data-testid="bin-{bin.id}"
-          onclick={() => onBinTap(i)}
-        >
-          <span class="bin-icon">{bin.icon}</span>
-          <span class="bin-name">{$_(bin.id)}</span>
-          {#if showBinHelper && hoverBin === i && bin.id === correctBinId}<span class="ok-mark">✓</span>{/if}
+  <div class="category-game">
+    <div class="room">
+      <div class="wall" aria-hidden="true"></div>
+      <div class="floor" aria-hidden="true"></div>
+      <div class="window" aria-hidden="true">
+        <span class="moon"></span>
+        <span class="wstar" style:left="22%" style:top="26%"></span>
+        <span class="wstar" style:left="62%" style:top="18%"></span>
+        <span class="wstar" style:left="46%" style:top="46%"></span>
+      </div>
+
+      <div class="zones" data-testid="bins" class:many={round.bins.length > 2}>
+        {#each round.bins as bin, i}
+          <button
+            class="zone"
+            class:over={over === i}
+            class:wrong={wrong === i}
+            class:helper={showHelper &&
+              ((selectedItem && selectedItem.categoryId === bin.id) ||
+                (drag && over === i && drag.item.categoryId === bin.id))}
+            class:hover-wrong={drag && over === i && drag.item.categoryId !== bin.id}
+            class:filled={(placed[i]?.length ?? 0) > 0}
+            class:pop={popping === i}
+            data-basket={i}
+            data-cat={bin.id}
+            bind:this={zoneEls[i]}
+            onclick={() => tapZone(i)}
+          >
+            <span class="zone-sign">
+              <CategoryArt id={bin.id} size={34} />
+            </span>
+            <span class="zone-name">{$_(bin.id)}</span>
+            {#if showHelper &&
+              ((selectedItem && selectedItem.categoryId === bin.id) ||
+                (drag && over === i && drag.item.categoryId === bin.id))}
+              <span class="ok-mark" aria-hidden="true">✓</span>
+            {/if}
+            <span class="shelf">
+              {#each placed[i] ?? [] as emoji, n (n)}
+                <span class="mini" style:animation-delay="{n * 45}ms">{emoji}</span>
+              {/each}
+            </span>
+            <span class="zone-count">{placed[i]?.length ?? 0}</span>
+          </button>
+        {/each}
+      </div>
+
+      <div class="rug" aria-hidden="true"></div>
+
+      <div class="tray-wrap">
+        <p class="hint">{$_('dragToBin')}</p>
+        <div class="tray">
+          {#each round.items as item (item.uid)}
+            <button
+              class="draggable"
+              class:selected={selected === item.uid}
+              class:dragging={drag?.item.uid === item.uid}
+              style:--tilt="{(item.uid % 3) - 1}deg"
+              data-emoji={item.emoji}
+              data-cat={item.categoryId}
+              onpointerdown={(e) => startDrag(e, item)}
+              onclick={(e) => {
+                if (e.detail === 0) toggleSelect(item);
+              }}
+              aria-label={item.emoji}
+            >
+              {item.emoji}
+            </button>
+          {/each}
         </div>
-      {/each}
-    </div>
+      </div>
 
-    <p class="hint-line">👇 {$_('dragToBin')}</p>
-
-    <div
-      class="drop-area"
-      data-testid="drop-area"
-      bind:this={areaEl}
-      bind:clientWidth={areaW}
-      bind:clientHeight={areaH}
-    >
-      {#if currentItem && !won}
-        <button
-          class="draggable"
-          class:dragging
-          class:selected
-          class:returning
-          class:over-correct={hoverBin !== -1 && round.bins[hoverBin]?.id === correctBinId}
-          style:left="{dragging || returning ? dragX : homeX}px"
-          style:top="{dragging || returning ? dragY : homeY}px"
-          onpointerdown={beginDrag}
-          aria-label={currentItem.emoji}
-          data-testid="item"
+      {#if drag}
+        <div
+          class="ghost"
+          class:live={drag.mode === 'drag'}
+          class:correct={draggedCorrectly}
+          class:dropping={drag.mode === 'drop'}
+          style:left="{drag.x}px"
+          style:top="{drag.y}px"
         >
-          {currentItem.emoji}
-          {#if dragging && hoverBin !== -1 && round.bins[hoverBin]?.id === correctBinId}
-            <span class="ok-badge" data-testid="ok-badge">✓</span>
-          {/if}
-        </button>
-      {/if}
-
-      {#if flying}
-        <span class="flying-ghost" style:left="{flying.x}px" style:top="{flying.y}px" data-testid="flying-ghost">
-          {flying.emoji}
-        </span>
+          {drag.item.emoji}
+        </div>
       {/if}
     </div>
 
-    <LadderBar current={level} {mastered} onchange={startLevel} />
+    <div class="ladder-dock">
+      <LadderBar current={level} {mastered} onchange={startLevel} />
+    </div>
   </div>
 
   {#if won}
@@ -310,130 +350,303 @@
 </GameShell>
 
 <style>
-  .sort {
-    flex: 1;
+  .category-game {
     display: flex;
     flex-direction: column;
-    align-items: center;
-    gap: 10px;
-    padding: 10px;
-    padding-bottom: calc(10px + var(--safe-bottom));
-    overflow-y: auto;
+    flex: 1;
+    overflow: hidden;
   }
-  .bins {
-    display: flex;
-    gap: 12px;
-    width: min(96vw, 480px);
-  }
-  .bin {
+
+  .room {
     position: relative;
     flex: 1;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    background: #2a2035;
+  }
+  .wall {
+    position: absolute;
+    inset: 0 0 30% 0;
+    background:
+      radial-gradient(60% 44% at 50% 0%, rgba(255, 176, 88, 0.2), transparent 70%),
+      repeating-linear-gradient(90deg, rgba(255, 248, 236, 0.035) 0 2px, transparent 2px 52px),
+      linear-gradient(180deg, #43304a, #33253c);
+  }
+  .floor {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 30%;
+    border-top: 6px solid #4a2e1b;
+    background:
+      repeating-linear-gradient(90deg, #6b4326 0 40px, #5a3720 40px 43px, #6b4326 43px 84px);
+    box-shadow: inset 0 12px 26px rgba(0, 0, 0, 0.3);
+    pointer-events: none;
+  }
+  .window {
+    position: absolute;
+    top: 4px;
+    left: 22px;
+    width: 70px;
+    height: 58px;
+    border-radius: 12px;
+    background: #141b34;
+    border: 5px solid #7a4e2d;
+    box-shadow: 0 8px 18px rgba(0, 0, 0, 0.35);
+    overflow: hidden;
+  }
+  .moon {
+    position: absolute;
+    top: 9px;
+    right: 11px;
+    width: 15px;
+    height: 15px;
+    border-radius: 50%;
+    background: #ffe3a3;
+    box-shadow: 0 0 14px rgba(255, 214, 140, 0.7);
+  }
+  .wstar {
+    position: absolute;
+    width: 3px;
+    height: 3px;
+    border-radius: 50%;
+    background: #fff;
+    opacity: 0.8;
+    animation: twinkle 3.6s ease-in-out infinite;
+  }
+
+  .zones {
+    position: relative;
+    z-index: 2;
+    width: min(360px, 92%);
+    margin: 74px auto 0;
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+  }
+  .zones > :last-child:nth-child(odd) {
+    grid-column: 1 / -1;
+    width: min(200px, 62%);
+    justify-self: center;
+  }
+  .zone {
+    position: relative;
+    aspect-ratio: 1 / 0.92;
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 4px;
-    padding: 14px 8px;
-    border-radius: 20px;
-    background: var(--panel-glass);
-    border: 2px dashed var(--panel-border);
-    transition: transform 0.15s, border-color 0.15s, box-shadow 0.15s;
+    padding: 8px;
+    border-radius: 22px;
+    background: linear-gradient(160deg, rgba(255, 248, 236, 0.16), rgba(255, 248, 236, 0.05));
+    border: 2px solid rgba(255, 233, 201, 0.32);
+    box-shadow: inset 0 2px 10px rgba(0, 0, 0, 0.25), 0 8px 18px rgba(0, 0, 0, 0.2);
+    transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease,
+      opacity 0.2s ease;
+    touch-action: manipulation;
   }
-  .bin.hover { transform: scale(1.05); }
-  .bin.hover-correct {
+  .zone.over {
+    transform: translateY(-3px) scale(1.02);
+    border-color: rgba(255, 205, 140, 0.9);
+    box-shadow: 0 0 24px rgba(255, 205, 140, 0.45);
+  }
+  .zone.helper {
     border-color: #7ee787;
-    box-shadow: 0 0 22px rgba(126, 231, 135, 0.6);
+    box-shadow: 0 0 22px rgba(126, 231, 135, 0.55);
   }
-  .bin.hover-wrong { opacity: 0.6; }
-  .bin.selected-target { border-color: #7ee787; }
-  .bin.wobbling { animation: fxWobble 0.4s ease-in-out; border-color: rgba(255, 155, 155, 0.6); }
+  .zone.hover-wrong { opacity: 0.55; }
+  .zone.filled { border-color: rgba(255, 205, 140, 0.55); }
+  .zone.wrong { animation: wobble 0.38s ease-in-out; }
+  .zone.pop { animation: zonePop 0.32s ease-out; }
+  @keyframes wobble {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-6px); }
+    75% { transform: translateX(6px); }
+  }
+  @keyframes zonePop {
+    0% { transform: scale(1); }
+    45% { transform: scale(1.04); }
+    100% { transform: scale(1); }
+  }
+  .zone-sign {
+    width: 48px;
+    height: 48px;
+    border-radius: 14px;
+    background: #fff8ec;
+    border: 2px solid #3a271b;
+    display: grid;
+    place-items: center;
+    box-shadow: 0 3px 0 rgba(52, 28, 16, 0.4);
+  }
+  .zone-name {
+    margin-top: 3px;
+    font-size: 11px;
+    font-weight: 700;
+    color: #ffe6c4;
+    text-shadow: 0 1px 4px rgba(0, 0, 0, 0.5);
+  }
   .ok-mark {
     position: absolute;
-    top: -10px;
-    right: -8px;
+    top: -9px;
+    right: -7px;
     width: 26px;
     height: 26px;
     border-radius: 50%;
     background: #7ee787;
-    color: #062033;
+    color: #06301a;
+    font-size: 15px;
     font-weight: 800;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    animation: fxPop 0.25s ease-out;
+    display: grid;
+    place-items: center;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
   }
-  .bin-icon { font-size: 30px; }
-  .bin-name { font-size: 13px; font-weight: 700; color: var(--text-lo); }
-  .hint-line { color: var(--text-lo); font-size: 14px; margin: 0; }
-  .drop-area {
+  .shelf {
+    flex: 1;
+    width: 100%;
+    margin-top: 4px;
+    padding: 4px;
+    display: flex;
+    flex-wrap: wrap;
+    align-content: center;
+    justify-content: center;
+    gap: 2px;
+    border-radius: 10px;
+    background: rgba(58, 39, 27, 0.45);
+    border: 1px solid rgba(255, 205, 140, 0.18);
+    font-size: 20px;
+    line-height: 1.1;
+  }
+  .mini { animation: popIn 0.26s ease-out backwards; }
+  .zone-count {
+    position: absolute;
+    top: 6px;
+    right: 8px;
+    font-size: 10px;
+    font-weight: 700;
+    color: #ffe6c4;
+    opacity: 0.7;
+  }
+
+  .rug {
+    position: absolute;
+    left: 4%;
+    right: 4%;
+    bottom: 3%;
+    height: 32%;
+    z-index: 1;
+    border-radius: 50% / 22%;
+    background:
+      repeating-linear-gradient(90deg, rgba(255, 205, 140, 0.12) 0 18px, transparent 18px 36px),
+      linear-gradient(180deg, #7a3f2e, #53291f);
+    border: 2px solid rgba(255, 205, 140, 0.22);
+    box-shadow: inset 0 3px 14px rgba(255, 205, 140, 0.14), 0 14px 26px rgba(0, 0, 0, 0.28);
+    pointer-events: none;
+  }
+
+  .tray-wrap {
     position: relative;
-    width: min(96vw, 480px);
-    height: 46vh;
-    border-radius: 18px;
-    background: rgba(255, 255, 255, 0.03);
-    border: 1px solid var(--panel-border);
-    touch-action: none;
-    user-select: none;
-    -webkit-touch-callout: none;
+    z-index: 3;
+    margin-top: auto;
+    padding: 8px 10px 10px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+  }
+  .hint {
+    font-size: 13px;
+    font-weight: 600;
+    color: #ffe6c4;
+    text-shadow: 0 2px 6px rgba(0, 0, 0, 0.5);
+  }
+  .tray {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 7px;
+    padding: 9px 12px;
+    border-radius: 20px;
+    background: rgba(58, 39, 27, 0.55);
+    border: 2px solid rgba(255, 205, 140, 0.3);
+    box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.3);
+    max-width: min(360px, 94vw);
   }
   .draggable {
-    position: absolute;
-    width: 88px;
-    height: 88px;
-    margin: -44px 0 0 -44px;
-    border-radius: 24px;
-    font-size: 52px;
-    line-height: 84px;
-    background: var(--panel-glass);
-    border: 2px solid var(--panel-border);
-    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
+    width: 54px;
+    height: 54px;
+    border-radius: 14px;
+    display: grid;
+    place-items: center;
+    font-size: 32px;
+    line-height: 1;
+    background: linear-gradient(160deg, #fff8ec, #ffe9c9);
+    border: 2px solid rgba(255, 205, 140, 0.65);
+    box-shadow: 0 4px 0 rgba(52, 28, 16, 0.45), 0 8px 12px rgba(0, 0, 0, 0.28);
+    transform: rotate(var(--tilt, 0deg));
+    transition: transform 0.18s ease, box-shadow 0.18s ease, opacity 0.14s ease;
     touch-action: none;
-    transition: box-shadow 0.2s, left 0.3s ease-out, top 0.3s ease-out;
-    z-index: 4;
-  }
-  .draggable.dragging {
-    transition: none;
-    transform: scale(1.12);
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.55), 0 0 24px rgba(240, 171, 252, 0.45);
-    z-index: 6;
   }
   .draggable.selected {
-    transform: scale(1.1);
-    outline: 3px solid #7ee787;
-    outline-offset: 2px;
+    transform: translateY(-4px) rotate(0deg) scale(1.05);
+    box-shadow: 0 0 0 4px rgba(255, 205, 140, 0.55), 0 10px 18px rgba(0, 0, 0, 0.32);
   }
-  .draggable.over-correct {
-    box-shadow: 0 0 26px rgba(126, 231, 135, 0.8);
-  }
-  .draggable.returning { pointer-events: none; }
-  .ok-badge {
-    position: absolute;
-    top: -8px;
-    right: -8px;
-    width: 30px;
-    height: 30px;
-    border-radius: 50%;
-    background: #7ee787;
-    color: #062033;
-    font-weight: 800;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 18px;
-  }
-  .flying-ghost {
-    position: absolute;
-    width: 88px;
-    height: 88px;
-    margin: -44px 0 0 -44px;
-    font-size: 52px;
-    line-height: 84px;
-    text-align: center;
+  .draggable.dragging { opacity: 0; }
+
+  .ghost {
+    position: fixed;
+    z-index: 80;
+    width: 62px;
+    height: 62px;
+    border-radius: 16px;
+    display: grid;
+    place-items: center;
+    font-size: 38px;
+    background: linear-gradient(160deg, #fff8ec, #ffe9c9);
+    border: 2px solid rgba(255, 205, 140, 0.8);
+    box-shadow: 0 14px 22px rgba(0, 0, 0, 0.38);
+    transform: translate(-50%, -50%) rotate(-4deg) scale(1.08);
     pointer-events: none;
-    z-index: 7;
-    animation: flyIn 0.3s ease-in forwards;
+    transition: left 0.34s cubic-bezier(0.34, 1.4, 0.64, 1),
+      top 0.34s cubic-bezier(0.34, 1.4, 0.64, 1),
+      transform 0.26s ease, opacity 0.26s ease, box-shadow 0.2s ease;
   }
-  @keyframes flyIn {
-    0% { transform: translate(0, 0) scale(1); opacity: 1; }
-    100% { transform: translate(0, 0) scale(0.4); opacity: 0; }
+  .ghost.live { transition: none; }
+  .ghost.correct {
+    border-color: #7ee787;
+    box-shadow: 0 0 22px rgba(126, 231, 135, 0.65);
+  }
+  .ghost.dropping {
+    transform: translate(-50%, -50%) rotate(0) scale(0.35);
+    opacity: 0.15;
+  }
+
+  .ladder-dock {
+    flex-shrink: 0;
+    padding: 6px 0 calc(6px + var(--safe-bottom));
+    background: rgba(16, 12, 22, 0.55);
+    border-top: 1px solid rgba(255, 205, 140, 0.12);
+  }
+  .category-game :global(.ladder-step.active) {
+    background: #f6b26b;
+    border-color: #f6b26b;
+    color: #3a271b;
+    box-shadow: 0 0 10px rgba(246, 178, 107, 0.55);
+  }
+
+  .category-game :global(.win-overlay) { background: rgba(20, 12, 10, 0.72); }
+  .category-game :global(.win-card) {
+    background: linear-gradient(160deg, #fff8ec, #ffe7c2);
+    border: 2px solid rgba(255, 205, 140, 0.7);
+    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.5), 0 0 50px rgba(255, 190, 110, 0.25);
+  }
+  .category-game :global(.win-title) { color: #8a4b1f; text-shadow: none; }
+  .category-game :global(.win-sub) { color: #6b4a33; }
+
+  @media (max-height: 700px) {
+    .zones { margin-top: 58px; }
+    .zone { aspect-ratio: 1 / 0.84; }
+    .draggable { width: 48px; height: 48px; font-size: 28px; }
+    .tray { gap: 5px; padding: 7px 10px; }
   }
 </style>

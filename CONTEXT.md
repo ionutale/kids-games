@@ -59,11 +59,15 @@
 
 ## Category Sort Game
 
-- **Bin**: A drop target area representing one Category.
-- **Category**: A labeled group of related Emojis (e.g., Animals, Food, Vehicles).
-- **Round**: A set of 8-10 Emojis the player must sort into the correct Bins.
-- **Tap-to-Place**: The dual interaction — drag the Emoji into a Bin, or tap the Emoji to lift it and tap the Bin to drop it.
-- **Hover-Correct**: A green glow + ✓ mark on the Bin matching the dragged Emoji, shown only for the first five placements of the first round, then permanently retired; non-matching Bins dim softly. The dragged Emoji keeps its own green drop feedback afterward.
+- **Room**: the cutaway scene that holds the Zones and the Tray. It replaced the old single-item drop area.
+- **Zone**: a large illustrated home for one Category (Animals, Food, Vehicles, Nature, Clothes, Toys). "Bin" is the legacy name for the same thing.
+- **Category**: a labeled group of related Emojis.
+- **Tray**: the rug at the bottom of the Room holding every item in the Round.
+- **Round**: one shuffled set of 6–10 Emojis that must be placed into the Zones.
+- **Shelf**: the growing collection of placed Emojis inside a Zone.
+- **Tap-to-Place**: drag an Emoji into a Zone, or tap the Emoji to lift it and tap the Zone.
+- **Helper**: a green glow plus ✓ on the matching Zone, shown only for the first five placements of level 1, then retired. The dragged Emoji keeps its own green glow as the item-side cue.
+- **Spring-back**: a wrong Zone wobbles silently and the dragged Emoji springs back to its tray slot; it is never consumed.
 
 ## Path Builder Game
 
@@ -130,11 +134,15 @@ The following games have been proposed but not yet designed or implemented. Each
 
 ## Category Sort Game
 
-- **Bin**: A drop target area representing one Category.
-- **Category**: A labeled group of related Emojis (e.g., Animals, Food, Vehicles).
-- **Round**: A set of 8-10 Emojis the player must sort into the correct Bins.
-- **Tap-to-Place**: The dual interaction — drag the Emoji into a Bin, or tap the Emoji to lift it and tap the Bin to drop it.
-- **Hover-Correct**: A green glow + ✓ mark on the Bin matching the dragged Emoji, shown only for the first five placements of the first round, then permanently retired; non-matching Bins dim softly. The dragged Emoji keeps its own green drop feedback afterward.
+- **Room**: the cutaway scene that holds the Zones and the Tray. It replaced the old single-item drop area.
+- **Zone**: a large illustrated home for one Category (Animals, Food, Vehicles, Nature, Clothes, Toys). "Bin" is the legacy name for the same thing.
+- **Category**: a labeled group of related Emojis.
+- **Tray**: the rug at the bottom of the Room holding every item in the Round.
+- **Round**: one shuffled set of 6–10 Emojis that must be placed into the Zones.
+- **Shelf**: the growing collection of placed Emojis inside a Zone.
+- **Tap-to-Place**: drag an Emoji into a Zone, or tap the Emoji to lift it and tap the Zone.
+- **Helper**: a green glow plus ✓ on the matching Zone, shown only for the first five placements of level 1, then retired. The dragged Emoji keeps its own green glow as the item-side cue.
+- **Spring-back**: a wrong Zone wobbles silently and the dragged Emoji springs back to its tray slot; it is never consumed.
 
 ## Path Builder Game
 

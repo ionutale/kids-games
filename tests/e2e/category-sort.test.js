@@ -1,288 +1,127 @@
 import { test, expect } from '@playwright/test';
 import { touchDrag, touchTap, center } from './helpers/touch.js';
 
-test.describe('Category Sort E2E', () => {
-  test('bins render with labels and an item waits below', async ({ page }) => {
+test.describe('Category Sort — Sorting Room', () => {
+  async function levelOne(page) {
+    await page.addInitScript(() => localStorage.setItem('categorySortLevel', '1'));
     await page.goto('/games/category-sort');
-    await page.waitForTimeout(600);
-    await expect(page.getByTestId('bins')).toBeVisible();
-    const bins = page.getByTestId('bins').locator('.bin');
-    await expect(bins).toHaveCount(2); // first set is 2-bin
-    await expect(bins.first()).toContainText(/Animals|Animali|Animale|Tiere|Animaux|动物/);
-    await expect(page.getByTestId('item')).toBeVisible();
+    await page.waitForSelector('.zone');
+  }
+
+  async function zoneFor(page, categoryId) {
+    return page.locator(`.zone[data-cat="${categoryId}"]`);
+  }
+
+  test('renders category homes with illustrated signs and the whole round in a tray', async ({ page }) => {
+    await levelOne(page);
+    const zones = page.getByTestId('bins').locator('.zone');
+    await expect(zones).toHaveCount(2);
+    await expect(zones.first().locator('.zone-sign svg')).toBeVisible();
+    await expect(zones.first().locator('.zone-name')).not.toBeEmpty();
+    await expect(page.locator('.draggable')).toHaveCount(6);
   });
 
-  test('item NEVER vanishes mid-drag, including while hovering a bin', async ({ page }) => {
-    test.setTimeout(30000);
-    await page.goto('/games/category-sort');
-    await page.waitForTimeout(600);
-    const item = page.getByTestId('item');
-    const bin = page.getByTestId('bins').locator('.bin').first();
-    const binP = await center(bin);
-    const from = await center(item);
+  test('dragging an item into its home collects it', async ({ page }) => {
+    await levelOne(page);
+    const item = page.locator('.draggable').first();
+    const category = await item.getAttribute('data-cat');
+    const zone = await zoneFor(page, category);
 
-    // lift the item (down ON the item — where beginDrag is bound)
-    await item.dispatchEvent('pointerdown', {
-      pointerId: 7,
-      pointerType: 'touch',
-      isPrimary: true,
-      clientX: from.x,
-      clientY: from.y,
-      buttons: 1,
-      bubbles: true,
-      cancelable: true
-    });
-    // move toward the bin in small touch steps
-    for (let i = 1; i <= 10; i++) {
-      const t = i / 10;
-      const x = from.x + (binP.x - from.x) * t;
-      const y = from.y + (binP.y - from.y) * t;
-      await page.dispatchEvent(':root', 'pointermove', {
-        pointerId: 7,
-        pointerType: 'touch',
-        isPrimary: true,
-        clientX: x,
-        clientY: y,
-        buttons: 1,
-        bubbles: true
-      });
-      await page.waitForTimeout(30);
-    }
-    // while hovering the bin, the dragged emoji must still be VISIBLE on screen
-    const box = await item.boundingBox();
-    expect(box).not.toBeNull();
-    const vp = page.viewportSize();
-    expect(box.x).toBeGreaterThan(-10);
-    expect(box.x).toBeLessThan(vp.width + 10);
-    expect(box.y).toBeGreaterThan(-10);
-    expect(box.y).toBeLessThan(vp.height + 10);
+    await touchDrag(page, item, await center(zone));
 
-    await page.dispatchEvent(':root', 'pointerup', {
-      pointerId: 7,
-      pointerType: 'touch',
-      isPrimary: true,
-      clientX: binP.x,
-      clientY: binP.y,
-      buttons: 1,
-      bubbles: true
-    });
+    await expect(page.locator('.draggable')).toHaveCount(5);
+    await expect(zone.locator('.zone-count')).toHaveText('1');
+    await expect(zone.locator('.mini')).toHaveCount(1);
   });
 
-  test('correct bin glows green while hovering; wrong bin does not', async ({ page }) => {
-    test.setTimeout(30000);
-    await page.goto('/games/category-sort');
-    await page.waitForTimeout(600);
-    const item = page.getByTestId('item');
-    const bins = page.getByTestId('bins').locator('.bin');
-    const binPts = [];
-    for (let i = 0; i < (await bins.count()); i++) binPts.push(await center(bins.nth(i)));
+  test('dragging into a wrong home springs the item back', async ({ page }) => {
+    await levelOne(page);
+    const item = page.locator('.draggable').first();
+    const category = await item.getAttribute('data-cat');
+    const zones = page.locator('.zone');
+    const count = await zones.count();
 
-    const from = await center(item);
-    await item.dispatchEvent('pointerdown', {
-      pointerId: 7, pointerType: 'touch', isPrimary: true,
-      clientX: from.x, clientY: from.y, buttons: 1, bubbles: true, cancelable: true
-    });
-
-    // hover the FIRST bin and check its class
-    const p0 = binPts[0];
-    await page.dispatchEvent(':root', 'pointermove', {
-      pointerId: 7, pointerType: 'touch', isPrimary: true,
-      clientX: p0.x, clientY: p0.y, buttons: 1, bubbles: true
-    });
-    await page.waitForTimeout(150);
-    const c0 = await bins.nth(0).getAttribute('class');
-
-    // hover the SECOND bin
-    const p1 = binPts[1];
-    await page.dispatchEvent(':root', 'pointermove', {
-      pointerId: 7, pointerType: 'touch', isPrimary: true,
-      clientX: p1.x, clientY: p1.y, buttons: 1, bubbles: true
-    });
-    await page.waitForTimeout(150);
-    const c1 = await bins.nth(1).getAttribute('class');
-
-    // exactly one bin must be marked hover-correct
-    const marked = [c0.includes('hover-correct'), c1.includes('hover-correct')];
-    expect(marked.filter(Boolean).length).toBe(1);
-
-    await page.dispatchEvent(':root', 'pointerup', {
-      pointerId: 7, pointerType: 'touch', isPrimary: true,
-      clientX: p1.x, clientY: p1.y, buttons: 1, bubbles: true
-    });
-  });
-
-  test('bin-side green helper retires after 5 placements in level 1 (item-side cue stays)', async ({ page }) => {
-    test.setTimeout(120000);
-    await page.goto('/games/category-sort');
-    await page.waitForTimeout(600);
-
-    const score = page.locator('.top-bar .hud-item').first();
-    const bins = page.getByTestId('bins').locator('.bin');
-    const binCount = await bins.count();
-
-    async function placeCurrentItem() {
-      const before = (await score.textContent()) ?? '';
-      for (let i = 0; i < binCount; i++) {
-        await touchDrag(page, page.getByTestId('item'), await center(bins.nth(i)));
-        if (((await score.textContent()) ?? '') !== before) {
-          await page.waitForTimeout(350); // let the fly-in ghost finish
-          return true;
-        }
-        await page.waitForTimeout(350); // let a wrong drop bounce home
-      }
-      return false;
-    }
-
-    for (let n = 1; n <= 5; n++) {
-      expect(await placeCurrentItem(), `placement ${n} failed`).toBe(true);
-    }
-
-    // 6th item of round 1: hover each bin until the item-side cue reveals the correct one
-    const item = page.getByTestId('item');
-    const from = await center(item);
-    await item.dispatchEvent('pointerdown', {
-      pointerId: 7, pointerType: 'touch', isPrimary: true,
-      clientX: from.x, clientY: from.y, buttons: 1, bubbles: true, cancelable: true
-    });
-    let correctIdx = -1;
-    for (let i = 0; i < binCount; i++) {
-      const p = await center(bins.nth(i));
-      await page.dispatchEvent(':root', 'pointermove', {
-        pointerId: 7, pointerType: 'touch', isPrimary: true,
-        clientX: p.x, clientY: p.y, buttons: 1, bubbles: true
-      });
-      await page.waitForTimeout(150);
-      if (((await item.getAttribute('class')) ?? '').includes('over-correct')) {
-        correctIdx = i;
+    let wrong = null;
+    for (let i = 0; i < count; i++) {
+      if ((await zones.nth(i).getAttribute('data-cat')) !== category) {
+        wrong = zones.nth(i);
         break;
       }
     }
-    expect(correctIdx, 'item-side drop cue should still reveal the correct bin').toBeGreaterThanOrEqual(0);
+    expect(wrong, 'expected a non-matching home').not.toBeNull();
 
-    const correctBin = bins.nth(correctIdx);
-    expect((await correctBin.getAttribute('class')) ?? '').not.toContain('hover-correct');
-    await expect(correctBin.locator('.ok-mark')).toHaveCount(0);
+    const before = await page.locator('.draggable').count();
+    await touchDrag(page, item, await center(wrong));
+    await expect(wrong).toHaveClass(/wrong/, { timeout: 1000 });
 
-    // release over the correct bin — places the 6th item, confirming drops still work
-    const dropP = await center(correctBin);
-    await page.dispatchEvent(':root', 'pointerup', {
-      pointerId: 7, pointerType: 'touch', isPrimary: true,
-      clientX: dropP.x, clientY: dropP.y, buttons: 1, bubbles: true
-    });
-    await page.waitForTimeout(350);
-
-    // that was the last of the 6 level-1 items; advance to level 2 which must also show no bin-side hint
-    await expect(page.locator('.win-overlay')).toBeVisible({ timeout: 8000 });
-    await page.getByTestId('next-level').click();
-    await page.waitForTimeout(600);
-    await expect(page.getByTestId('item')).toBeVisible({ timeout: 6000 });
-
-    const round2From = await center(item);
-    await item.dispatchEvent('pointerdown', {
-      pointerId: 7, pointerType: 'touch', isPrimary: true,
-      clientX: round2From.x, clientY: round2From.y, buttons: 1, bubbles: true, cancelable: true
-    });
-    let round2Found = false;
-    for (let i = 0; i < binCount; i++) {
-      const p = await center(bins.nth(i));
-      await page.dispatchEvent(':root', 'pointermove', {
-        pointerId: 7, pointerType: 'touch', isPrimary: true,
-        clientX: p.x, clientY: p.y, buttons: 1, bubbles: true
-      });
-      await page.waitForTimeout(150);
-      const cls = (await item.getAttribute('class')) ?? '';
-      if (cls.includes('over-correct')) {
-        round2Found = true;
-        expect((await bins.nth(i).getAttribute('class')) ?? '').not.toContain('hover-correct');
-        await expect(bins.nth(i).locator('.ok-mark')).toHaveCount(0);
-        break;
-      }
-    }
-    expect(round2Found, 'round 2 item-side cue should still reveal the correct bin').toBe(true);
-    await page.dispatchEvent(':root', 'pointerup', {
-      pointerId: 7, pointerType: 'touch', isPrimary: true,
-      clientX: round2From.x, clientY: round2From.y, buttons: 1, bubbles: true
-    });
+    await page.waitForTimeout(450);
+    await expect(page.locator('.draggable')).toHaveCount(before);
+    await expect(item).toBeVisible();
+    await expect(wrong.locator('.zone-count')).toHaveText('0');
   });
 
-  test('dragging the item into the CORRECT bin advances round progress', async ({ page }) => {
-    test.setTimeout(30000);
-    await page.goto('/games/category-sort');
-    await page.waitForTimeout(600);
-    const hud = page.locator('.top-bar .hud-item');
-    await expect(hud.first()).toBeVisible({ timeout: 8000 });
-    const before = (await hud.first().textContent()) ?? '';
-
-    const item = page.getByTestId('item');
-    const bins = page.getByTestId('bins').locator('.bin');
-    // try each bin with touch drag until the score advances (exactly one is correct)
-    for (let i = 0; i < (await bins.count()); i++) {
-      const p = await center(bins.nth(i));
-      await touchDrag(page, item, p);
-      const after = (await hud.first().textContent()) ?? '';
-      if (after !== before) {
-        // progress pill should show 1/6 (level 1 has 6 items)
-        await expect(hud.nth(2)).toHaveText(/🎯\s*1\/6/);
-        return;
-      }
-    }
-    throw new Error('no bin advanced the round progress');
-  });
-
-  test('full level completes → win overlay with next level, replay and back', async ({ page }) => {
-    test.setTimeout(60000);
-    await page.goto('/games/category-sort');
-    await page.waitForTimeout(600);
-    const bins = page.getByTestId('bins').locator('.bin');
-
-    // Level 1 has 6 items; place each by dragging to every bin until one advances the score.
-    const score = page.locator('.top-bar .hud-item').first();
-    for (let n = 0; n < 6; n++) {
-      const before = (await score.textContent()) ?? '';
-      const item = page.getByTestId('item');
-      let placed = false;
-      for (let i = 0; i < (await bins.count()); i++) {
-        await touchDrag(page, item, await center(bins.nth(i)));
-        if (((await score.textContent()) ?? '') !== before) {
-          placed = true;
-          await page.waitForTimeout(350);
-          break;
-        }
-        await page.waitForTimeout(350); // wrong drop bounces home
-      }
-      expect(placed, `placement ${n + 1} failed`).toBe(true);
-    }
-
-    await expect(page.locator('.win-overlay')).toBeVisible({ timeout: 8000 });
-    await expect(page.getByTestId('next-level')).toBeVisible();
-    await expect(page.getByTestId('replay')).toBeVisible();
-
-    await page.getByTestId('next-level').click();
-    await page.waitForTimeout(600);
-    await expect(page.getByTestId('item')).toBeVisible({ timeout: 6000 });
-    // level 2 has 6 items again starting at 0 progress
-    await expect(page.locator('.top-bar .hud-item').nth(2)).toHaveText(/🎯\s*0\/6/);
-  });
-
-  test('tap-to-place: tap item then tap its bin places it', async ({ page }) => {
-    test.setTimeout(30000);
-    await page.goto('/games/category-sort');
-    await page.waitForTimeout(600);
-    const hud = page.locator('.top-bar .hud-item').first();
-    const before = (await hud.textContent()) ?? '';
-    const item = page.getByTestId('item');
+  test('tap-to-place: tap an item, then its home', async ({ page }) => {
+    await levelOne(page);
+    const item = page.locator('.draggable').first();
+    const category = await item.getAttribute('data-cat');
+    const zone = await zoneFor(page, category);
 
     await touchTap(page, item);
-    // item enters "selected" state (lifted / outline)
-    await expect(item).toHaveClass(/selected/, { timeout: 3000 });
+    await expect(item).toHaveClass(/selected/);
 
-    // tap every bin until one accepts the placement
-    const bins = page.getByTestId('bins').locator('.bin');
-    for (let i = 0; i < (await bins.count()); i++) {
-      await touchTap(page, bins.nth(i));
-      const after = (await hud.textContent()) ?? '';
-      if (after !== before) return; // placed
+    await touchTap(page, zone);
+    await expect(page.locator('.draggable')).toHaveCount(5);
+    await expect(zone.locator('.zone-count')).toHaveText('1');
+  });
+
+  test('the green home helper shows for the first five placements, then retires', async ({ page }) => {
+    test.setTimeout(60000);
+    await levelOne(page);
+
+    for (let placed = 0; placed < 5; placed++) {
+      const item = page.locator('.draggable').first();
+      const category = await item.getAttribute('data-cat');
+      await touchTap(page, item);
+      await expect(item).toHaveClass(/selected/);
+
+      const helper = page.locator('.zone.helper');
+      await expect(helper).toHaveCount(1);
+      await expect(helper.locator('.ok-mark')).toBeVisible();
+
+      await touchTap(page, await zoneFor(page, category));
+      await expect(page.locator('.draggable')).toHaveCount(5 - placed);
     }
-    throw new Error('tap-to-place never placed the item');
+
+    const last = page.locator('.draggable').first();
+    await touchTap(page, last);
+    await expect(last).toHaveClass(/selected/);
+    await expect(page.locator('.zone.helper')).toHaveCount(0);
+    await expect(page.locator('.ok-mark')).toHaveCount(0);
+  });
+
+  test('clearing the room wins and Next Level starts a fresh round', async ({ page }) => {
+    await levelOne(page);
+
+    for (let n = 0; n < 6; n++) {
+      const item = page.locator('.draggable').first();
+      const category = await item.getAttribute('data-cat');
+      await touchTap(page, item);
+      await touchTap(page, await zoneFor(page, category));
+      await expect(page.locator('.draggable')).toHaveCount(5 - n, { timeout: 4000 });
+    }
+
+    await expect(page.locator('.win-overlay')).toBeVisible({ timeout: 6000 });
+    await page.getByTestId('next-level').click();
+
+    await expect(page.locator('.zone')).toHaveCount(2);
+    await expect(page.locator('.draggable')).toHaveCount(6);
+    await expect(page.locator('.zone-count').first()).toHaveText('0');
+  });
+
+  test('level switch grows the room to three homes', async ({ page }) => {
+    await levelOne(page);
+    await page.locator('.ladder-step').nth(4).click();
+    await expect(page.locator('.zone')).toHaveCount(3);
+    await expect(page.locator('.draggable')).toHaveCount(8);
   });
 });
