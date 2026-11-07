@@ -85,6 +85,18 @@ The game is moving from a grid puzzle to a continuous freehand road (ADR 0005). 
 - **Level**: one step of the shared 10-step Ladder; difficulty grows by distance, Blockers and required Stars.
 - **Legacy grid terms**: Puzzle, Start, Goal, Obstacle (cell-based) are retired by ADR 0005.
 
+## Pop Game
+
+- **Bubble**: a rising soap film carrying one Surprise.
+- **Surprise**: the trinket inside a Bubble — fish, starfish, shell, flower or butterfly.
+- **Pop**: bursting a Bubble. Consecutive Pops in one swipe form a **Chain**, with rising pitch.
+- **Giant Bubble**: needs two taps; worth two Jar slots.
+- **Star Bubble**: rare; worth two Jar slots and leaves a star sticker on the Jar.
+- **Jar**: the visual score target; fills as Surprises are collected. No numbers.
+- **Moon Timer**: the 30-second gentle clock, drawn as a moon crossing an arc.
+- **Round**: one 30-second pond session. The shared Ladder's Level chooses the target and speed.
+- **Good Try**: the calm card when the Moon Timer ends before the Jar fills — Try again / Back, no star, no sad sound.
+- **Rising Pond**: the chosen world — a moonlit pond with lily pads, reeds and fireflies.
 
 ## Quiz Games
 
