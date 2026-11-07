@@ -2,13 +2,14 @@
 
 ## What to build
 
-Teach the gesture without words and make every outcome legible. A ghost hand traces the first Road once per device; after roughly six seconds without a completed Road, a faint Guide fades in and out. Stars glow and pop, a Blocker wiggles with a quiet bump, and a gentle forest sound pass plays while drawing, walking and arriving.
+Teach the gesture without words and make every outcome legible. A ghost hand traces the first Road once per device (key `path-builderGhostSeen`); after roughly six seconds without a completed Road, a faint Guide fades in and out. Stars glow and pop, a Blocker wiggles with a quiet bump, and a gentle forest sound pass plays while drawing, walking and arriving.
 
 ## Acceptance criteria
 
-- [ ] A ghost hand demonstrates the first Road once per device
+- [ ] A ghost hand demonstrates the first Road once per device (key `path-builderGhostSeen`)
 - [ ] Any press dismisses the demonstration and leaves the Road playable
 - [ ] After ~6s without a completed Road, a faint full Guide appears and fades
+- [ ] The idle Guide is a valid route derived from the Scene
 - [ ] The Guide never auto-completes the Road
 - [ ] Stars have a warm halo; collected Stars shrink and fade
 - [ ] A Blocker stop wiggles the Blocker and plays a quiet bump

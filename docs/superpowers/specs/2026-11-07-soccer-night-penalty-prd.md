@@ -48,7 +48,7 @@ A five-shot penalty shootout in a warm night stadium, seen from behind the ball.
 ## Implementation Decisions
 
 - **Scene.** A portrait night stadium: floodlights, a crowd silhouette, striped grass, a wide goal with a net, a child striker and a ball at the penalty spot. The camera is behind the ball in a flat 2.5D composition.
-- **Goal.** The goal mouth is wide and shallow (the engine's bounds are adjusted from a tall mouth to a wide one) so it reads as a real goal and the keeper has a horizontal patrol.
+- **Goal.** The goal mouth is wide and shallow (the engine's bounds are adjusted from a tall mouth to a wide, shallow one) so it reads as a real goal and the keeper has a horizontal patrol.
 - **Input.** A swipe anywhere on the field. During the drag, a dashed line and reticle show the **impact point** (the first point of the arc inside the goal mouth), not the raw release. The swipe length only sets the flight time; it does not change the result.
 - **Aim aid.** Levels 1–2 softly glow the open side of the goal; later levels do not. The reticle is always shown while dragging.
 - **Keeper.** A bear who patrols continuously and dives late at release. The save band (Reach) is his half-width plus the ball radius. The far corner always has room.

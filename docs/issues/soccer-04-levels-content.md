@@ -13,7 +13,7 @@ Tune the ten-level ladder for the Night Penalty. Each level is a five-shot round
 - [ ] The keeper still leaves the far corner open at level 10
 - [ ] Stars are 1/2/3 for 3/4/5 goals and stored per level
 - [ ] Level 10 keeps the mastery moment
-- [ ] Unit tests cover the target curve, goal bounds and keeper at all levels
+- [ ] Unit tests replace the old `targetScoreFor` test with the 3→5 curve, and cover the goal bounds and keeper at all levels
 - [ ] An e2e pass at a late level proves the smaller goal and faster keeper stay fair
 - [ ] No new dependencies
 

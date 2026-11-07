@@ -1,9 +1,15 @@
 # Six-game review — PRDs and ticket sets
 
 - **Date:** 2026-11-07
-- **Scope:** the six redesign PRDs and their 24 tickets, checked against each other and the current engines/tests.
+- **Scope:** the six redesign PRDs and their 24 game tickets, plus the three cross-game tickets added from this review.
 - **Method:** section/structure audit, decision-to-ticket cross-check, dependency check, engine/test comparison, and the prototype/browser pass.
-- **Verdict:** **no blockers.** The six PRDs are implementable. Three cross-cutting decisions should be made once, before the first implementation, and eight small documentation inconsistencies should be fixed.
+- **Verdict:** **no blockers.** The six PRDs are implementable. The three cross-cutting decisions are now ticketed, and the eight small documentation contradictions have been corrected in the source docs.
+
+## Resolution (applied 2026-11-07)
+
+- **Cross-cutting work is ticketed:** `cross-game-01-localization.md`, `cross-game-02-shared-sound-and-motion.md`, `cross-game-03-deterministic-seeds.md`. Each is a prerequisite for the first game core or juice ticket.
+- **The eight minor contradictions are fixed:** Focus Tap is six items; Soccer core has the release-time/impact and flight-time-only rules; Spot retires the old unit test; Focus Tap has a real unit-test target; Quick Count options start at 1 and use an explicit `countMax(level)`; Path Builder's ghost hand is once per device with a named key; Soccer's bounds wording is wide-and-shallow. The Path Builder Guide and Spot prop-id nits are also added to their tickets.
+- The findings below are kept as the record of what was found; the source tickets and PRDs now carry the fixes.
 
 ## What is consistent
 
@@ -13,7 +19,7 @@
 - The hard-won decisions are consistently carried into the tickets: Pop's 30-second round and Good Try, Soccer's five always-played shots and per-level stars, Focus Tap's firefly jar and goal 6 + level, Quick Count's 1–3/1–6/1–8/1–10 ramp, Spot's 5-puzzle flat set and postcard album, and Path Builder's freehand road with no grid.
 - Testing seams are named (route roots, panels, rings, HUD, cards) and the prior-art test files exist, with one exception noted below.
 
-## Major findings — decide before implementing
+## Major findings — now ticketed
 
 ### 1. Localization is missing from all six
 
@@ -37,7 +43,7 @@ Each PRD adds its own palette: forest (Path Builder), pond (Pop), stadium (Socce
 
 This bends the global “distinct world per game” decision. It is not a doc contradiction — the user chose each world knowingly — but the two games will sit next to each other in the hub with the same biome. Either accept it explicitly as a two-pond family, or differentiate one sub-world (for example, Pop stays the moonlit pond with a jar; Focus Tap becomes a dusk firefly marsh with reeds and a frog). Also note the bear appears as the Quick Count asker and the Soccer keeper; that is a smaller overlap.
 
-## Minor documentation contradictions to fix
+## Minor documentation contradictions (now fixed)
 
 1. **Focus Tap item cap.** `focus-tap-06` says “Five items on screen at most”. The engine (`levelConfig.maxItems = 6`) and the PRD (“six on screen max”) say six. Change the ticket to six.
 2. **Soccer core rule.** `soccer-01` says the keeper patrols and dives, but not that the **result uses the keeper’s x at release** and the **impact point**, nor that **swipe length only sets flight time**. The PRD has all three; add them to the ticket.
@@ -85,7 +91,7 @@ Within every game: **core → juice and sound → devices/a11y → content/level
 - [ ] Add the new copy to all six locales and a parity test.
 - [ ] Decide the shared sound/mute helper and the reduced-motion helper.
 - [ ] Add a seed parameter/`?seed=` to Path Builder, Pop, Soccer and Spot.
-- [ ] Fix the eight minor contradictions above.
+- [x] Fix the eight minor contradictions above.
 - [ ] Decide the Pop/Focus Tap pond overlap.
 - [ ] Decide whether the hub icon/tagline gets a small pass.
 - [ ] Mark the prototype branches as reference-only; do not merge them.

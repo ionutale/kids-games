@@ -10,6 +10,8 @@ Replace the green-card shooter with the Night Penalty: a night stadium, a child 
 - [ ] The ball is placed at the penalty spot and the striker stands behind it
 - [ ] A swipe anywhere shows a reticle and a dashed trajectory at the impact point
 - [ ] The ball flies to the impact; goal, save and miss are visibly distinct
+- [ ] The goal/save result uses the keeper's x at release and the impact point
+- [ ] The swipe length only sets flight time; it never shrinks the keeper's reach or changes the result
 - [ ] The keeper patrols continuously and dives late at release
 - [ ] The far corner always has room for a goal
 - [ ] The open side glows softly on levels 1–2 only

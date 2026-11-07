@@ -16,7 +16,7 @@ Honour ADR 0001 and make a goal feel like an event. Store the best stars per lev
 - [ ] A whistle opens each round after the first
 - [ ] Everything respects the existing sound setting
 - [ ] Sound and juice remain usable under reduced motion
-- [ ] Unit tests cover the star store and the stars-by-goals mapping
+- [ ] Unit tests replace the old `starsFor(wasted)` tests with the stars-by-goals mapping, and cover the star store
 - [ ] E2E covers the local star row and its persistence
 
 ## Blocked by

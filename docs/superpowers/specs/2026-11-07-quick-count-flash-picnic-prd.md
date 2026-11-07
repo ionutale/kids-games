@@ -49,8 +49,8 @@ A bear picnic. The bear asks “How many?”; a brief flash of one themed object
 
 - **Scene.** A portrait picnic: a checkered cloth, a bear at the left with a speech bubble, a berry basket at the right. The flash happens on the cloth; the answer pills sit at the bottom.
 - **Objects.** One theme per prompt (berry, egg, cookie, apple), repeated N times. Repeats replace the old distinct-category cap. Positions are a jittered grid so objects never overlap.
-- **Count ramp.** Level 1: 1–3; level 4: 1–6; level 7: 1–8; level 10: 1–10. The flash duration stays `max(800, 3000 − 150·level)` ms.
-- **Answer pills.** Three options (correct ±1/±2, unique, non-negative); each pill shows the digit and that many theme dots. Wrong pills wobble silently; the correct one advances.
+- **Count ramp.** Level 1: 1–3; level 4: 1–6; level 7: 1–8; level 10: 1–10, supplied by an explicit `countMax(level)`. `levelConfig.max` is not used for this game, so the old distinct-emoji cap cannot drift back in. The flash duration stays `max(800, 3000 − 150·level)` ms.
+- **Answer pills.** Three options (correct ±1/±2, unique, at least 1); each pill shows the digit and that many theme dots. Wrong pills wobble silently; the correct one advances.
 - **Progress.** A berry basket lights one berry per correct prompt; goal `5 + min(level, 10)` prompts. No digits.
 - **Sound.** Keep the shared Trainer Music; add a soft count tick per object on levels 1–2, a berry plop on a correct answer, and a three-note fill chime. Respect the setting.
 - **No fail.** Wrong answers only wobble; there is no timer.

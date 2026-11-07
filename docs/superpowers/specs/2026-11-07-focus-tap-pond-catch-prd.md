@@ -62,7 +62,7 @@ A moonlit pond with a frog on a lily pad holding the target sign. The child help
 
 - **Test external behavior:** a target tap fills the jar, a distractor tap does not, the jar reaches the goal, the round ends, the level in the URL matches, the landing is unchanged.
 - **Highest seam:** the play route DOM. Keep `data-testid="stream"`, `[data-testid="target"]`, `[data-testid="distractor"]`, the frog, the jar (with a data count), and the round card. Tests should not read Svelte state.
-- **Unit:** reuse the existing `focusTap` engine tests; add jar/fill math if extracted.
+- **Unit:** add `tests/unit/focusTap.test.js` for the goal, tier and spawn rules; add jar/fill math if extracted.
 - **E2E:** tap a target, tap a distractor, catch to the goal, check the jar, play the next level, 320×568 and 390×844, reduced motion, muted sound.
 - **Prior art:** `tests/e2e/focus-tap.test.js` for the stream hooks and the win/next flow.
 

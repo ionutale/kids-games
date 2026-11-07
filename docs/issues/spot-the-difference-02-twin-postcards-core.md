@@ -18,8 +18,10 @@ Replace the abstract emoji grids with the harbor Twin Postcards. Two stacked pic
 - [ ] The fifth solve opens a set-complete card with the album, Play again and Back
 - [ ] Each solve prepends a postcard to `spotPostcards`; the album survives a reload and shows the latest 12
 - [ ] The HUD shows found tokens and a five-slot set strip, with no digits
+- [ ] Every rendered prop has a stable id, so a puzzle update cannot duplicate a keyed block
 - [ ] The shared GameShell, hub entry and sound toggle are unchanged
 - [ ] No new dependencies; the old emoji-grid generator is retired
+- [ ] `tests/unit/spot-difference.test.js` is replaced by the new scene/hotspot/store tests
 - [ ] Unit tests cover the generator, hotspots and postcard store
 - [ ] E2E covers a find, a wrong tap, a full set and album persistence
 

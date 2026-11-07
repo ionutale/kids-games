@@ -12,7 +12,7 @@ Tune the ten-level ramp for the Pond Catch. The goal is 6 + level catches (cap 2
 - [ ] Levels 3–5 use same-category distractors
 - [ ] Levels 6–10 use lookalikes
 - [ ] The target is fixed for the whole round
-- [ ] Five items on screen at most, with the forced-target rule preserved
+- [ ] Six items on screen at most, with the forced-target rule preserved
 - [ ] Level 10 keeps the mastery moment
 - [ ] Unit tests cover the goal and tier mapping
 - [ ] E2E covers a late level

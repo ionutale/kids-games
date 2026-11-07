@@ -55,7 +55,7 @@ A continuous illustrated forest Scene viewed in portrait. Home and Destination s
 - **Walker.** After the road reaches the Destination, the fox walks the polyline at a readable pace with a small bob. On arrival, if all required Stars were collected, the Layout is solved. Otherwise the fox returns Home, the road persists, and the child edits or redraws.
 - **Stars.** Collected when the Walker comes within a forgiving radius of the star. Collected stars sparkle and shrink. Required count is part of the Scene.
 - **Blockers.** The road cannot enter; the stroke stops at the edge, the blocker wiggles, and a quiet bump plays.
-- **Guidance.** A ghost hand traces the first-ever road once. After roughly six seconds without a completed road, a faint full Guide fades in for a few seconds. It never auto-completes. Any press hides it.
+- **Guidance.** A ghost hand traces the first road once per device (key `path-builderGhostSeen`). After roughly six seconds without a completed road, a faint full Guide fades in for a few seconds. It never auto-completes. Any press hides it.
 - **Levels.** Keep ten ladder steps and five Layouts per Level. Difficulty grows by Home/Destination distance, Blocker count and shape, and required Stars. Early Levels are nearly free drawing; mid adds Blockers; late adds required Stars. No timers.
 - **Sound.** Scratch while drawing, soft footsteps while walking, a two-note chime per star, a quiet bump on a Blocker, a three-note arrival. Respect the existing sound setting. No negative sound on a miss.
 - **Art.** Flat inline SVG: fox, cottage, cabin, rock, pond, hedge, tree, mushroom, star, hand, fireflies. No emoji on the game surface.
