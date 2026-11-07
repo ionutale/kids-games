@@ -198,11 +198,17 @@ The following games have been proposed but not yet designed or implemented. Each
 
 ## Focus Tap Game
 
-- **Target**: The emoji type the round asks the child to catch; shown large in the header ("Catch 🍎!").
-- **Distractor**: Any non-target emoji in the Stream. Tapping one → gentle wobble, silent, never penalized.
-- **Catch**: A successful tap on the Target; increments progress toward the round goal.
-- **Stream**: The floating emojis rising up the screen; spawn interval shrinks and rise time drops with level.
-- **Sneaky Tier**: Distractor difficulty band by level — L1–2 cross-category, L3–5 same-category, L6+ lookalikes.
+- **Pond**: the moonlit pond scene; the chosen world for the game.
+- **Frog**: the character on a lily pad who holds the Target Sign.
+- **Target Sign**: the little board the Frog holds, showing the Target emoji.
+- **Target**: the emoji the Frog asks for; the only emoji that scores.
+- **Distractor**: any non-target emoji. Tapping it wobbles it silently; never penalized.
+- **Catch**: a tap on a Target. The Frog's tongue flicks out, the target pops, and a firefly lands in the Jar.
+- **Firefly Jar**: the visual progress; each Catch lights one firefly; the Jar fills to the round Goal. No numbers.
+- **Stream**: the floating emojis rising up the pond; spawn interval shrinks and rise time drops with level.
+- **Sneaky Tier**: distractor difficulty band — L1–2 cross-category, L3–5 same-category, L6+ lookalikes.
+- **Goal**: 6 + level Catches, capped at 20. No timer, no fail.
+- **Trainer Music**: the shared focus-tap music keeps playing under the pond; catch plops, a soft croak and a fill chime sit on top.
 
 ## Quick Count Game
 
