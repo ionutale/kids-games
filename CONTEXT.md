@@ -212,9 +212,17 @@ The following games have been proposed but not yet designed or implemented. Each
 
 ## Quick Count Game
 
-- **Flash**: The brief, level-scaled display of emojis to count (`max(800, 3000 − 150·n)` ms).
-- **Glimpse Set**: The scattered, non-overlapping group of emojis shown during a Flash.
-- **Answer Pill**: One of three big tappable number buttons (correct count ± near-misses) answering "how many?".
+- **Picnic**: the chosen world; a bear, a checkered cloth, a berry bush and a basket. Replaces the abstract starry panel.
+- **Bear**: the asker. Holds a speech bubble ("How many?" or "3 🍓") and reacts to a correct feed.
+- **Cloth**: the checkered picnic cloth where the Flash Objects appear.
+- **Flash Object**: one themed object (berry, egg, cookie, apple) repeated for the round. Repeats let the count grow past the old distinct-emoji cap.
+- **Count**: how many Flash Objects appear; 1–3 at level 1, 1–6 at level 4, 1–8 at level 7, 1–10 at level 10.
+- **Answer Pill**: one of three number buttons; each shows the digit and that many theme dots.
+- **Berry Basket**: the round progress; one berry lights per correct answer. No digits.
+- **Flash**: the brief display of the Cloth. Its duration is `max(800, 3000 − 150·level)` ms.
+- **Count Tick**: a soft tick per Flash Object during the Flash, on levels 1–2 only, as a counting aid.
+- **Goal**: 5 + min(level, 10) prompts. No timer, no fail.
+- **Trainer Music**: the shared quick-count music stays under the picnic effects.
 
 ## Speed Match Game
 
