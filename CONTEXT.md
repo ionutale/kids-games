@@ -71,12 +71,19 @@
 
 ## Path Builder Game
 
-- **Puzzle**: A single Grid with a Start, Goal, and Obstacles that the player must solve.
-- **Start**: The origin cell marked with 🚩 where the Path begins.
-- **Goal**: The destination cell marked with 🏁 that the Path must reach.
-- **Obstacle**: An impassable cell marked with 🧱 that the Path cannot cross.
-- **Path**: An ordered list of adjacent cells connecting Start to Goal.
-- **Hint**: A visual indicator showing the next optimal cell on the shortest Path.
+The game is moving from a grid puzzle to a continuous freehand road (ADR 0005). The grid terms are legacy until the migration ships.
+
+- **Scene**: the continuous illustrated world for one Layout; no visible grid or blocks.
+- **Road**: the freehand line the child draws from Home to Destination. It cannot enter a Blocker. The Road persists between strokes; backtracking over it erases to that point.
+- **Walker**: the character that travels the Road after it connects (a fox in the current world).
+- **Home**: the fixed starting place of a Scene, on one side.
+- **Destination**: the fixed goal place, on the opposite side.
+- **Blocker**: a natural obstacle (rock, pond, hedge) the Road cannot enter; the stroke stops at its edge.
+- **Star**: a collectible the Walker picks up when the Road passes near it; required in later Levels.
+- **Guide**: the teaching aid — a one-time ghost hand that traces the first Road, and a faint suggested Road shown after idling.
+- **Layout**: one generated Scene; five Layouts make a Level.
+- **Level**: one step of the shared 10-step Ladder; difficulty grows by distance, Blockers and required Stars.
+- **Legacy grid terms**: Puzzle, Start, Goal, Obstacle (cell-based) are retired by ADR 0005.
 
 
 ## Quiz Games
@@ -143,15 +150,6 @@ The following games have been proposed but not yet designed or implemented. Each
 - **Tap-to-Place**: drag an Emoji into a Zone, or tap the Emoji to lift it and tap the Zone.
 - **Helper**: a green glow plus ✓ on the matching Zone, shown only for the first five placements of level 1, then retired. The dragged Emoji keeps its own green glow as the item-side cue.
 - **Spring-back**: a wrong Zone wobbles silently and the dragged Emoji springs back to its tray slot; it is never consumed.
-
-## Path Builder Game
-
-- **Puzzle**: A single Grid with a Start, Goal, and Obstacles that the player must solve.
-- **Start**: The origin cell marked with 🚩 where the Path begins.
-- **Goal**: The destination cell marked with 🏁 that the Path must reach.
-- **Obstacle**: An impassable cell marked with 🧱 that the Path cannot cross.
-- **Path**: An ordered list of adjacent cells connecting Start to Goal.
-- **Hint**: A visual indicator showing the next optimal cell on the shortest Path.
 
 ## Level Ladder (shared)
 
