@@ -57,4 +57,72 @@ test.describe('Sorting E2E — play all levels', () => {
       }
     }
   });
+
+  async function dragTo(page, item, basket) {
+    const ib = await item.boundingBox();
+    const bb = await basket.boundingBox();
+    await page.mouse.move(ib.x + ib.width / 2, ib.y + ib.height / 2);
+    await page.mouse.down();
+    await page.mouse.move(bb.x + bb.width / 2, bb.y + bb.height / 2, { steps: 10 });
+    await page.mouse.up();
+  }
+
+  test('every basket shows a painted category sign', async ({ page }) => {
+    await page.goto('/games/sorting');
+    const category = await page.locator('.sorting-game').getAttribute('data-category');
+    const baskets = page.locator('.basket');
+    const count = await baskets.count();
+    expect(count).toBeGreaterThan(0);
+
+    for (let i = 0; i < count; i++) {
+      const sign = baskets.nth(i).locator('.basket-sign');
+      await expect(sign).toBeVisible();
+      if (category === 'colors') {
+        await expect(sign.locator('.sign-swatch')).toBeVisible();
+      } else {
+        await expect(sign.locator('.sign-shape')).toBeVisible();
+      }
+    }
+  });
+
+  test('dragging to the wrong basket brings the item back', async ({ page }) => {
+    await page.goto('/games/sorting');
+    const items = page.locator('.item');
+    const item = items.first();
+    const itemCat = Number(await item.getAttribute('data-cat'));
+    const baskets = page.locator('.basket');
+    const basketCount = await baskets.count();
+
+    let wrongIdx = -1;
+    for (let i = 0; i < basketCount; i++) {
+      if (i !== itemCat) {
+        wrongIdx = i;
+        break;
+      }
+    }
+    expect(wrongIdx, 'expected a basket that does not match the first item').toBeGreaterThanOrEqual(0);
+
+    const before = await items.count();
+    await dragTo(page, item, baskets.nth(wrongIdx));
+    await expect(baskets.nth(wrongIdx)).toHaveClass(/wrong/, { timeout: 1000 });
+
+    // the ghost glides back into its slot; the item is never consumed
+    await page.waitForTimeout(450);
+    await expect(items).toHaveCount(before);
+    await expect(item).toBeVisible();
+    await expect(baskets.nth(wrongIdx).locator('.basket-count')).toHaveText('0');
+  });
+
+  test('dragging to the right basket collects the item', async ({ page }) => {
+    await page.goto('/games/sorting');
+    const items = page.locator('.item');
+    const item = items.first();
+    const itemCat = Number(await item.getAttribute('data-cat'));
+    const baskets = page.locator('.basket');
+    const before = await items.count();
+
+    await dragTo(page, item, baskets.nth(itemCat));
+    await expect(items).toHaveCount(before - 1, { timeout: 3000 });
+    await expect(baskets.nth(itemCat).locator('.basket-count')).toHaveText('1');
+  });
 });

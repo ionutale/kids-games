@@ -103,6 +103,11 @@ export function playError() {
   playTone(200, 0.2, 'sawtooth', 0.15);
 }
 
+// Gentle "not this one" for toddler games: no sawtooth, low volume.
+export function playSoftNo() {
+  playTone(220, 0.16, 'sine', 0.07);
+}
+
 export function playSplash() {
   for (let i = 0; i < 5; i++) {
     setTimeout(() => {
