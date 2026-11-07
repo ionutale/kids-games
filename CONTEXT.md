@@ -53,9 +53,19 @@
 
 ## Spot the Difference Game
 
-- **Difference**: A cell that contains a different Emoji between the two Grids.
-- **Puzzle**: A single round consisting of two Grids with N Differences to find.
-- **Found Difference**: A Difference cell that the player has correctly tapped, marked with a highlight ring.
+- **Harbor**: the chosen world — a seaside harbor with a lighthouse, pier, boats, gulls and a pier cat.
+- **Twin Pictures**: the two stacked panels, Picture 1 and Picture 2, showing the same harbor.
+- **Prop**: one emoji object placed on the harbor. Nine to twelve per picture.
+- **Difference**: one prop that changes between the pictures — Swap, Missing, Moved or Size.
+- **Hotspot**: the generous circle around a Difference. A Moved prop's hotspot spans both positions.
+- **Found Difference**: a Difference that has been tapped; it rings in both pictures.
+- **Hint**: after about eight seconds with no find, one unfound Difference pulses softly. No penalty.
+- **Postcard**: the reward for a solved puzzle; stored in the album.
+- **Set**: five puzzles at the Settings age band (2 / 3 / 4 Differences). Flat difficulty.
+- **Postcard Album**: the persisted collection (`spotPostcards`); the latest twelve show on the set-complete card.
+- **Found Tokens**: the row of tokens for the current puzzle's Differences.
+- **Set Strip**: the row of postcard slots showing Set progress.
+- **No pressure**: no timer, no fail, no mistake count; a wrong tap only wobbles.
 
 ## Category Sort Game
 
@@ -131,37 +141,6 @@ The following games have been proposed but not yet designed or implemented. Each
 | 10 | **Quick Count** (Brain Trainer 2) | Emojis flash briefly, child answers "how many?" via 3 Answer Pills. Subitizing + estimation. | [spec](docs/superpowers/specs/2026-08-23-quick-count-design.md) | [issues](docs/issues/quick-count-01-core-game.md) | Implemented |
 | 11 | **Speed Match** (Brain Trainer 3) | Deck of emoji Pair Cards; same or different? Auto-advance window keeps tempo. Processing speed. | [spec](docs/superpowers/specs/2026-08-23-speed-match-design.md) | [issues](docs/issues/speed-match-01-core-game.md) | Implemented |
 | 12 | **What Comes Next** (Brain Trainer 4) | Complete the emoji Pattern Unit from 3 options; pedagogical arc AB → AABB → ABC → growing. Pattern logic / pre-math. | [spec](docs/superpowers/specs/2026-08-23-what-comes-next-design.md) | [issues](docs/issues/what-comes-next-01-core-game.md) | Implemented |
-
-## Sequence Memory Game
-
-- **Pad**: One of 4 emoji buttons in a 2×2 grid that lights up during sequence playback.
-- **Sequence**: An ordered list of Pads that the player must memorize and reproduce.
-- **Round**: One complete cycle of sequence playback → player input → either advance or game over.
-- **Second Chance**: After the first wrong tap, the same Sequence replays at half speed before the player tries again.
-
-## Emoji Math Game
-
-- **Equation**: An arithmetic expression shown with emoji counts and real + / − signs (e.g., `🍎 + 🍎 = ?`, `🍎🍎🍎 − 🍎 = ?`); age 4 mixes addition and subtraction within 10, age 5+ interleaves addition, subtraction ≤20, and comparison.
-- **Distractor**: One of the three incorrect multiple-choice answers, positioned ±1 or ±2 from the correct answer.
-- **Milestone**: A celebration triggered every 10 correct answers.
-
-## Spot the Difference Game
-
-- **Difference**: A cell that contains a different Emoji between the two Grids.
-- **Puzzle**: A single round consisting of two Grids with N Differences to find.
-- **Found Difference**: A Difference cell that the player has correctly tapped, marked with a highlight ring.
-
-## Category Sort Game
-
-- **Room**: the cutaway scene that holds the Zones and the Tray. It replaced the old single-item drop area.
-- **Zone**: a large illustrated home for one Category (Animals, Food, Vehicles, Nature, Clothes, Toys). "Bin" is the legacy name for the same thing.
-- **Category**: a labeled group of related Emojis.
-- **Tray**: the rug at the bottom of the Room holding every item in the Round.
-- **Round**: one shuffled set of 6–10 Emojis that must be placed into the Zones.
-- **Shelf**: the growing collection of placed Emojis inside a Zone.
-- **Tap-to-Place**: drag an Emoji into a Zone, or tap the Emoji to lift it and tap the Zone.
-- **Helper**: a green glow plus ✓ on the matching Zone, shown only for the first five placements of level 1, then retired. The dragged Emoji keeps its own green glow as the item-side cue.
-- **Spring-back**: a wrong Zone wobbles silently and the dragged Emoji springs back to its tray slot; it is never consumed.
 
 ## Level Ladder (shared)
 
