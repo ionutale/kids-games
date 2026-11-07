@@ -173,18 +173,17 @@ The following games have been proposed but not yet designed or implemented. Each
 
 ## Soccer Game
 
-- **Pitch**: The field markings — sidelines, a center circle, and a penalty spot — drawn as lines. The ball and the Keeper stay emoji.
-- **Shot**: A swipe that sends the ball toward a landing point on the field.
-- **Power**: How long the swipe is. Higher Power shrinks the Keeper's Reach and lofts the Flight higher. The landing point still has to be inside the goal.
-- **Flight**: The ball's trip. It rises, casts a shrinking shadow, and squashes when kicked. A Goal bulges the net. The arc does not change the result.
-- **Keeper**: The glove in the goal mouth. On levels 1–5 he freezes when the finger goes down. From level 6 he keeps moving during the swipe, then dives toward the landing point but stops short, so the far post always has room for a ball. The dive stays up until the ball is back.
-- **Reach**: The band around the Keeper that turns a landing in the goal into a Save. The softest Shot widens it to about 1.6× his body. Full Power narrows it to his body. In between, it shrinks in a straight line.
-- **Goal**: A Shot that lands in the goal mouth, outside the Keeper's Reach.
-- **Save**: A Shot that lands in the goal mouth, inside the Keeper's Reach. It plays a short glove thud.
-- **Miss**: A Shot that lands outside the goal mouth. It is silent.
-- **Star**: The rating of a finished round. Each Save or Miss costs one. None left is 3 stars, one or two left is 2 stars, and more is 1 star. The round cannot be lost. The win screen shows the stars for the round just played.
-- **Best Stars**: The highest Star count earned on a Soccer level. Remembered for Soccer only. Shown as up to three pips under that level's number. An unplayed level has none. A worse replay does not lower them. On a mastered level 10 the graduation cap stays, with the pips under it.
-- **Streak**: Consecutive Goals. A Save or a Miss clears it.
+- **Pitch**: the night stadium seen from behind the ball. SVG ball, child striker, bear keeper, crowd and net. No emoji on the pitch.
+- **Shot**: a swipe anywhere. A reticle and dashed trajectory show the impact point; the swipe length only sets the flight time.
+- **Flight**: the ball's arc to the impact. A Goal flashes the net; the arc does not change the result.
+- **Keeper**: the bear in the goal mouth. He patrols continuously and dives late; the far corner always has room.
+- **Reach**: the band around the Keeper that turns an impact in the goal into a Save.
+- **Goal**: an impact in the goal mouth outside the Keeper's Reach. A Save is the same impact inside the Reach. A Miss is outside the mouth.
+- **Shots**: five per Round, shown as ball pips.
+- **Round**: five shots. The target is 3 goals at level 1 rising to 5 at level 10. All five shots are always played; the target decides the win. A round below the target shows a Good Try.
+- **Star Row**: 1/2/3 stars for 3/4/5 goals. The best per level is stored in `soccerStars` and shown in a local row above the ladder. The shared ladder still shows no stars (ADR 0001).
+- **Good Try**: the calm card when the five shots finish below the target — Try again / Back, no star, no sad sound.
+- **Night Penalty**: the chosen world and behind-the-ball camera.
 
 ## Brain Trainers (shared)
 
