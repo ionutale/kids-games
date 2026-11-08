@@ -34,21 +34,24 @@
 <style>
   .ladder-bar {
     display: flex;
-    justify-content: center;
+    /* `safe` keeps step 1 on screen if a narrow phone still needs to scroll. */
+    justify-content: safe center;
     flex-wrap: nowrap;
-    gap: 3px;
+    gap: 2px;
     padding-bottom: calc(8px + var(--safe-bottom));
-    padding-left: 8px;
-    padding-right: 8px;
+    padding-left: 4px;
+    padding-right: 4px;
     overflow-x: auto;
     scrollbar-width: none;
   }
   .ladder-bar::-webkit-scrollbar { display: none; }
   .ladder-step {
+    /* Steps share the row on a 320 px phone instead of clipping at the edges. */
     width: 32px;
     height: 32px;
-    min-width: 32px;
-    flex: 0 0 auto;
+    min-width: 0;
+    flex: 1 1 32px;
+    max-width: 32px;
     border-radius: 8px;
     font-size: 12px;
     font-weight: 600;

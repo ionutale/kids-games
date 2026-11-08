@@ -3,6 +3,16 @@
 // negative sound, so an escaped bubble is simply silent.
 import { createGameSound } from '#lib/sounds/gameSound.js';
 
+/**
+ * Pitch of the nth pop in a swipe chain. The plop climbs a whole tone-ish step
+ * per link and clamps after ten so a long swipe never turns shrill. Pure so the
+ * chain can be tested without an AudioContext.
+ */
+export function chainFrequency(step) {
+  const i = Math.min(Math.max(0, step), 9);
+  return 360 + i * 58;
+}
+
 export function createPondSound() {
   let chain = 0;
   let lastSpawn = 0;
@@ -12,8 +22,7 @@ export function createPondSound() {
     // A water plop. The pitch climbs through a swipe chain so a chain sounds
     // like a chain; the route resets the chain when the finger lifts.
     pop: ({ tone }, step = 0) => {
-      const i = Math.min(Math.max(0, step), 9);
-      tone({ freq: 360 + i * 58, dur: 0.12, type: 'sine', vol: 0.11, slide: -140 });
+      tone({ freq: chainFrequency(step), dur: 0.12, type: 'sine', vol: 0.11, slide: -140 });
       tone({ freq: 150, dur: 0.07, type: 'sine', vol: 0.045 });
     },
     // A soft bubble-up when a new bubble leaves the water.

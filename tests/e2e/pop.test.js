@@ -220,6 +220,74 @@ test.describe('Pop — the Rising Pond', () => {
     await expect(page.getByTestId('pop-card')).toHaveCount(0);
   });
 
+  test('the Good Try card clears a star sticker collected earlier', async ({ page }) => {
+    await page.clock.install({ time: new Date('2026-01-01T00:00:00') });
+    await page.addInitScript(() => localStorage.setItem('popLevel', '6'));
+    await page.goto('/games/pop?seed=7');
+    await startRound(page);
+
+    const star = page.locator('.bubble[data-type="star"]').first();
+    await expect(star).toBeVisible();
+    await tapBubble(page, star);
+    await expect(page.locator(JAR)).toHaveAttribute('data-sticker', 'true');
+    expect(await filled(page)).toBe(2);
+
+    await page.clock.runFor(31_000);
+    await expect(page.getByTestId('pop-card')).toBeVisible();
+    await expect(page.locator(JAR)).toHaveAttribute('data-sticker', 'false');
+    await expect(page.getByTestId('pop-sticker')).toHaveCount(0);
+  });
+
+  test('level 10 shows the mastered ladder, target 15 and a mastery win', async ({ page }) => {
+    await page.addInitScript(() => {
+      localStorage.setItem('popLevel', '10');
+      localStorage.setItem('popMastered', '1');
+    });
+    await page.goto('/games/pop');
+    const root = page.getByTestId('pop-root');
+    await expect(root).toHaveAttribute('data-level', '10');
+    await expect(root).toHaveAttribute('data-target', '15');
+    await expect(page.locator('.ladder-step').nth(9)).toHaveText('🎓');
+    await expect(page.getByTestId('pop-types')).toContainText('Giant bubble');
+    await expect(page.getByTestId('pop-types')).toContainText('Star bubble');
+
+    await startRound(page);
+    const win = page.getByTestId('pop-win');
+    for (let i = 0; i < 160; i += 1) {
+      if (await win.isVisible()) break;
+      const bubble = await bubbleInPond(page);
+      if (bubble) await tapBubble(page, bubble);
+      await page.waitForTimeout(90);
+    }
+
+    await expect(win).toBeVisible();
+    await expect(win.locator('.win-title')).toContainText('Jar full');
+    await expect(win.getByTestId('ladder-done')).toHaveText('🎓');
+    await expect(win.getByTestId('next-level')).toHaveCount(0);
+    await expect(win.getByTestId('replay')).toBeVisible();
+    expect(await page.evaluate(() => localStorage.getItem('popMastered'))).toBe('1');
+  });
+
+  test('reduced motion keeps the win card usable but drops the celebration layers', async ({ page }) => {
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    await page.goto('/games/pop');
+    await startRound(page);
+
+    const win = page.getByTestId('pop-win');
+    for (let i = 0; i < 120; i += 1) {
+      if (await win.isVisible()) break;
+      const bubble = await bubbleInPond(page);
+      if (bubble) await tapBubble(page, bubble);
+      await page.waitForTimeout(110);
+    }
+
+    await expect(win).toBeVisible();
+    await expect(win.locator('.win-title')).toContainText('Jar full');
+    await expect(win.locator('.confetti-container')).toBeHidden();
+    await expect(win.locator('.starfield')).toBeHidden();
+    await expect(win.getByTestId('replay')).toBeVisible();
+  });
+
   test('picking a level saves it, resets to ready and unlocks the later types', async ({ page }) => {
     await page.goto('/games/pop');
     await page.locator('.ladder-step').nth(5).click();
@@ -236,18 +304,42 @@ test.describe('Pop — the Rising Pond', () => {
     await expect(page.getByTestId('pop-types')).not.toContainText('Star bubble');
   });
 
-  test('the sound toggle mutes the pond without errors', async ({ page }) => {
+  test('the sound toggle mutes the pond cues, not just page errors', async ({ page }) => {
     const errors = [];
     page.on('pageerror', (error) => errors.push(error.message));
+    // Count scheduled oscillators so muting is proven, not assumed.
+    await page.addInitScript(() => {
+      window.__tones = 0;
+      const Ctx = window.AudioContext || window.webkitAudioContext;
+      if (!Ctx) return;
+      const create = Ctx.prototype.createOscillator;
+      Ctx.prototype.createOscillator = function (...args) {
+        window.__tones += 1;
+        return create.apply(this, args);
+      };
+    });
     await page.goto('/games/pop');
+    await startRound(page);
+
+    // An unmuted spawn cue proves the counter sees real pond sound.
+    await expect.poll(() => page.evaluate(() => window.__tones), { timeout: 2500 }).toBeGreaterThan(0);
+
     await page.locator('.sound-btn').click();
     expect(
       await page.evaluate(() => JSON.parse(localStorage.getItem('kids-games-settings')).soundEnabled)
     ).toBe(false);
-    await startRound(page);
-    const bubble = page.locator('.bubble').first();
+
+    const before = await page.evaluate(() => window.__tones);
+    let bubble = null;
+    for (let i = 0; i < 25 && !bubble; i += 1) {
+      bubble = await bubbleInPond(page);
+      if (!bubble) await page.waitForTimeout(100);
+    }
+    expect(bubble).not.toBeNull();
     await tapBubble(page, bubble);
     expect(await filled(page)).toBeGreaterThanOrEqual(1);
+    await page.waitForTimeout(400);
+    expect(await page.evaluate(() => window.__tones)).toBe(before);
     expect(errors).toEqual([]);
   });
 
@@ -278,7 +370,17 @@ test.describe('Pop — the Rising Pond', () => {
       await expect(page.getByTestId('pop-pond')).toBeVisible();
       await expect(page.getByTestId('pop-jar')).toBeVisible();
       await expect(page.getByTestId('pop-moon')).toBeVisible();
+      await expect(page.locator('.ladder-bar')).toBeVisible();
       await expect(page.locator('.ladder-step')).toHaveCount(10);
+      const steps = page.locator('.ladder-step');
+      for (let i = 0; i < 10; i += 1) {
+        const step = steps.nth(i);
+        await expect(step).toBeVisible();
+        const box = await step.boundingBox();
+        expect(box.x).toBeGreaterThanOrEqual(0);
+        expect(box.x + box.width).toBeLessThanOrEqual(viewport.width + 0.5);
+        expect(box.width).toBeGreaterThanOrEqual(24);
+      }
 
       const overflow = await page.evaluate(() => ({
         scrollWidth: document.documentElement.scrollWidth,

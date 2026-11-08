@@ -2,13 +2,15 @@
   // The jar is the score: it fills by points and keeps the collected trinkets.
   // A star sticker appears on the rim when a star pops or the jar fills.
   import Icons from '#lib/pop/Icons.svelte';
+  import { jarPercent, jarIsFull } from '#lib/pop/config.js';
 
   let { items = [], target = 6, star = false, reduced = false, label = '' } = $props();
 
-  const pct = $derived(Math.min(1, items.length / Math.max(1, target)));
-  // The jar keeps the whole collection; once it is busy the trinkets shrink a
-  // little so every point still has a visible mini.
-  const shown = $derived(items.slice(-16));
+  const pct = $derived(jarPercent(items.length, target));
+  const full = $derived(jarIsFull(items.length, target));
+  // A full round can hold at most 16 points (a 15-point target finished by a
+  // giant/star), so every collected trinket gets a mini. Above ten points the
+  // minis shrink a little so the whole collection still fits.
   const miniSize = $derived(items.length > 10 ? 11 : 14);
 </script>
 
@@ -20,13 +22,14 @@
   data-testid="pop-jar"
   data-filled={items.length}
   data-target={target}
+  data-full={full}
   data-sticker={star}
 >
   <span class="lid" aria-hidden="true"></span>
   <div class="glass">
     <span class="fill" data-testid="jar-fill" data-percent={Math.round(pct * 100)} style:height="{pct * 100}%"></span>
     <div class="contents" aria-hidden="true">
-      {#each shown as item (item.id)}
+      {#each items as item (item.id)}
         <span
           class="mini"
           style:--fly-x="{item.dx ?? 0}px"

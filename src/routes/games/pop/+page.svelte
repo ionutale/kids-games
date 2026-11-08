@@ -203,8 +203,10 @@
 
   function endRound() {
     if (phase !== 'playing') return;
-    // Time ended short: calm, no star, no sad sound.
+    // Time ended short: calm, no star, no sad sound. A star popped earlier may
+    // still be on the rim, so the Good Try state clears it explicitly.
     phase = 'good';
+    sticker = false;
   }
 
   function popBubble(bubble) {
@@ -472,22 +474,24 @@
 </GameShell>
 
 {#if phase === 'won'}
-  <WinOverlay
-    title={$_('jarFull')}
-    subtitle={$_('popWinSub')}
-    sound={false}
-    testid="pop-win"
-  >
-    <LadderActions
-      gameId="pop"
-      {level}
-      backHref="/"
-      nextHref="/games/pop"
-      replayHref="/games/pop"
-      onnext={advanceLevel}
-      onreplay={replayLevel}
-    />
-  </WinOverlay>
+  <div class="win-wrap" class:calm={reduced}>
+    <WinOverlay
+      title={$_('jarFull')}
+      subtitle={$_('popWinSub')}
+      sound={false}
+      testid="pop-win"
+    >
+      <LadderActions
+        gameId="pop"
+        {level}
+        backHref="/"
+        nextHref="/games/pop"
+        replayHref="/games/pop"
+        onnext={advanceLevel}
+        onreplay={replayLevel}
+      />
+    </WinOverlay>
+  </div>
 {/if}
 
 <style>
@@ -614,6 +618,16 @@
   }
   .pop-game :global(.ladder-bar) {
     margin: 0;
+  }
+  .win-wrap {
+    display: contents;
+  }
+  /* WinOverlay is shared and always mounts Confetti/Starfield. A child who
+     asked for reduced motion should not get a falling celebration, so the
+     route hides those two layers; the win card and ladder actions stay. */
+  .win-wrap.calm :global(.confetti-container),
+  .win-wrap.calm :global(.starfield) {
+    display: none;
   }
   .sr-only {
     position: absolute;
