@@ -1,190 +1,313 @@
 import { describe, it, expect } from 'vitest';
 import {
+  W,
+  H,
+  LEVELS,
+  LAYOUTS,
+  DEST_RADIUS,
+  STAR_RADIUS,
+  BLOCKER_PAD,
+  dist,
+  distanceToPath,
+  segmentHitsCircle,
+  clipSegmentToCircle,
+  pathLength,
+  pointAt,
+  nearestRoadIndex,
+  blockerHit,
+  roadReachesDestination,
+  starCollected,
+  requiredStarsCollected,
+  hasRequiredStars,
   levelSpec,
-  generatePuzzle,
-  validatePath,
-  bfs,
-  hintCell,
-  neighbors
-} from '../../src/lib/path-builder/engine.js';
-import { makeRng } from '../../src/lib/trainers/rng.js';
+  sceneFor
+} from '../../src/lib/path-builder/scene.js';
 
-describe('level spec', () => {
-  it('grows grid and obstacles with level, capped at 6×6 / 8', () => {
-    expect(levelSpec(1)).toEqual({ size: 4, obstacles: 1 });
-    expect(levelSpec(5).size).toBe(4);
-    expect(levelSpec(6).size).toBe(5);
-    expect(levelSpec(10)).toEqual({ size: 5, obstacles: 5 });
-    const hard = levelSpec(15);
-    expect(hard.size).toBe(6);
-    expect(hard.obstacles).toBeLessThanOrEqual(8);
-  });
-});
-
-describe('generatePuzzle', () => {
-  it('always yields a solvable puzzle with a valid BFS route', () => {
-    for (let lvl = 1; lvl <= 20; lvl++) {
-      for (let s = 0; s < 8; s++) {
-        const p = generatePuzzle(lvl, lvl * 100 + s);
-        const route = bfs(p.grid, p.start, p.goal);
-        expect(route).not.toBeNull();
-        expect(route.length - 1).toBeGreaterThanOrEqual(3); // min path length
-        // obstacles placed match the requested count (or fewer on fallback)
-        let obs = 0;
-        for (const row of p.grid) for (const c of row) if (c === 'obstacle') obs++;
-        expect(obs).toBeLessThanOrEqual(levelSpec(lvl).obstacles);
-      }
-    }
-  });
-
-  it('start never equals goal and both sit on empty cells', () => {
-    for (let s = 0; s < 30; s++) {
-      const p = generatePuzzle(7, s * 31);
-      expect(p.start.r !== p.start.c || true).toBe(true);
-      expect(p.start.r === p.goal.r && p.start.c === p.goal.c).toBe(false);
-      expect(p.grid[p.start.r][p.start.c]).toBe('empty');
-      expect(p.grid[p.goal.r][p.goal.c]).toBe('empty');
-    }
-  });
-
-  it('is deterministic per seed', () => {
-    expect(generatePuzzle(4, 12345)).toEqual(generatePuzzle(4, 12345));
-  });
-});
-
-describe('validatePath', () => {
-  const puzzle = (() => {
-    // hand-built 3×3: start top-left, goal bottom-right, obstacle in the center
-    return {
-      size: 3,
-      grid: [
-        ['empty', 'empty', 'empty'],
-        ['empty', 'obstacle', 'empty'],
-        ['empty', 'empty', 'empty']
-      ],
-      start: { r: 0, c: 0 },
-      goal: { r: 2, c: 2 }
-    };
-  })();
-
-  it('rejects paths that do not begin at Start', () => {
-    expect(validatePath(puzzle, [{ r: 0, c: 1 }])).toBe('invalid');
-    expect(validatePath(puzzle, [])).toBe('invalid');
-  });
-
-  it('accepts a legal path and reports completion at the Goal', () => {
-    const path = [
-      { r: 0, c: 0 },
-      { r: 1, c: 0 },
-      { r: 2, c: 0 },
-      { r: 2, c: 1 },
-      { r: 2, c: 2 }
+describe('geometry', () => {
+  it('measures distances and path length', () => {
+    expect(dist({ x: 0, y: 0 }, { x: 3, y: 4 })).toBe(5);
+    const line = [
+      { x: 0, y: 0 },
+      { x: 10, y: 0 },
+      { x: 10, y: 10 }
     ];
-    expect(validatePath(puzzle, path.slice(0, 3))).toBe('ok');
-    expect(validatePath(puzzle, path)).toBe('complete');
+    expect(pathLength(line)).toBe(20);
+    expect(pathLength([])).toBe(0);
   });
 
-  it('flags diagonal jumps as invalid', () => {
-    expect(
-      validatePath(puzzle, [
-        { r: 0, c: 0 },
-        { r: 1, c: 1 }
-      ])
-    ).toBe('invalid');
+  it('detects a segment crossing a circle and misses a clear one', () => {
+    const c = { x: 50, y: 50 };
+    expect(segmentHitsCircle({ x: 0, y: 50 }, { x: 100, y: 50 }, c, 10)).toBe(true);
+    expect(segmentHitsCircle({ x: 0, y: 0 }, { x: 100, y: 0 }, c, 10)).toBe(false);
+    expect(segmentHitsCircle({ x: 50, y: 50 }, { x: 50, y: 90 }, c, 10)).toBe(true);
   });
 
-  it('flags obstacle crossings as invalid', () => {
-    expect(
-      validatePath(puzzle, [
-        { r: 0, c: 0 },
-        { r: 0, c: 1 },
-        { r: 1, c: 1 } // obstacle
-      ])
-    ).toBe('invalid');
+  it('clips a segment exactly at the circle edge', () => {
+    const c = { x: 50, y: 50 };
+    const hit = clipSegmentToCircle({ x: 0, y: 50 }, { x: 100, y: 50 }, c, 10);
+    expect(hit).not.toBeNull();
+    expect(hit.x).toBeCloseTo(40, 5);
+    expect(hit.y).toBeCloseTo(50, 5);
+    expect(dist(hit, c)).toBeCloseTo(10, 5);
   });
 
-  it('rejects a path that reaches the Goal but continues past it', () => {
+  it('returns the start point for a segment that begins inside the circle', () => {
+    const c = { x: 50, y: 50 };
+    const hit = clipSegmentToCircle({ x: 50, y: 50 }, { x: 90, y: 50 }, c, 10);
+    expect(hit).toEqual({ x: 50, y: 50 });
+  });
+
+  it('returns null when the segment never reaches the circle', () => {
     expect(
-      validatePath(puzzle, [
-        { r: 0, c: 0 },
-        { r: 1, c: 0 },
-        { r: 2, c: 0 },
-        { r: 2, c: 1 },
-        { r: 2, c: 2 }, // goal
-        { r: 1, c: 2 } // one step past the goal
-      ])
-    ).toBe('invalid');
+      clipSegmentToCircle({ x: 0, y: 0 }, { x: 100, y: 0 }, { x: 50, y: 50 }, 10)
+    ).toBeNull();
+    expect(
+      clipSegmentToCircle({ x: 0, y: 0 }, { x: 10, y: 0 }, { x: 50, y: 0 }, 5)
+    ).toBeNull();
+  });
+
+  it('samples a polyline by normalized arc length', () => {
+    const line = [
+      { x: 0, y: 0 },
+      { x: 100, y: 0 }
+    ];
+    expect(pointAt(line, 0).x).toBeCloseTo(0);
+    expect(pointAt(line, 1).x).toBeCloseTo(100);
+    expect(pointAt(line, 0.5).x).toBeCloseTo(50);
+    expect(pointAt(line, 0.5).angle).toBeCloseTo(0);
+    expect(pointAt([], 0.5)).toBeNull();
+    expect(pointAt([{ x: 7, y: 9 }], 0.5)).toEqual({ x: 7, y: 9, angle: 0 });
+  });
+
+  it('clamps pointAt outside 0..1', () => {
+    const line = [
+      { x: 0, y: 0 },
+      { x: 100, y: 0 }
+    ];
+    expect(pointAt(line, -1).x).toBeCloseTo(0);
+    expect(pointAt(line, 2).x).toBeCloseTo(100);
+  });
+
+  it('finds the nearest earlier road point for truncation', () => {
+    const road = [
+      { x: 0, y: 0 },
+      { x: 100, y: 0 },
+      { x: 200, y: 0 }
+    ];
+    expect(nearestRoadIndex(road, { x: 104, y: 2 }, 10)).toBe(1);
+    expect(nearestRoadIndex(road, { x: 150, y: 0 }, 10)).toBe(-1);
+    expect(nearestRoadIndex(road, { x: 0, y: 0 }, 10)).toBe(0);
+  });
+
+  it('finds the first Blocker a stroke would enter', () => {
+    const blockers = [
+      { x: 200, y: 50, r: 20, kind: 'rock' },
+      { x: 120, y: 50, r: 20, kind: 'pond' }
+    ];
+    const hit = blockerHit(blockers, { x: 0, y: 50 }, { x: 300, y: 50 });
+    expect(hit).toBe(blockers[1]);
+    expect(blockerHit(blockers, { x: 0, y: 300 }, { x: 300, y: 300 })).toBeNull();
+  });
+
+  it('pads Blocker collision so the stroke stops before the art', () => {
+    const blocker = { x: 100, y: 100, r: 30, kind: 'rock' };
+    const hit = blockerHit([blocker], { x: 0, y: 100 }, { x: 200, y: 100 });
+    const edge = clipSegmentToCircle({ x: 0, y: 100 }, { x: 200, y: 100 }, blocker, blocker.r + BLOCKER_PAD);
+    expect(hit).toBe(blocker);
+    expect(dist(edge, blocker)).toBeCloseTo(blocker.r + BLOCKER_PAD, 5);
   });
 });
 
-describe('bfs & hint', () => {
-  it('bfs returns the shortest route length on an open grid', () => {
-    const grid = [
-      ['empty', 'empty'],
-      ['empty', 'empty']
+describe('road outcomes', () => {
+  const scene = sceneFor(6, 0);
+
+  it('reports a connected road only when it reaches the cabin', () => {
+    const short = [
+      { ...scene.home },
+      { x: scene.home.x + 60, y: scene.home.y - 60 }
     ];
-    const route = bfs(grid, { r: 0, c: 0 }, { r: 1, c: 1 });
-    expect(route.length - 1).toBe(2);
+    const connected = [
+      { ...scene.home },
+      { ...scene.dest }
+    ];
+    expect(roadReachesDestination(scene, short)).toBe(false);
+    expect(roadReachesDestination(scene, connected)).toBe(true);
+    expect(roadReachesDestination(scene, [])).toBe(false);
+    expect(roadReachesDestination(scene, [{ ...scene.dest }])).toBe(false);
+    expect(DEST_RADIUS).toBeGreaterThan(0);
   });
 
-  it('hint proposes the next optimal step from the current tip', () => {
-    const p = generatePuzzle(6, 5);
-    const optimal = bfs(p.grid, p.start, p.goal);
-    const hint = hintCell(p, []);
-    expect(hint).toEqual(optimal[1]);
-    // following hints from each tip walks the optimal route
-    const walked = [p.start];
-    for (let i = 0; i < optimal.length; i++) {
-      const h = hintCell(p, walked);
-      if (!h) break;
-      walked.push(h);
+  it('collects a star inside the forgiving radius only', () => {
+    const star = scene.stars[0];
+    expect(starCollected({ x: star.x, y: star.y }, star)).toBe(true);
+    expect(starCollected({ x: star.x + STAR_RADIUS - 1, y: star.y }, star)).toBe(true);
+    expect(starCollected({ x: star.x + STAR_RADIUS + 6, y: star.y }, star)).toBe(false);
+    expect(STAR_RADIUS).toBeGreaterThanOrEqual(40);
+  });
+
+  it('solves only when every required star was gathered', () => {
+    const required = scene.stars.filter((s) => s.required).map((s) => s.id);
+    expect(scene.required).toBeGreaterThan(0);
+    expect(hasRequiredStars(scene, [])).toBe(false);
+    expect(hasRequiredStars(scene, required)).toBe(true);
+    expect(requiredStarsCollected(scene, required)).toBe(scene.required);
+
+    // An optional star never counts toward the required total.
+    const early = sceneFor(3, 0);
+    expect(early.required).toBe(0);
+    expect(early.stars.length).toBeGreaterThan(0);
+    expect(hasRequiredStars(early, [])).toBe(true);
+    expect(requiredStarsCollected(early, [])).toBe(0);
+  });
+});
+
+describe('level configuration', () => {
+  it('ships ten levels with five layouts each', () => {
+    expect(LEVELS).toBe(10);
+    expect(LAYOUTS).toBe(5);
+  });
+
+  it('keeps early levels open and grows Blockers and required Stars', () => {
+    expect(levelSpec(1).blockers).toBe(0);
+    expect(levelSpec(2).blockers).toBe(0);
+    for (let level = 3; level <= 5; level += 1) {
+      expect(levelSpec(level).blockers).toBeGreaterThanOrEqual(1);
+      expect(levelSpec(level).blockers).toBeLessThanOrEqual(2);
+      expect(levelSpec(level).required).toBe(0);
     }
-    expect(walked[walked.length - 1]).toEqual(p.goal);
+    for (let level = 6; level <= 10; level += 1) {
+      const spec = levelSpec(level);
+      expect(spec.required).toBeGreaterThanOrEqual(1);
+      expect(spec.required).toBeLessThanOrEqual(2);
+      expect(spec.stars).toBeGreaterThanOrEqual(spec.required);
+    }
   });
 
-  it('neighbors are 4-directional within bounds', () => {
-    expect(neighbors({ r: 0, c: 0 }, 3)).toEqual([
-      { r: 1, c: 0 },
-      { r: 0, c: 1 }
-    ]);
-    expect(neighbors({ r: 1, c: 1 }, 3).length).toBe(4);
+  it('clamps out-of-range levels and layouts', () => {
+    expect(levelSpec(0).level).toBe(1);
+    expect(levelSpec(99).level).toBe(LEVELS);
+    const low = sceneFor(-4, -2);
+    expect(low.level).toBe(1);
+    expect(low.layout).toBe(0);
+    const high = sceneFor(99, 99);
+    expect(high.level).toBe(LEVELS);
+    expect(high.layout).toBe(LAYOUTS - 1);
   });
+});
 
-  it('returns null from a dead end instead of a cell already on the path', () => {
-    const puzzle = {
-      grid: [
-        ['empty', 'empty', 'empty'],
-        ['empty', 'obstacle', 'empty'],
-        ['empty', 'obstacle', 'empty']
-      ],
-      start: { r: 1, c: 0 },
-      goal: { r: 0, c: 0 }
-    };
-    // player walked into the dead end at (2,0): boxed in by (1,0) behind and obstacle at (2,1)
-    expect(hintCell(puzzle, [{ r: 1, c: 0 }, { r: 2, c: 0 }])).toBeNull();
-  });
-
-  it('never hints a cell already on the path (random-walk property)', () => {
-    for (const seed of [1, 2, 3]) {
-      const puzzle = generatePuzzle(6, seed);
-      const rng = makeRng(seed * 1000 + 7);
-      const onPath = (cell) => path.some((p) => p.r === cell.r && p.c === cell.c);
-      let path = [puzzle.start];
-      let steps = 0;
-      while (steps < 200) {
-        const tip = path[path.length - 1];
-        const options = neighbors(tip, puzzle.grid.length).filter(
-          (n) => puzzle.grid[n.r][n.c] !== 'obstacle' && !onPath(n)
-        );
-        if (options.length === 0) {
-          path = [puzzle.start]; // dead end — restart the walk
-          continue;
+describe('scene generation', () => {
+  it('puts the cottage and cabin on opposite sides, always in bounds', () => {
+    for (let level = 1; level <= LEVELS; level += 1) {
+      for (let layout = 0; layout < LAYOUTS; layout += 1) {
+        const scene = sceneFor(level, layout);
+        expect(scene.home.x, `L${level}/${layout} home x`).toBeLessThan(W / 2);
+        expect(scene.dest.x, `L${level}/${layout} dest x`).toBeGreaterThan(W / 2);
+        expect(scene.home.y, `L${level}/${layout} home below dest`).toBeGreaterThan(scene.dest.y);
+        for (const p of [scene.home, scene.dest]) {
+          expect(p.x).toBeGreaterThan(60);
+          expect(p.x).toBeLessThan(W - 60);
+          expect(p.y).toBeGreaterThan(60);
+          expect(p.y).toBeLessThan(H - 60);
         }
-        path.push(options[Math.floor(rng() * options.length)]);
-        steps++;
-        const hint = hintCell(puzzle, path);
-        if (hint) expect(onPath(hint)).toBe(false);
       }
+    }
+  });
+
+  it('grows the home-to-cabin distance with the level', () => {
+    const first = dist(levelSpec(1).home, levelSpec(1).dest);
+    const last = dist(levelSpec(10).home, levelSpec(10).dest);
+    expect(last).toBeGreaterThan(first + 50);
+  });
+
+  it('never lets a Blocker cover the suggested route or the buildings', () => {
+    for (let level = 1; level <= LEVELS; level += 1) {
+      for (let layout = 0; layout < LAYOUTS; layout += 1) {
+        const scene = sceneFor(level, layout);
+        for (const blocker of scene.blockers) {
+          const nearest = distanceToPath(scene.route, blocker);
+          expect(nearest, `L${level}/${layout} ${blocker.kind} route clearance`).toBeGreaterThan(
+            blocker.r + 8
+          );
+          expect(dist(blocker, scene.home)).toBeGreaterThan(blocker.r + 40);
+          expect(dist(blocker, scene.dest)).toBeGreaterThan(blocker.r + 40);
+        }
+      }
+    }
+  });
+
+  it('places every Star on the valid guide route and requires a subset', () => {
+    for (let level = 1; level <= LEVELS; level += 1) {
+      for (let layout = 0; layout < LAYOUTS; layout += 1) {
+        const scene = sceneFor(level, layout);
+        expect(scene.required).toBeLessThanOrEqual(scene.stars.length);
+        for (const star of scene.stars) {
+          const nearest = distanceToPath(scene.route, star);
+          expect(nearest, `L${level}/${layout} star on route`).toBeLessThan(0.001);
+          expect(star.required).toBe(scene.stars.indexOf(star) < scene.required);
+        }
+      }
+    }
+  });
+
+  it('keeps every Blocker inside the scene', () => {
+    for (let level = 1; level <= LEVELS; level += 1) {
+      for (let layout = 0; layout < LAYOUTS; layout += 1) {
+        const scene = sceneFor(level, layout);
+        for (const blocker of scene.blockers) {
+          expect(blocker.x - blocker.r).toBeGreaterThanOrEqual(10);
+          expect(blocker.x + blocker.r).toBeLessThanOrEqual(W - 10);
+          expect(blocker.y - blocker.r).toBeGreaterThanOrEqual(110);
+          expect(blocker.y + blocker.r).toBeLessThanOrEqual(H - 80);
+        }
+      }
+    }
+  });
+
+  it('never fully seals the scene: a route always connects Home to Destination', () => {
+    for (let level = 1; level <= LEVELS; level += 1) {
+      for (let layout = 0; layout < LAYOUTS; layout += 1) {
+        const scene = sceneFor(level, layout);
+        for (const blocker of scene.blockers) {
+          const crosses = scene.route.some((p, i) => {
+            if (i === 0) return false;
+            return segmentHitsCircle(scene.route[i - 1], p, blocker, blocker.r + BLOCKER_PAD);
+          });
+          expect(crosses, `L${level}/${layout} route blocked`).toBe(false);
+        }
+        expect(roadReachesDestination(scene, scene.route)).toBe(true);
+        expect(hasRequiredStars(scene, scene.stars.map((s) => s.id))).toBe(true);
+      }
+    }
+  });
+
+  it('is deterministic per level and layout', () => {
+    expect(sceneFor(4, 2)).toEqual(sceneFor(4, 2));
+    expect(sceneFor(7, 0)).not.toEqual(sceneFor(7, 1));
+  });
+
+  it('gives every level five visibly different layouts', () => {
+    for (let level = 1; level <= LEVELS; level += 1) {
+      const layouts = Array.from({ length: LAYOUTS }, (_, layout) => sceneFor(level, layout));
+      const shapes = new Set(
+        layouts.map((scene) => scene.blockers.map((b) => `${Math.round(b.x)},${Math.round(b.y)}`).join('|'))
+      );
+      const routes = new Set(
+        layouts.map((scene) => scene.route.map((p) => `${Math.round(p.x)},${Math.round(p.y)}`).join('|'))
+      );
+      // Levels 1–2 have no Blockers, so their routes must carry the variety.
+      expect(routes.size, `L${level} routes`).toBe(LAYOUTS);
+      if (levelSpec(level).blockers > 0) expect(shapes.size, `L${level} blockers`).toBeGreaterThan(1);
+    }
+  });
+
+  it('reaches the Destination with the guide route and collects its Stars', () => {
+    for (let level = 1; level <= LEVELS; level += 1) {
+      const scene = sceneFor(level, 2);
+      expect(roadReachesDestination(scene, scene.route)).toBe(true);
+      const collected = scene.stars
+        .filter((star) => scene.route.some((p) => starCollected(p, star)))
+        .map((star) => star.id);
+      expect(hasRequiredStars(scene, collected)).toBe(true);
     }
   });
 });
