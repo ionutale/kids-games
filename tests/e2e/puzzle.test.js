@@ -71,7 +71,7 @@ test.describe('Puzzle E2E', () => {
 
       for (let g = 0; g < count; g++) {
         const ghostText = await ghosts.nth(g).locator('.ghost-emoji').textContent();
-        if (ghostText && emojiText && ghostText[0] === emojiText[0]) {
+        if (ghostText && emojiText && ghostText === emojiText) {
           await ghosts.nth(g).click();
           await page.waitForTimeout(100);
           break;
