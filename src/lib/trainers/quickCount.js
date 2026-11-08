@@ -1,61 +1,93 @@
-import { makeRng, shuffle, pickOne } from './rng.js';
-import { CATEGORIES } from './emojiSets.js';
+// Quick Count — the Flash Picnic engine.
+//
+// The old prompt drew distinct emoji from one random category, so the real
+// count was capped by the smallest category pool (about eight) even though
+// levelConfig asked for twenty. The picnic repeats one themed object instead,
+// and the count comes from the explicit `countMax` ramp below.
+
+import { makeRng, shuffle } from './rng.js';
+
+export const THEMES = [
+  { id: 'berry', emoji: '🍓' },
+  { id: 'egg', emoji: '🥚' },
+  { id: 'cookie', emoji: '🍪' },
+  { id: 'apple', emoji: '🍎' }
+];
+
+/**
+ * The Flash Picnic count ramp: 1–3 at L1, 1–6 at L4, 1–8 at L7, 1–10 at L10.
+ * Deliberately independent of `levelConfig.max`; repeats make counts past the
+ * distinct-emoji cap possible.
+ */
+export function countMax(level) {
+  const n = Math.max(1, Math.floor(level) || 1);
+  if (n <= 2) return 3;
+  if (n <= 5) return 6;
+  if (n <= 7) return 8;
+  if (n <= 9) return 9;
+  return 10;
+}
 
 export function levelConfig(level) {
   const n = Math.max(1, level);
-  const max = Math.min(4 + n, 20);
   return {
     goal: 5 + Math.min(n, 10),
-    flashMs: Math.max(800, 3000 - 150 * n),
-    min: 1,
-    max,
-    optionClampMax: max + 2
+    flashMs: Math.max(800, 3000 - 150 * n)
   };
 }
 
 function buildCells(count, rng) {
-  // jittered grid: one emoji per cell ⇒ never overlap
+  // One object per jittered grid cell, so repeated objects never overlap.
   const side = Math.ceil(Math.sqrt(Math.max(count, 1)));
+  const step = 100 / side;
+  const jitter = Math.min(step * 0.18, 5);
   const cells = [];
   for (let row = 0; row < side; row++) {
     for (let col = 0; col < side; col++) {
-      const cx = ((col + 0.5) / side) * 100;
-      const cy = ((row + 0.5) / side) * 100;
+      const x = (col + 0.5) * step + (rng() - 0.5) * 2 * jitter;
+      const y = (row + 0.5) * step + (rng() - 0.5) * 2 * jitter;
       cells.push({
-        x: Math.min(88, Math.max(8, cx + (rng() - 0.5) * (70 / side))),
-        y: Math.min(88, Math.max(8, cy + (rng() - 0.5) * (70 / side)))
+        x: Math.min(88, Math.max(12, x)),
+        y: Math.min(88, Math.max(12, y))
       });
     }
   }
-  return shuffle(cells, rng);
+  return shuffle(cells, rng).slice(0, count);
 }
 
-export function makePrompt(level, seed = Date.now()) {
+/**
+ * A picnic prompt: one theme object repeated `n` times plus three answer pills
+ * showing the digit and the matching dots.
+ *
+ * Pass `promptIndex` to rotate themes deterministically (the play route uses
+ * the solved count), otherwise the theme is seeded at random.
+ */
+export function makePrompt(level, seed = Date.now(), promptIndex = null) {
   const rng = makeRng(seed);
-  const config = levelConfig(level);
-  const categoryName = pickOne(Object.keys(CATEGORIES), rng);
-  const pool = CATEGORIES[categoryName];
-  const wanted = config.min + Math.floor(rng() * (config.max - config.min + 1));
-  // The flash set holds distinct emojis, so it can never be larger than the
-  // category pool. The answer must describe what is actually shown.
-  const emojis = shuffle(pool, rng).slice(0, Math.min(wanted, pool.length));
-  const correct = emojis.length;
+  const max = countMax(level);
+  const n = 1 + Math.floor(rng() * max);
+  const themeIndex =
+    promptIndex == null
+      ? Math.floor(rng() * THEMES.length)
+      : ((Math.floor(promptIndex) % THEMES.length) + THEMES.length) % THEMES.length;
+  const theme = THEMES[themeIndex];
 
-  // answer pills: correct ±1/±2, unique, clamped
-  const deltas = shuffle([1, 2, -1, -2], rng);
-  const options = [correct];
-  for (const d of deltas) {
+  // Answer pills: correct ±1/±2, unique, at least 1, within the level range ±2.
+  const options = [n];
+  for (const delta of shuffle([1, 2, -1, -2], rng)) {
     if (options.length >= 3) break;
-    const v = correct + d;
-    if (v >= 0 && v <= config.optionClampMax && !options.includes(v)) options.push(v);
+    const value = n + delta;
+    if (value >= 1 && value <= max + 2 && !options.includes(value)) options.push(value);
   }
 
   return {
-    count: correct,
-    emojis,
-    category: categoryName,
-    cells: buildCells(emojis.length, rng).slice(0, emojis.length),
+    n,
+    count: n,
+    correct: n,
+    theme,
     options: shuffle(options, rng),
-    correct
+    // The object repeats, so `objects.length` is the real count shown.
+    objects: Array.from({ length: n }, (_, id) => ({ id, emoji: theme.emoji })),
+    cells: buildCells(n, rng)
   };
 }

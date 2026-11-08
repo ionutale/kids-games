@@ -1,73 +1,104 @@
 <script>
+  // Quick Count — the Flash Picnic. The bear asks “How many?”; one themed
+  // object (berries, eggs, cookies, apples) flashes on the checkered cloth,
+  // repeated N times. Three pills show the digit plus that many dots. A correct
+  // answer drops a berry in the basket. No timer, no fail.
   import { onMount, untrack } from 'svelte';
   import { _ } from '#lib/stores/locale.js';
+  import { reducedMotion } from '#lib/stores/reducedMotion.js';
   import GameShell from '#lib/components/ui/GameShell.svelte';
-  import HudPill from '#lib/components/ui/HudPill.svelte';
   import WinOverlay from '#lib/components/ui/WinOverlay.svelte';
   import LadderActions from '#lib/ladder/LadderActions.svelte';
+  import PicnicCloth from '#lib/quick-count/PicnicCloth.svelte';
+  import Bear from '#lib/quick-count/Bear.svelte';
+  import Basket from '#lib/quick-count/Basket.svelte';
+  import Pills from '#lib/quick-count/Pills.svelte';
+  import { createPicnicSound } from '#lib/quick-count/sound.js';
   import '#lib/trainers/fx.css';
 
-  import { makePrompt } from '#lib/trainers/quickCount.js';
-  import { levelConfig } from '#lib/trainers/quickCount.js';
+  import { makePrompt, levelConfig } from '#lib/trainers/quickCount.js';
   import { startTrainerMusic, stopTrainerMusic } from '#lib/sounds/trainerMusic.js';
-  import { playPop } from '#lib/sounds/audioManager.js';
-  import { playLevelTick, playFlashWhoosh, playReadyTick } from '#lib/sounds/trainerSounds.js';
 
   let { data } = $props();
+
   const level = $derived(data.level);
   const config = $derived(levelConfig(level));
+  const reduced = $derived($reducedMotion);
   const FANFARE_PITCH = 1.12;
 
   let solved = $state(0);
   let won = $state(false);
-
   let prompt = $state(null);
   let phase = $state('ready'); // ready → flash → answer
-  let chosen = $state(-1); // index of wrong pill currently wobbling
+  let chosen = $state(-1); // index of the wrong pill currently wobbling
   let answered = $state(false);
-  let timers = [];
+  const timers = new Set();
 
-  function clearTimers() {
-    for (const t of timers) clearTimeout(t);
-    timers = [];
-  }
+  const sound = createPicnicSound();
+
+  const basketLabel = $derived(
+    $_('qcBasket', { n: Math.min(solved, config.goal), m: config.goal })
+  );
+  const statusText = $derived(
+    won ? `${$_('qcBasketFull')} ${basketLabel}` : `${$_('howMany')} ${basketLabel}`
+  );
 
   function later(fn, ms) {
-    timers.push(setTimeout(fn, ms));
+    const id = setTimeout(() => {
+      timers.delete(id);
+      fn();
+    }, ms);
+    timers.add(id);
+    return id;
+  }
+
+  function clearTimers() {
+    for (const id of timers) clearTimeout(id);
+    timers.clear();
   }
 
   function nextPrompt() {
     clearTimers();
-    prompt = makePrompt(level, (data.seed + solved * 7919) % 100000000);
+    // Rotate themes by prompt so all four picnic foods appear in a round.
+    prompt = makePrompt(level, (data.seed + solved * 7919) % 100000000, solved);
     chosen = -1;
     answered = false;
     phase = 'ready';
-    playReadyTick();
     later(() => {
       if (phase !== 'ready') return;
       phase = 'flash';
-      playFlashWhoosh();
+      // Count ticks are the teaching aid for the first two levels only.
+      if (level <= 2) {
+        for (let i = 0; i < prompt.n; i += 1) later(() => sound.tick(), i * 90);
+      }
       later(() => {
         if (phase === 'flash') phase = 'answer';
       }, config.flashMs);
-    }, 600);
+    }, 650);
   }
 
   function answer(idx) {
-    if (phase !== 'answer' || won || answered) return;
+    if (phase !== 'answer' || won || answered || !prompt) return;
+    sound.unlock();
     const value = prompt.options[idx];
     if (value !== prompt.correct) {
-      chosen = idx; // silent wobble, stays until correct
-      later(() => (chosen = -1), 320);
+      chosen = idx; // silent wobble, no penalty and no advance
+      later(() => {
+        if (chosen === idx) chosen = -1;
+      }, 320);
       return;
     }
+
     answered = true;
-    playPop();
     solved += 1;
+    sound.berry();
     if (solved >= config.goal) {
       won = true;
+      // Let the berry plop land before the basket chime; the win card itself
+      // is silent so the fill is the one positive audio beat.
+      later(() => sound.fill(), 260);
     } else {
-      later(nextPrompt, 400);
+      later(nextPrompt, 480);
     }
   }
 
@@ -84,9 +115,11 @@
 
   function resetRound() {
     clearTimers();
+    sound.stop();
     solved = 0;
     won = false;
     chosen = -1;
+    answered = false;
     prompt = null;
     phase = 'ready';
     nextPrompt();
@@ -109,112 +142,131 @@
       document.removeEventListener('visibilitychange', restartFlashIfHidden);
       clearTimers();
       stopTrainerMusic();
+      sound.dispose();
     };
   });
 </script>
 
 <GameShell accent="#FDBA74">
-  {#snippet hudLeft()}
-    <HudPill icon="🔢" label={`${solved}/${config.goal}`} />
-  {/snippet}
+  <div
+    class="picnic"
+    class:calm={reduced}
+    data-testid="board"
+    data-level={level}
+    data-goal={config.goal}
+    data-flash-ms={config.flashMs}
+    data-theme={prompt?.theme.id ?? ''}
+  >
+    <PicnicCloth
+      {phase}
+      objects={prompt?.objects ?? []}
+      cells={prompt?.cells ?? []}
+      {reduced}
+      readyLabel={$_('getReady')}
+    />
 
-  <div class="board" data-testid="board">
-    <p class="question">{$_('howMany')}</p>
+    <div class="docks">
+      <div class="bear-dock">
+        <Bear ask={$_('howMany')} size={92} />
+      </div>
+      <div
+        class="basket-dock"
+        data-testid="basket"
+        data-count={solved}
+        data-goal={config.goal}
+        role="img"
+        aria-label={basketLabel}
+      >
+        <Basket filled={solved} goal={config.goal} {reduced} />
+      </div>
+    </div>
 
-    <div class="panel" class:visible={phase === 'flash'} data-testid="panel">
-      {#if phase === 'flash'}
-        {#each prompt.cells as cell, i}
-          <span class="dot" style:left="{cell.x}%" style:top="{cell.y}%">{prompt.emojis[i]}</span>
-        {/each}
-      {:else if phase === 'ready'}
-        <span class="get-ready">{$_('getReady')}</span>
+    <div class="answer-slot">
+      {#if phase === 'answer' && prompt}
+        <Pills
+          options={prompt.options}
+          theme={prompt.theme}
+          wrong={chosen}
+          correct={prompt.correct}
+          groupLabel={$_('qcAnswers')}
+          onpick={answer}
+        />
       {/if}
     </div>
 
-    {#if phase === 'answer'}
-      <div class="pills" data-testid="pills">
-        {#each prompt.options as value, idx}
-          <button
-            class="pill"
-            class:wobbling={chosen === idx}
-            onclick={() => answer(idx)}
-            data-testid={value === prompt.correct ? 'correct-pill' : `wrong-pill-${idx}`}
-          >
-            {value}
-          </button>
-        {/each}
-      </div>
-    {/if}
+    <p class="sr-only" role="status" data-testid="prompt-status">{statusText}</p>
   </div>
-
-  {#if won}
-    <WinOverlay title={$_('wellDone')} subtitle={`🔢 ${solved}/${config.goal}`}>
-      {#snippet badge()}<img class="win-badge" src="/art/trainers/quick-count/win-badge.png" alt="" />{/snippet}
-      <LadderActions gameId="quick-count" {level} pitch={FANFARE_PITCH} />
-    </WinOverlay>
-  {/if}
 </GameShell>
 
+{#if won}
+  <div class="win-wrap" class:calm={reduced}>
+    <WinOverlay title={$_('qcBasketFull')} subtitle={$_('qcWinSub')} sound={false}>
+      {#snippet badge()}<img
+          class="win-badge"
+          src="/art/trainers/quick-count/win-badge.png"
+          alt=""
+        />{/snippet}
+      <LadderActions gameId="quick-count" {level} pitch={FANFARE_PITCH} />
+    </WinOverlay>
+  </div>
+{/if}
+
 <style>
-  .board {
+  .picnic {
+    position: relative;
     flex: 1;
+    min-height: 0;
     display: flex;
     flex-direction: column;
-    align-items: center;
-    gap: 18px;
-    padding: 12px 16px;
+    gap: clamp(4px, 1.2vh, 8px);
+    padding: 4px 10px calc(6px + var(--safe-bottom));
+    overflow: hidden;
+    background: #2a1f2a;
   }
-  .question {
-    font-size: 22px;
-    font-weight: 700;
-    color: var(--text-hi);
+  .docks {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 26px 6px 0;
+    flex-shrink: 0;
   }
-  .panel {
-    position: relative;
-    width: min(88vw, 420px);
-    height: min(52vh, 340px);
-    border-radius: 24px;
-    background: var(--panel-glass);
-    border: 1px solid var(--panel-border);
+  .bear-dock {
+    width: clamp(76px, 23vw, 100px);
+  }
+  .basket-dock {
+    width: clamp(58px, 17vw, 76px);
+  }
+  .answer-slot {
+    flex-shrink: 0;
+    min-height: clamp(84px, 14vh, 104px);
     display: flex;
     align-items: center;
     justify-content: center;
   }
-  .panel.visible {
-    border-color: var(--accent);
-    box-shadow: 0 0 24px var(--accent-glow);
+  .win-wrap {
+    display: contents;
   }
-  .dot {
+  /* A child who asked for reduced motion keeps the static celebration and the
+     win card, but not the falling confetti. */
+  .win-wrap.calm :global(.confetti-container) {
+    display: none;
+  }
+  .win-badge {
+    width: 64px;
+    height: 64px;
+    filter: drop-shadow(0 0 12px var(--glow-gold));
+  }
+  .sr-only {
     position: absolute;
-    font-size: 34px;
-    line-height: 1;
-    transform: translate(-50%, -50%);
-    animation: fxPop 0.25s ease-out;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    clip-path: inset(50%);
+    white-space: nowrap;
+    border: 0;
   }
-  .get-ready {
-    font-size: 20px;
-    color: var(--text-lo);
-    animation: floaty 1s ease-in-out infinite;
-  }
-  .pills {
-    display: flex;
-    gap: 16px;
-    padding-bottom: calc(12px + var(--safe-bottom));
-  }
-  .pill {
-    width: 76px;
-    height: 76px;
-    border-radius: 24px;
-    font-size: 32px;
-    font-weight: 700;
-    font-family: var(--font-display);
-    color: #062033;
-    background: var(--btn-gradient);
-    box-shadow: 0 4px 18px rgba(91, 194, 240, 0.5);
-    transition: transform 0.15s;
-  }
-  .pill:active { transform: scale(0.92); }
-  .pill.wobbling { animation: fxWobble 0.3s ease-in-out; }
-
-  .win-badge { width: 64px; height: 64px; filter: drop-shadow(0 0 12px var(--glow-gold)); }
 </style>

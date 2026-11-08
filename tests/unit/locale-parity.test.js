@@ -48,6 +48,10 @@ const NEW_KEYS = [
   'soccerZoneCentre',
   'soccerZoneRight',
   'qcBasketFull',
+  'qcAnswers',
+  'qcDots',
+  'qcBasket',
+  'qcWinSub',
   'spotFindChanged',
   'picture1',
   'picture2',
@@ -106,6 +110,14 @@ describe('locale parity', () => {
       expect(translations[code].ftJarFill, `${code}.ftJarFill`).toContain('{n}');
       expect(translations[code].ftJarFill, `${code}.ftJarFill`).toContain('{m}');
       expect(translations[code].ftRemaining, `${code}.ftRemaining`).toContain('{n}');
+    }
+  });
+
+  it('keeps the quick-count picnic placeholders in every locale', () => {
+    for (const code of LOCALES) {
+      expect(translations[code].qcDots, `${code}.qcDots`).toContain('{n}');
+      expect(translations[code].qcBasket, `${code}.qcBasket`).toContain('{n}');
+      expect(translations[code].qcBasket, `${code}.qcBasket`).toContain('{m}');
     }
   });
 
