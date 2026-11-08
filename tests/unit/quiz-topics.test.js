@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { LOCALES, TOPICS, itemsFor } from '$lib/quiz/topics.js';
+import { LOCALES, TOPICS, itemsFor } from '../../src/lib/quiz/topics.js';
 
 describe('quiz topic data', () => {
   it('exposes the seven topics with metadata', () => {

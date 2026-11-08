@@ -1,5 +1,5 @@
 import { describe, it, expect, afterEach, vi } from 'vitest';
-import { seedFromUrl, makeSeed } from '$lib/game/seed.js';
+import { seedFromUrl, makeSeed } from '../../src/lib/game/seed.js';
 
 function url(search = '') {
   return new URL(`http://localhost/games/example${search}`);

@@ -1,6 +1,6 @@
 <script>
   import { onMount } from 'svelte';
-  import { _ } from '$lib/stores/locale';
+  import { _ } from '#lib/stores/locale.js';
 
   /**
    * @type {{ onconfirm: () => void, oncancel: () => void }}

@@ -5,7 +5,7 @@ import {
   BUTTERFLY_GARDEN_LINES,
   BUTTERFLY_GARDEN_DOTS,
   BUTTERFLY_GARDEN_SMILES
-} from '$lib/paint/paper/butterflyGarden.js';
+} from '../../src/lib/paint/paper/butterflyGarden.js';
 
 const EXPECTED_IDS = [
   'sky',

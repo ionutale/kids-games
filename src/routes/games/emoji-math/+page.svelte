@@ -1,13 +1,13 @@
 <script>
   import { onMount } from 'svelte';
-  import { _ } from '$lib/stores/locale';
-  import { settings } from '$lib/stores/settings';
-  import GameShell from '$lib/components/ui/GameShell.svelte';
-  import '$lib/trainers/fx.css';
-  import HudPill from '$lib/components/ui/HudPill.svelte';
-  import Confetti from '$lib/components/Confetti.svelte';
-  import { playMatch, playWin } from '$lib/sounds/audioManager.js';
-  import { makeQuestion } from '$lib/emoji-math/game.js';
+  import { _ } from '#lib/stores/locale.js';
+  import { settings } from '#lib/stores/settings.js';
+  import GameShell from '#lib/components/ui/GameShell.svelte';
+  import '#lib/trainers/fx.css';
+  import HudPill from '#lib/components/ui/HudPill.svelte';
+  import Confetti from '#lib/components/Confetti.svelte';
+  import { playMatch, playWin } from '#lib/sounds/audioManager.js';
+  import { makeQuestion } from '#lib/emoji-math/game.js';
 
   let question = $state(null);
   let chosen = $state(-1); // index of wrong pick (shake) / tapped side for compare

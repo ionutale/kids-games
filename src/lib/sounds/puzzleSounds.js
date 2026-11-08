@@ -1,7 +1,7 @@
 // Puzzle-specific sounds loaded from CC0 audio files (Freesound — see docs/free-assets.md)
 
 import { get } from 'svelte/store';
-import { settings } from '$lib/stores/settings.js';
+import { settings } from '#lib/stores/settings.js';
 
 const sounds = {};
 let loaded = false;

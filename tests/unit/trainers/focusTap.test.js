@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { levelConfig, tierFor, chooseSpawnItem, makeRoundState, nextSpawn } from '$lib/trainers/focusTap.js';
-import { categoryOfEmoji, lookalikePartner } from '$lib/trainers/emojiSets.js';
+import { levelConfig, tierFor, chooseSpawnItem, makeRoundState, nextSpawn } from '../../../src/lib/trainers/focusTap.js';
+import { categoryOfEmoji, lookalikePartner } from '../../../src/lib/trainers/emojiSets.js';
 
 describe('tierFor', () => {
   it('maps levels to sneaky tiers', () => {

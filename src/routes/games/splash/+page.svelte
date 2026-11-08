@@ -1,10 +1,10 @@
 <script>
   import { onMount, onDestroy } from 'svelte';
-  import { settings } from '$lib/stores/settings';
-  import { playSplashChirp } from '$lib/sounds/audioManager';
-  import GameShell from '$lib/components/ui/GameShell.svelte';
-  import DebugHud from '$lib/splash/DebugHud.svelte';
-  import { getSplashBudget, shouldSpawn, appendWithCap, filterExpired } from '$lib/splash/budget.js';
+  import { settings } from '#lib/stores/settings.js';
+  import { playSplashChirp } from '#lib/sounds/audioManager.js';
+  import GameShell from '#lib/components/ui/GameShell.svelte';
+  import DebugHud from '#lib/splash/DebugHud.svelte';
+  import { getSplashBudget, shouldSpawn, appendWithCap, filterExpired } from '#lib/splash/budget.js';
 
   const colors = ['#FF6B6B', '#4FC3F7', '#81C784', '#FFD54F', '#BA68C8', '#FF8A65', '#E57373', '#64B5F6'];
   const emojis = ['⭐', '🌸', '🦋', '💫', '🎈', '🌈', '✨', '❤️'];

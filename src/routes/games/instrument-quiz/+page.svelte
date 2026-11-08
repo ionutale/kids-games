@@ -1,5 +1,5 @@
 <script>
-  import QuizGame from '$lib/components/QuizGame.svelte';
+  import QuizGame from '#lib/components/QuizGame.svelte';
 </script>
 
 <QuizGame topic="instruments" gameId="instrument-quiz" />

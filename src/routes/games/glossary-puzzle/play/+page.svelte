@@ -1,12 +1,12 @@
 <script>
   import { get } from 'svelte/store';
-  import { page } from '$app/stores';
+  import { page } from '$app/state';
   import { goto } from '$app/navigation';
-  import PuzzleBoard from '$lib/glossary-puzzle/PuzzleBoard.svelte';
-  import { resolveImage, revokeVM } from '$lib/glossary-puzzle/images.js';
-  import { readSave, clearSave } from '$lib/glossary-puzzle/save.js';
-  import { _ } from '$lib/stores/locale';
-  import { MAX_LEVEL } from '$lib/ladder/progress.js';
+  import PuzzleBoard from '#lib/glossary-puzzle/PuzzleBoard.svelte';
+  import { resolveImage, revokeVM } from '#lib/glossary-puzzle/images.js';
+  import { readSave, clearSave } from '#lib/glossary-puzzle/save.js';
+  import { _ } from '#lib/stores/locale.js';
+  import { MAX_LEVEL } from '#lib/ladder/progress.js';
 
   // Same async-resolution gate as the ladder route: a `photo:<uuid>` needs an
   // IndexedDB read, so nothing mounts until the final image is known. Precedence
@@ -14,7 +14,7 @@
   let state = $state({ image: null, initialPlaced: null, level: 1, ready: false });
 
   $effect(() => {
-    const href = $page.url.href;
+    const href = page.url.href;
     let alive = true;
     (async () => {
       // Drop the previous board while the new URL resolves (see [level] route).
@@ -63,7 +63,7 @@
 </svelte:head>
 
 {#if state.ready && state.image}
-  {#key $page.url.href}
+  {#key page.url.href}
     <PuzzleBoard
       image={state.image}
       level={state.level}

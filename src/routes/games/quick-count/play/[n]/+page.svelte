@@ -1,17 +1,17 @@
 <script>
   import { onMount, untrack } from 'svelte';
-  import { _ } from '$lib/stores/locale';
-  import GameShell from '$lib/components/ui/GameShell.svelte';
-  import HudPill from '$lib/components/ui/HudPill.svelte';
-  import WinOverlay from '$lib/components/ui/WinOverlay.svelte';
-  import LadderActions from '$lib/ladder/LadderActions.svelte';
-  import '$lib/trainers/fx.css';
+  import { _ } from '#lib/stores/locale.js';
+  import GameShell from '#lib/components/ui/GameShell.svelte';
+  import HudPill from '#lib/components/ui/HudPill.svelte';
+  import WinOverlay from '#lib/components/ui/WinOverlay.svelte';
+  import LadderActions from '#lib/ladder/LadderActions.svelte';
+  import '#lib/trainers/fx.css';
 
-  import { makePrompt } from '$lib/trainers/quickCount.js';
-  import { levelConfig } from '$lib/trainers/quickCount.js';
-  import { startTrainerMusic, stopTrainerMusic } from '$lib/sounds/trainerMusic.js';
-  import { playPop } from '$lib/sounds/audioManager.js';
-  import { playLevelTick, playFlashWhoosh, playReadyTick } from '$lib/sounds/trainerSounds.js';
+  import { makePrompt } from '#lib/trainers/quickCount.js';
+  import { levelConfig } from '#lib/trainers/quickCount.js';
+  import { startTrainerMusic, stopTrainerMusic } from '#lib/sounds/trainerMusic.js';
+  import { playPop } from '#lib/sounds/audioManager.js';
+  import { playLevelTick, playFlashWhoosh, playReadyTick } from '#lib/sounds/trainerSounds.js';
 
   let { data } = $props();
   const level = $derived(data.level);

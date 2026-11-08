@@ -6,8 +6,8 @@ import {
   emptyDocument,
   loadPaint,
   savePaint
-} from '$lib/paint/save.js';
-import { MAX_STROKE_POINTS } from '$lib/paint/geometry.js';
+} from '../../src/lib/paint/save.js';
+import { MAX_STROKE_POINTS } from '../../src/lib/paint/geometry.js';
 
 function memoryStorage() {
   const data = new Map();

@@ -1,19 +1,19 @@
 <script>
   import { get } from 'svelte/store';
   import { untrack } from 'svelte';
-  import { _, locale } from '$lib/stores/locale';
-  import { playTap, playMatch } from '$lib/sounds/audioManager';
-  import Confetti from '$lib/components/Confetti.svelte';
-  import GameShell from '$lib/components/ui/GameShell.svelte';
-  import WinOverlay from '$lib/components/ui/WinOverlay.svelte';
-  import LadderBar from '$lib/ladder/LadderBar.svelte';
-  import LadderActions from '$lib/ladder/LadderActions.svelte';
-  import { TOPICS, itemsFor } from '$lib/quiz/topics.js';
-  import { buildOptions } from '$lib/quiz/round.js';
-  import { quizLevelConfig, buildQueue } from '$lib/quiz/levels.js';
-  import { speak, defaultQuizMode } from '$lib/quiz/audio.js';
-  import { settings } from '$lib/stores/settings';
-  import { loadLevel, saveLevel, loadMastered, saveMastered, MAX_LEVEL } from '$lib/ladder/progress.js';
+  import { _, locale } from '#lib/stores/locale.js';
+  import { playTap, playMatch } from '#lib/sounds/audioManager.js';
+  import Confetti from '#lib/components/Confetti.svelte';
+  import GameShell from '#lib/components/ui/GameShell.svelte';
+  import WinOverlay from '#lib/components/ui/WinOverlay.svelte';
+  import LadderBar from '#lib/ladder/LadderBar.svelte';
+  import LadderActions from '#lib/ladder/LadderActions.svelte';
+  import { TOPICS, itemsFor } from '#lib/quiz/topics.js';
+  import { buildOptions } from '#lib/quiz/round.js';
+  import { quizLevelConfig, buildQueue } from '#lib/quiz/levels.js';
+  import { speak, defaultQuizMode } from '#lib/quiz/audio.js';
+  import { settings } from '#lib/stores/settings.js';
+  import { loadLevel, saveLevel, loadMastered, saveMastered, MAX_LEVEL } from '#lib/ladder/progress.js';
 
   let { topic = '', gameId = '' } = $props();
 

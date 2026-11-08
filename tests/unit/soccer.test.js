@@ -8,7 +8,7 @@ import {
   shotResult,
   starsFor,
   targetScoreFor
-} from '$lib/soccer/engine.js';
+} from '../../src/lib/soccer/engine.js';
 
 describe('Soccer levels', () => {
   it('asks for more goals as the level rises, capped at 8', () => {

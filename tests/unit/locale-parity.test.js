@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { translations } from '$lib/stores/locale.js';
+import { translations } from '../../src/lib/stores/locale.js';
 
 const LOCALES = ['en', 'it', 'ro', 'de', 'fr', 'zh'];
 

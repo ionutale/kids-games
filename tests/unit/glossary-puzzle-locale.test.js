@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { get } from 'svelte/store';
-import { locale, _ } from '$lib/stores/locale.js';
+import { locale, _ } from '../../src/lib/stores/locale.js';
 
 const LOCALES = ['en', 'it', 'ro', 'de', 'fr', 'zh'];
 

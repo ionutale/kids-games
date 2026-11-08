@@ -5,7 +5,7 @@ import {
   appendWithCap,
   filterExpired,
   estimatedLive
-} from '$lib/splash/budget.js';
+} from '../../src/lib/splash/budget.js';
 
 describe('Splash budget', () => {
   it('gives age 2 the half budget', () => {

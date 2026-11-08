@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { PUZZLE_IMAGES, getCategories, levelConfig } from '$lib/glossary-puzzle/images.js';
-import { generatePieces, piecePath, isWithinSnapZone, pickNudgeTarget } from '$lib/glossary-puzzle/pieces.js';
-import { buildSaveData, restorePlaced } from '$lib/glossary-puzzle/save.js';
-import { makeRng } from '$lib/trainers/rng.js';
+import { PUZZLE_IMAGES, getCategories, levelConfig } from '../../src/lib/glossary-puzzle/images.js';
+import { generatePieces, piecePath, isWithinSnapZone, pickNudgeTarget } from '../../src/lib/glossary-puzzle/pieces.js';
+import { buildSaveData, restorePlaced } from '../../src/lib/glossary-puzzle/save.js';
+import { makeRng } from '../../src/lib/trainers/rng.js';
 
 describe('Puzzle images', () => {
   it('has 27 images', () => expect(PUZZLE_IMAGES.length).toBe(27));

@@ -1,6 +1,6 @@
 <script>
   import { onMount, onDestroy } from 'svelte';
-  import { _ } from '$lib/stores/locale';
+  import { _ } from '#lib/stores/locale.js';
   import { listPhotos, addPhotoFromFile, deletePhoto } from './photos.js';
 
   let { onclose } = $props();

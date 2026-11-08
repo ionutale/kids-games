@@ -4,8 +4,8 @@ import {
   emptySheet,
   normalizeSheet,
   createPaintDocument
-} from '$lib/paint/document.js';
-import { MAX_STROKE_POINTS } from '$lib/paint/geometry.js';
+} from '../../src/lib/paint/document.js';
+import { MAX_STROKE_POINTS } from '../../src/lib/paint/geometry.js';
 
 const point = (x, y) => ({ x, y });
 

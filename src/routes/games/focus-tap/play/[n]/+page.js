@@ -1,4 +1,4 @@
-import { saveLevel, MAX_LEVEL } from '$lib/ladder/progress';
+import { saveLevel, MAX_LEVEL } from '#lib/ladder/progress.js';
 
 export function load({ params, url }) {
   // The ladder ends at MAX_LEVEL; deeper links clamp instead of persisting 11+.

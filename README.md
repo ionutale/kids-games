@@ -41,7 +41,7 @@ pnpm dev
 ## Stack
 
 - **Framework:** Svelte 5 + SvelteKit
-- **PWA:** vite-plugin-pwa (offline support)
+- **PWA:** @vite-pwa/sveltekit (offline support)
 - **Audio:** Web Audio API (synth sounds)
 - **Testing:** Vitest + Playwright
 - **Deploy:** Vercel (static export)

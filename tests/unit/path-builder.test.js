@@ -6,8 +6,8 @@ import {
   bfs,
   hintCell,
   neighbors
-} from '$lib/path-builder/engine.js';
-import { makeRng } from '$lib/trainers/rng.js';
+} from '../../src/lib/path-builder/engine.js';
+import { makeRng } from '../../src/lib/trainers/rng.js';
 
 describe('level spec', () => {
   it('grows grid and obstacles with level, capped at 6×6 / 8', () => {

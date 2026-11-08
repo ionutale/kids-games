@@ -20,7 +20,7 @@ describe('settings store', () => {
   });
 
   it('creates with default values when no stored data exists', async () => {
-    const { settings } = await import('$lib/stores/settings');
+    const { settings } = await import('../../src/lib/stores/settings.js');
     const unsub = settings.subscribe(v => {
       expect(v.soundEnabled).toBe(true);
       expect(v.ageLevel).toBe(3);
@@ -32,7 +32,7 @@ describe('settings store', () => {
 
   it('restores values from localStorage', async () => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify({ soundEnabled: false, ageLevel: 5, firstVisit: false, quizMode: 'listen' }));
-    const { settings } = await import('$lib/stores/settings');
+    const { settings } = await import('../../src/lib/stores/settings.js');
     const unsub = settings.subscribe(v => {
       expect(v.soundEnabled).toBe(false);
       expect(v.ageLevel).toBe(5);
@@ -43,7 +43,7 @@ describe('settings store', () => {
   });
 
   it('toggleSound flips the boolean and persists', async () => {
-    const { settings } = await import('$lib/stores/settings');
+    const { settings } = await import('../../src/lib/stores/settings.js');
     settings.toggleSound();
     const stored = JSON.parse(localStorage.getItem(STORAGE_KEY));
     expect(stored.soundEnabled).toBe(false);
@@ -52,7 +52,7 @@ describe('settings store', () => {
   });
 
   it('setAge updates age level and persists', async () => {
-    const { settings } = await import('$lib/stores/settings');
+    const { settings } = await import('../../src/lib/stores/settings.js');
     settings.setAge(2);
     expect(JSON.parse(localStorage.getItem(STORAGE_KEY)).ageLevel).toBe(2);
     settings.setAge(5);
@@ -60,13 +60,13 @@ describe('settings store', () => {
   });
 
   it('markVisited sets firstVisit to false', async () => {
-    const { settings } = await import('$lib/stores/settings');
+    const { settings } = await import('../../src/lib/stores/settings.js');
     settings.markVisited();
     expect(JSON.parse(localStorage.getItem(STORAGE_KEY)).firstVisit).toBe(false);
   });
 
   it('setQuizMode persists the chosen quiz mode', async () => {
-    const { settings } = await import('$lib/stores/settings');
+    const { settings } = await import('../../src/lib/stores/settings.js');
     settings.setQuizMode('listen');
     expect(JSON.parse(localStorage.getItem(STORAGE_KEY)).quizMode).toBe('listen');
     settings.setQuizMode('read');

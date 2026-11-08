@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { levelConfig, makePrompt } from '$lib/trainers/quickCount.js';
+import { levelConfig, makePrompt } from '../../../src/lib/trainers/quickCount.js';
 
 describe('levelConfig', () => {
   it('matches spec formulas at L1', () => {

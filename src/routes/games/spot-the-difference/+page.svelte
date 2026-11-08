@@ -1,16 +1,16 @@
 <script>
   import { onMount } from 'svelte';
   import { page } from '$app/state';
-  import { seedFromUrl } from '$lib/game/seed.js';
-  import { _ } from '$lib/stores/locale';
-  import { settings } from '$lib/stores/settings';
-  import GameShell from '$lib/components/ui/GameShell.svelte';
-  import '$lib/trainers/fx.css';
-  import HudPill from '$lib/components/ui/HudPill.svelte';
-  import BigButton from '$lib/components/ui/BigButton.svelte';
-  import WinOverlay from '$lib/components/ui/WinOverlay.svelte';
-  import { playTap, playMatch, playWin } from '$lib/sounds/audioManager.js';
-  import { makePuzzle, isDifference } from '$lib/spot-difference/game.js';
+  import { seedFromUrl } from '#lib/game/seed.js';
+  import { _ } from '#lib/stores/locale.js';
+  import { settings } from '#lib/stores/settings.js';
+  import GameShell from '#lib/components/ui/GameShell.svelte';
+  import '#lib/trainers/fx.css';
+  import HudPill from '#lib/components/ui/HudPill.svelte';
+  import BigButton from '#lib/components/ui/BigButton.svelte';
+  import WinOverlay from '#lib/components/ui/WinOverlay.svelte';
+  import { playTap, playMatch, playWin } from '#lib/sounds/audioManager.js';
+  import { makePuzzle, isDifference } from '#lib/spot-difference/game.js';
 
   let puzzle = $state(null);
   let found = $state([]);

@@ -43,7 +43,7 @@ afterEach(() => {
 
 describe('audioManager', () => {
   it('exports all expected functions', async () => {
-    const mod = await import('$lib/sounds/audioManager');
+    const mod = await import('../../src/lib/sounds/audioManager.js');
     expect(typeof mod.playTap).toBe('function');
     expect(typeof mod.playPop).toBe('function');
     expect(typeof mod.playMatch).toBe('function');
@@ -56,12 +56,12 @@ describe('audioManager', () => {
   });
 
   it('vibrate does not throw when navigator.vibrate is absent', async () => {
-    const mod = await import('$lib/sounds/audioManager');
+    const mod = await import('../../src/lib/sounds/audioManager.js');
     expect(() => mod.vibrate(30)).not.toThrow();
   });
 
   it('tap/error/match/win/splash/goal do not throw when called', async () => {
-    const mod = await import('$lib/sounds/audioManager');
+    const mod = await import('../../src/lib/sounds/audioManager.js');
     expect(() => mod.playTap()).not.toThrow();
     expect(() => mod.playPop()).not.toThrow();
     expect(() => mod.playMatch()).not.toThrow();
@@ -78,7 +78,7 @@ describe('audioManager', () => {
     vi.spyOn(performance, 'now').mockImplementation(() => now);
     vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
 
-    const mod = await import('$lib/sounds/audioManager');
+    const mod = await import('../../src/lib/sounds/audioManager.js');
 
     mod.playSplashChirp();
     expect(ctx.createOscillator).toHaveBeenCalledTimes(1);
@@ -96,11 +96,11 @@ describe('audioManager', () => {
 
   it('synthesized sounds stay silent while muted and play after unmute', async () => {
     const ctx = stubAudioContext();
-    const { settings } = await import('$lib/stores/settings');
+    const { settings } = await import('../../src/lib/stores/settings.js');
     const { get } = await import('svelte/store');
     if (get(settings).soundEnabled) settings.toggleSound(); // mute
 
-    const mod = await import('$lib/sounds/audioManager');
+    const mod = await import('../../src/lib/sounds/audioManager.js');
     mod.playTap();
     expect(ctx.createOscillator).not.toHaveBeenCalled();
 

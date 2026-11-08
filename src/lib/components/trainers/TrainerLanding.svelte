@@ -1,11 +1,11 @@
 <script>
   import { onMount } from 'svelte';
-  import { _ } from '$lib/stores/locale';
-  import GameShell from '$lib/components/ui/GameShell.svelte';
-  import LadderBar from '$lib/ladder/LadderBar.svelte';
-  import BigButton from '$lib/components/ui/BigButton.svelte';
-  import { loadLevel, loadMastered } from '$lib/ladder/progress';
-  import { startTrainerMusic, stopTrainerMusic } from '$lib/sounds/trainerMusic';
+  import { _ } from '#lib/stores/locale.js';
+  import GameShell from '#lib/components/ui/GameShell.svelte';
+  import LadderBar from '#lib/ladder/LadderBar.svelte';
+  import BigButton from '#lib/components/ui/BigButton.svelte';
+  import { loadLevel, loadMastered } from '#lib/ladder/progress.js';
+  import { startTrainerMusic, stopTrainerMusic } from '#lib/sounds/trainerMusic.js';
 
   let { trainerId = '', titleKey = '', tagline = '', hero = '', accent = '#7FD8FF', heroArt = '', music = true } = $props();
 

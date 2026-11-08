@@ -3,7 +3,7 @@
 
   /**
    * @type {{ type?: 'star' | 'heart' | 'butterfly' | 'flower', size?: number }}
-   * `type` must match the stamp ids in `$lib/paint/tools.js`.
+   * `type` must match the stamp ids in `#lib/paint/tools.js`.
    * The paper shadow belongs to the UI, never inside this SVG.
    */
   let { type = 'star', size = 56 } = $props();

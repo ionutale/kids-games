@@ -1,5 +1,5 @@
 <script>
-  import GrammarGame from '$lib/components/GrammarGame.svelte';
+  import GrammarGame from '#lib/components/GrammarGame.svelte';
 
   let { data } = $props();
 </script>

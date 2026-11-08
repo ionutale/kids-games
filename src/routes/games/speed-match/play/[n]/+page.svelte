@@ -1,15 +1,15 @@
 <script>
   import { onMount, tick, untrack } from 'svelte';
-  import { _ } from '$lib/stores/locale';
-  import GameShell from '$lib/components/ui/GameShell.svelte';
-  import HudPill from '$lib/components/ui/HudPill.svelte';
-  import WinOverlay from '$lib/components/ui/WinOverlay.svelte';
-  import LadderActions from '$lib/ladder/LadderActions.svelte';
-  import '$lib/trainers/fx.css';
+  import { _ } from '#lib/stores/locale.js';
+  import GameShell from '#lib/components/ui/GameShell.svelte';
+  import HudPill from '#lib/components/ui/HudPill.svelte';
+  import WinOverlay from '#lib/components/ui/WinOverlay.svelte';
+  import LadderActions from '#lib/ladder/LadderActions.svelte';
+  import '#lib/trainers/fx.css';
 
-  import { makeDeck, levelConfig } from '$lib/trainers/speedMatch.js';
-  import { startTrainerMusic, stopTrainerMusic } from '$lib/sounds/trainerMusic.js';
-  import { playAdvancePop } from '$lib/sounds/trainerSounds.js';
+  import { makeDeck, levelConfig } from '#lib/trainers/speedMatch.js';
+  import { startTrainerMusic, stopTrainerMusic } from '#lib/sounds/trainerMusic.js';
+  import { playAdvancePop } from '#lib/sounds/trainerSounds.js';
 
   let { data } = $props();
   const level = $derived(data.level);

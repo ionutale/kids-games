@@ -5,8 +5,8 @@ import {
   PhotoError,
   fitDims,
   canAdd,
-} from '$lib/glossary-puzzle/photos.js';
-import { PUZZLE_IMAGES, buildImageList, resolveImage } from '$lib/glossary-puzzle/images.js';
+} from '../../src/lib/glossary-puzzle/photos.js';
+import { PUZZLE_IMAGES, buildImageList, resolveImage } from '../../src/lib/glossary-puzzle/images.js';
 
 // Pure helpers only: fitDims / canAdd / PhotoError and resolveImage's builtin
 // path. The IndexedDB pipeline (add/list/get/delete/stats) is exercised by e2e

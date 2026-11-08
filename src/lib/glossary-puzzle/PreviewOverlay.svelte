@@ -1,8 +1,8 @@
 <script>
   import { onMount } from 'svelte';
-  import { _ } from '$lib/stores/locale';
-  import BigButton from '$lib/components/ui/BigButton.svelte';
-  import { loadPuzzleSounds, playPickup } from '$lib/sounds/puzzleSounds.js';
+  import { _ } from '#lib/stores/locale.js';
+  import BigButton from '#lib/components/ui/BigButton.svelte';
+  import { loadPuzzleSounds, playPickup } from '#lib/sounds/puzzleSounds.js';
   import { levelConfig } from './images.js';
 
   let { image, level, onclose } = $props();

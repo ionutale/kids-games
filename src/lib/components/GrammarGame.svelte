@@ -1,15 +1,15 @@
 <script>
   import { untrack } from 'svelte';
-  import { _ } from '$lib/stores/locale';
-  import GameShell from '$lib/components/ui/GameShell.svelte';
-  import HudPill from '$lib/components/ui/HudPill.svelte';
-  import WinOverlay from '$lib/components/ui/WinOverlay.svelte';
-  import LadderActions from '$lib/ladder/LadderActions.svelte';
-  import Confetti from '$lib/components/Confetti.svelte';
-  import '$lib/trainers/fx.css';
-  import { exercisesFor, roundGoal, prepareExercise } from '$lib/grammar/italian.js';
-  import { makeRng, shuffle } from '$lib/trainers/rng.js';
-  import { playMatch } from '$lib/sounds/audioManager.js';
+  import { _ } from '#lib/stores/locale.js';
+  import GameShell from '#lib/components/ui/GameShell.svelte';
+  import HudPill from '#lib/components/ui/HudPill.svelte';
+  import WinOverlay from '#lib/components/ui/WinOverlay.svelte';
+  import LadderActions from '#lib/ladder/LadderActions.svelte';
+  import Confetti from '#lib/components/Confetti.svelte';
+  import '#lib/trainers/fx.css';
+  import { exercisesFor, roundGoal, prepareExercise } from '#lib/grammar/italian.js';
+  import { makeRng, shuffle } from '#lib/trainers/rng.js';
+  import { playMatch } from '#lib/sounds/audioManager.js';
 
   let { level = 1, seed = 0 } = $props();
   const FANFARE_PITCH = 1.05;

@@ -4,9 +4,9 @@
   // Defaults navigate the /games/{id}/play/{n} routes; games with local level
   // state pass onnext/onreplay callbacks instead.
   import { goto } from '$app/navigation';
-  import { _ } from '$lib/stores/locale';
-  import { MAX_LEVEL, saveMastered } from '$lib/ladder/progress.js';
-  import { fanfare } from '$lib/sounds/trainerSounds.js';
+  import { _ } from '#lib/stores/locale.js';
+  import { MAX_LEVEL, saveMastered } from '#lib/ladder/progress.js';
+  import { fanfare } from '#lib/sounds/trainerSounds.js';
 
   let {
     gameId,
