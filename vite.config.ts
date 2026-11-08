@@ -1,3 +1,4 @@
+/// <reference types="vitest/config" />
 import adapter from '@sveltejs/adapter-static';
 import { defineConfig } from 'vite';
 import { withPwa } from '@vite-pwa/sveltekit';
@@ -62,5 +63,9 @@ export default defineConfig({
         }
       }
     )
-  ]
+  ],
+  test: {
+    environment: 'jsdom',
+    setupFiles: ['./tests/setup.js']
+  }
 });
