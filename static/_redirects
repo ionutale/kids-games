@@ -1,0 +1,2 @@
+# Cloudflare Pages SPA fallback: every unknown deep link boots the app shell.
+/* /index.html 200
