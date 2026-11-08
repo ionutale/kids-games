@@ -13,6 +13,13 @@ import { MAX_LEVEL } from '#lib/ladder/progress.js';
 export const SHOTS = 5;
 export const BALL_START = { x: 50, y: 82 };
 
+// A press with no real travel is a tap, not a swipe: it never spends a shot.
+export const TAP_SLOP_PX = 8;
+// Pointer travel that maps to the fastest flight. Length changes the flight
+// time only; the outcome is always keeper-at-release plus impact point.
+export const SWIPE_MIN_PX = 8;
+export const SWIPE_MAX_PX = 150;
+
 // The ball's radius in field percentage points, used for the save band.
 const BALL_RADIUS = 1.1;
 // The mouth is shallow: a low horizontal band high in the field.
@@ -40,6 +47,19 @@ export function starsForGoals(goals) {
   if (n >= 4) return 2;
   if (n >= 3) return 1;
   return 0;
+}
+
+/**
+ * Flight time in milliseconds from the pointer travel. A longer swipe is a
+ * faster shot; it never changes whether the shot scores or is saved.
+ */
+export function flightDuration(travelPx, { calm = false } = {}) {
+  const travel = Math.max(SWIPE_MIN_PX, Number(travelPx) || 0);
+  const power = Math.min(
+    1,
+    (travel - SWIPE_MIN_PX) / (SWIPE_MAX_PX - SWIPE_MIN_PX)
+  );
+  return Math.round(calm ? 360 - 100 * power : 720 - 340 * power);
 }
 
 /** The wide, shallow goal mouth in field percentages, level 1 → level 10. */

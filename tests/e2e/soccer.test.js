@@ -50,6 +50,8 @@ async function shootOpen(page) {
 
 async function shootAtKeeper(page) {
   await swipeTo(page, async () => ({ x: await keeperX(page), y: 10 }));
+  // The dive now starts at release, before the ball reaches the keeper.
+  await expect(page.locator('.keeper.diving')).toHaveCount(1);
   await expect(page.locator(CALL)).toContainText('SAVED', { timeout: 4000 });
   await expect(page.locator('.keeper.diving')).toHaveCount(1);
   await expect(page.locator(CALL)).toHaveCount(0, { timeout: 4000 });
@@ -121,6 +123,44 @@ test.describe('Soccer — the Night Penalty', () => {
     await expect(page.locator('.keeper.diving')).toHaveCount(0);
     await shootWide(page);
     await expect(page.getByTestId('soccer-root')).toHaveAttribute('data-shots', '3');
+  });
+
+  test('a stationary tap does not spend a shot', async ({ page }) => {
+    await page.goto('/games/soccer');
+    const box = await fieldBox(page);
+    // A tap on the pitch, far from the ball: no pointer travel, no shot.
+    await page.touchscreen.tap(box.x + box.width * 0.5, box.y + box.height * 0.45);
+    await page.waitForTimeout(350);
+    const root = page.getByTestId('soccer-root');
+    await expect(root).toHaveAttribute('data-shots', '5');
+    await expect(root).toHaveAttribute('data-goals', '0');
+    await expect(page.locator(CALL)).toHaveCount(0);
+    await expect(page.locator('.reticle')).toHaveCount(0);
+  });
+
+  test('a fast second swipe during the outcome window is ignored', async ({ page }) => {
+    await page.goto('/games/soccer');
+    const root = page.getByTestId('soccer-root');
+
+    await swipeTo(page, async () => openAim(page));
+    await expect(page.locator(CALL)).toContainText('GOAL', { timeout: 4000 });
+    await expect(root).toHaveAttribute('data-shots', '4');
+    await expect(root).toHaveAttribute('data-goals', '1');
+
+    // The keeper is still frozen in the outcome window: a second swipe must
+    // not fire at that frozen keeper.
+    await swipeTo(page, async () => openAim(page));
+    await page.waitForTimeout(150);
+    await expect(root).toHaveAttribute('data-shots', '4');
+    await expect(root).toHaveAttribute('data-goals', '1');
+    await expect(page.locator(CALL)).toContainText('GOAL');
+
+    // Once the window closes, the next real swipe counts again.
+    await expect(page.locator(CALL)).toHaveCount(0, { timeout: 4000 });
+    await swipeTo(page, async () => openAim(page));
+    await expect(page.locator(CALL)).toContainText('GOAL', { timeout: 4000 });
+    await expect(root).toHaveAttribute('data-shots', '3');
+    await expect(root).toHaveAttribute('data-goals', '2');
   });
 
   test('all five shots are played even after the target is reached', async ({ page }) => {
@@ -278,7 +318,16 @@ test.describe('Soccer — the Night Penalty', () => {
     const expectedY = box.y + (aim.y / 100) * box.height;
     expect(Math.abs(reticle.x + reticle.width / 2 - expectedX)).toBeLessThan(6);
     expect(Math.abs(reticle.y + reticle.height / 2 - expectedY)).toBeLessThan(6);
+    await expect(page.getByTestId('soccer-aim')).toContainText('On target');
     await expect(page.getByTestId('soccer-aim')).toContainText('Aim:');
+
+    // A wide drag is announced as off target, then the open side is on target.
+    await page.mouse.move(box.x + box.width * 0.04, box.y + box.height * 0.1, { steps: 3 });
+    await expect(page.getByTestId('soccer-aim')).toContainText('Off target');
+    await page.mouse.move(box.x + (aim.x / 100) * box.width, box.y + (aim.y / 100) * box.height, {
+      steps: 3
+    });
+    await expect(page.getByTestId('soccer-aim')).toContainText('On target');
     await page.mouse.up();
   });
 
@@ -370,6 +419,38 @@ test.describe('Soccer — the Night Penalty', () => {
       return seen;
     });
     expect(spun).toBe(true);
+  });
+
+  test('a win after a fifth-shot miss gets the positive stadium cheer', async ({ page }) => {
+    const errors = [];
+    page.on('pageerror', (error) => errors.push(error.message));
+    await page.addInitScript(() => {
+      window.__tones = 0;
+      const Ctx = window.AudioContext || window.webkitAudioContext;
+      if (!Ctx) return;
+      const create = Ctx.prototype.createOscillator;
+      Ctx.prototype.createOscillator = function (...args) {
+        window.__tones += 1;
+        return create.apply(this, args);
+      };
+    });
+    await page.goto('/games/soccer');
+    await shootOpen(page);
+    await shootOpen(page);
+    await shootOpen(page);
+    await shootWide(page);
+
+    // The fifth shot is a miss but the target was already reached.
+    await swipeTo(page, async () => ({ x: 4, y: 10 }));
+    await expect(page.locator(CALL)).toContainText('MISS', { timeout: 4000 });
+    const atMiss = await page.evaluate(() => window.__tones);
+    await expect(page.getByTestId('soccer-win')).toBeVisible({ timeout: 5000 });
+    const atWin = await page.evaluate(() => window.__tones);
+
+    // The miss itself is a noise-only whoosh; the only new tones belong to the
+    // positive stadium cheer that opens the win card.
+    expect(atWin).toBeGreaterThan(atMiss);
+    expect(errors).toEqual([]);
   });
 
   test('the sound toggle mutes the stadium cues with no errors', async ({ page }) => {

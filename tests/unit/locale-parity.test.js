@@ -42,6 +42,8 @@ const NEW_KEYS = [
   'soccerGoodTrySub',
   'soccerWinSub',
   'soccerAimAt',
+  'soccerOnTarget',
+  'soccerOffTarget',
   'soccerZoneLeft',
   'soccerZoneCentre',
   'soccerZoneRight',

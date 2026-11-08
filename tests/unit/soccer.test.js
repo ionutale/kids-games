@@ -2,7 +2,11 @@ import { beforeEach, describe, it, expect } from 'vitest';
 import {
   BALL_START,
   SHOTS,
+  SWIPE_MAX_PX,
+  SWIPE_MIN_PX,
+  TAP_SLOP_PX,
   controlPoint,
+  flightDuration,
   goalBounds,
   impactPoint,
   keeperCenter,
@@ -202,6 +206,42 @@ describe('Soccer — one shot', () => {
     const away = keeperCenter(level, 0);
     expect(shotResult(BALL_START, aim, level, away)).toBe('goal');
     expect(shotResult(BALL_START, aim, level, 62)).toBe('save');
+  });
+});
+
+describe('Soccer — the swipe sets flight time only', () => {
+  it('makes a longer swipe a faster flight, monotonically', () => {
+    expect(flightDuration(SWIPE_MIN_PX)).toBeGreaterThan(flightDuration(SWIPE_MAX_PX));
+    let previous = Infinity;
+    for (const travel of [8, 20, 40, 60, 80, 100, 120, 150, 300]) {
+      const duration = flightDuration(travel);
+      expect(duration).toBeLessThanOrEqual(previous);
+      previous = duration;
+    }
+    expect(flightDuration(8)).toBeGreaterThan(flightDuration(150));
+  });
+
+  it('clamps tiny, missing and huge travels and shortens calm flights', () => {
+    expect(flightDuration(0)).toBe(flightDuration(SWIPE_MIN_PX));
+    expect(flightDuration(-20)).toBe(flightDuration(SWIPE_MIN_PX));
+    expect(flightDuration(undefined)).toBe(flightDuration(SWIPE_MIN_PX));
+    expect(flightDuration(9999)).toBe(flightDuration(SWIPE_MAX_PX));
+    for (const travel of [8, 60, 150]) {
+      expect(flightDuration(travel, { calm: true })).toBeLessThan(flightDuration(travel));
+    }
+    expect(TAP_SLOP_PX).toBeGreaterThan(0);
+    expect(SWIPE_MAX_PX).toBeGreaterThan(SWIPE_MIN_PX);
+  });
+
+  it('never touches the result: the same aim and keeper still score', () => {
+    const level = 5;
+    const keeperX = keeperCenter(level, 2.3);
+    const aim = openAim(level, keeperX);
+    expect(shotResult(BALL_START, aim, level, keeperX)).toBe('goal');
+    // A short and a long swipe through the mouth both score the open side;
+    // only their flightDuration differs.
+    expect(shotResult(BALL_START, { x: aim.x, y: -40 }, level, keeperX)).toBe('goal');
+    expect(flightDuration(10)).not.toBe(flightDuration(140));
   });
 });
 

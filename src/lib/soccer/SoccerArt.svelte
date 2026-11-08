@@ -42,19 +42,10 @@
     <path d="M32 40v12" stroke="#C98A5E" stroke-width="12" />
     <circle cx="16" cy="42" r="8" fill={gold} />
     <circle cx="48" cy="42" r="8" fill={gold} />
-  {:else if id === 'glove'}
-    <path d="M20 54V28a6 6 0 0 1 12 0v10h4V22a6 6 0 0 1 12 0v20h4v-6a5 5 0 0 1 10 0v14c0 8-6 12-14 12H34c-8 0-12-4-14-8z" fill={gold} />
-    <path d="M22 40h22" stroke="#C99A2E" stroke-width="2" />
   {:else if id === 'star'}
     <path d="M32 6 39.5 24 59 25.5 44 38.5 48.5 57.5 32 47 15.5 57.5 20 38.5 5 25.5 24.5 24z" fill={gold} stroke="#C99A2E" stroke-width="1.6" />
   {:else if id === 'star-outline'}
     <path d="M32 6 39.5 24 59 25.5 44 38.5 48.5 57.5 32 47 15.5 57.5 20 38.5 5 25.5 24.5 24z" fill="none" stroke="#8C7CA6" stroke-width="2.4" />
-  {:else if id === 'bear-paw'}
-    <ellipse cx="32" cy="40" rx="14" ry="12" fill="#C98A5E" />
-    <circle cx="18" cy="24" r="7" fill="#C98A5E" />
-    <circle cx="30" cy="18" r="7" fill="#C98A5E" />
-    <circle cx="42" cy="18" r="7" fill="#C98A5E" />
-    <circle cx="52" cy="26" r="7" fill="#C98A5E" />
   {:else}
     <circle cx="32" cy="32" r="18" fill="#C9B79C" />
   {/if}

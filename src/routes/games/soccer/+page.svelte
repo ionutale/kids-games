@@ -25,7 +25,9 @@
   import {
     BALL_START,
     SHOTS,
+    TAP_SLOP_PX,
     controlPoint,
+    flightDuration,
     goalBounds,
     impactPoint,
     keeperCenter,
@@ -67,6 +69,8 @@
 
   let fieldRect = null;
   let activePointer = null;
+  let pressClient = null;
+  let lastClient = null;
   let keeperHold = false;
   let keeperClock = KEEPER_PHASE;
   let lastKeeperNow = 0;
@@ -105,7 +109,8 @@
         : aim.x > bounds.x1 - third
           ? $_('soccerZoneRight')
           : $_('soccerZoneCentre');
-    return $_('soccerAimAt', { zone });
+    const state = onTarget ? $_('soccerOnTarget') : $_('soccerOffTarget');
+    return `${state}. ${$_('soccerAimAt', { zone })}`;
   });
   // The single live round status: progress, outcomes, win and Good Try.
   const statusText = $derived.by(() => {
@@ -145,6 +150,8 @@
     detachDrag();
     activePointer = null;
     fieldRect = null;
+    pressClient = null;
+    lastClient = null;
     isDragging = false;
     dragEnd = null;
   }
@@ -166,6 +173,8 @@
     detachDrag();
     activePointer = null;
     fieldRect = null;
+    pressClient = null;
+    lastClient = null;
     phase = 'playing';
     goals = 0;
     shotsLeft = SHOTS;
@@ -207,7 +216,7 @@
   }
 
   function down(event) {
-    if (phase !== 'playing' || ballMoving) return;
+    if (phase !== 'playing' || ballMoving || keeperHold) return;
     if (activePointer !== null) return;
     if (event.pointerType === 'mouse' && event.button !== 0) return;
     event.preventDefault?.();
@@ -219,6 +228,8 @@
       return;
     }
     activePointer = event.pointerId;
+    pressClient = { x: event.clientX, y: event.clientY };
+    lastClient = { ...pressClient };
     isDragging = true;
     dragEnd = p;
     window.addEventListener('pointermove', move);
@@ -229,15 +240,28 @@
   function move(event) {
     if (!isDragging || event.pointerId !== activePointer) return;
     if (event.cancelable) event.preventDefault?.();
+    if (Number.isFinite(event.clientX) && Number.isFinite(event.clientY)) {
+      lastClient = { x: event.clientX, y: event.clientY };
+    }
     dragEnd = toField(event);
   }
 
   function up(event) {
     if (event.pointerId !== undefined && event.pointerId !== activePointer) return;
     const end = toField(event) ?? dragEnd;
+    const release =
+      Number.isFinite(event.clientX) && Number.isFinite(event.clientY)
+        ? { x: event.clientX, y: event.clientY }
+        : lastClient;
+    const travel =
+      release && pressClient
+        ? Math.hypot(release.x - pressClient.x, release.y - pressClient.y)
+        : 0;
     detachDrag();
     activePointer = null;
     fieldRect = null;
+    pressClient = null;
+    lastClient = null;
     if (!isDragging || !end) {
       isDragging = false;
       dragEnd = null;
@@ -245,29 +269,31 @@
     }
     isDragging = false;
     dragEnd = null;
+    // A stationary tap is not a shot: only real pointer travel fires.
+    if (travel < TAP_SLOP_PX) return;
     if (Math.hypot(end.x - BALL_START.x, end.y - BALL_START.y) < 3) return;
-    shoot(end);
+    shoot(end, travel);
   }
 
-  function shoot(end) {
-    if (phase !== 'playing' || shotsLeft <= 0) return;
+  function shoot(end, travel) {
+    if (phase !== 'playing' || shotsLeft <= 0 || keeperHold) return;
     // Capture the keeper's position at release: this is the moment the result
     // is decided, so swipe timing matters and swipe length never does.
     const keeperAtRelease = keeperX;
     const result = shotResult(BALL_START, end, level, keeperAtRelease);
     const to = impactPoint(BALL_START, end, level) ?? end;
     const control = controlPoint(BALL_START, to);
-    const power = Math.min(1, Math.hypot(end.x - BALL_START.x, end.y - BALL_START.y) / 55);
-    // Flight time is the only thing the swipe length changes.
+    // The dive starts at release, toward the impact, and stays through the
+    // outcome window. The result was already fixed by the release keeper x.
     const calm = prefersReducedMotion();
-    const duration = calm ? 300 : 700 - 320 * power;
+    const duration = flightDuration(travel, { calm });
     const startTime = performance.now();
 
     ballMoving = true;
     keeperHold = true;
     outcome = null;
     goalFlash = false;
-    dive = 0;
+    dive = to.x < keeperAtRelease ? -1 : 1;
     shotsLeft = Math.max(0, shotsLeft - 1);
     sound.kick();
 
@@ -280,12 +306,12 @@
         return;
       }
       flightRaf = 0;
-      resolve(result, to, keeperAtRelease);
+      resolve(result, to);
     }
     flightRaf = requestAnimationFrame(tick);
   }
 
-  function resolve(result, to, keeperAtRelease) {
+  function resolve(result, to) {
     ballMoving = false;
     outcome = result;
     if (result === 'goal') {
@@ -294,7 +320,6 @@
       ball = { ...to, scale: 1.22 };
       sound.net();
     } else if (result === 'save') {
-      dive = to.x < keeperAtRelease ? -1 : 1;
       ball = { ...to, scale: 1.1 };
       sound.glove();
     } else {
@@ -309,14 +334,14 @@
         goalFlash = false;
         dive = 0;
         ball = { ...BALL_START, scale: 1 };
-        if (shotsLeft <= 0) finishRound();
+        if (shotsLeft <= 0) finishRound({ scored: result === 'goal' });
         else keeperHold = false;
       },
       result === 'goal' ? 1100 : 850
     );
   }
 
-  function finishRound() {
+  function finishRound({ scored = false } = {}) {
     if (phase !== 'playing') return;
     keeperHold = true;
     if (goals >= target) {
@@ -327,6 +352,9 @@
         saveMastered('soccer');
       }
       phase = 'won';
+      // A won round whose fifth shot was saved or missed still deserves the
+      // stadium's positive cheer; the shared fanfare stays suppressed.
+      if (!scored) sound.cheer();
     } else {
       // Calm Good Try: no star, no sad sound, no fail state.
       phase = 'good';

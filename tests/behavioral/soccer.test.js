@@ -2,6 +2,7 @@ import { beforeEach, describe, it, expect } from 'vitest';
 import {
   BALL_START,
   SHOTS,
+  flightDuration,
   goalBounds,
   keeperCenter,
   openAim,
@@ -110,6 +111,15 @@ describe('Soccer — a Night Penalty round', () => {
     const level = 2;
     const keeperX = keeperCenter(level, 1.4);
     const aim = openAim(level, keeperX);
+    expect(shotResult(BALL_START, { x: aim.x, y: -40 }, level, keeperX)).toBe('goal');
+  });
+
+  it('a longer swipe only speeds up the flight, never the result', () => {
+    const level = 6;
+    const keeperX = keeperCenter(level, 1.7);
+    const aim = openAim(level, keeperX);
+    expect(flightDuration(10)).toBeGreaterThan(flightDuration(140));
+    expect(shotResult(BALL_START, aim, level, keeperX)).toBe('goal');
     expect(shotResult(BALL_START, { x: aim.x, y: -40 }, level, keeperX)).toBe('goal');
   });
 

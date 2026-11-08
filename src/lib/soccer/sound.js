@@ -28,6 +28,14 @@ export function createStadiumSound() {
       tone({ freq: 120, dur: 0.12, type: 'sine', vol: 0.14 });
       noise({ dur: 0.06, vol: 0.04, cutoff: 600 });
     },
+    // A positive crowd cheer for a won round whose last shot did not score.
+    // It is the same warm stadium colour as the goal cheer, never a sting.
+    cheer: ({ tone, noise, after }) => {
+      noise({ dur: 0.65, vol: 0.08, cutoff: 950 });
+      tone({ freq: 659, dur: 0.18, type: 'triangle', vol: 0.05 });
+      after(140, () => tone({ freq: 784, dur: 0.22, type: 'triangle', vol: 0.05 }));
+      after(300, () => tone({ freq: 988, dur: 0.28, type: 'triangle', vol: 0.04 }));
+    },
     // A miss: the ball sails past the post, and nothing scolds the child.
     whoosh: ({ noise }) => {
       noise({ dur: 0.22, vol: 0.06, cutoff: 3200 });
@@ -49,6 +57,9 @@ export function createStadiumSound() {
     },
     glove() {
       sound.play('glove');
+    },
+    cheer() {
+      sound.play('cheer');
     },
     whoosh() {
       sound.play('whoosh');
