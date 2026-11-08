@@ -48,11 +48,14 @@ export default defineConfig({
             { src: '/icons/icon-512.png', sizes: '512x512', type: 'image/png' }
           ]
         },
-        workbox: {
+        generateSW: {
           // Every built file and every static asset, so one online visit caches
-          // the whole app: routes, fonts, puzzle photos, and sounds.
+          // the whole app: routes, fonts, puzzle photos, and sounds. The glob is
+          // rooted at `client/` on purpose: SvelteKit copies `static/` there, and
+          // an un-prefixed `**/*` would also match the `client/**` glob that the
+          // plugin injects, putting every asset in the precache manifest twice.
           globPatterns: [
-            '**/*.{js,css,html,ico,png,svg,webp,jpg,jpeg,gif,mp3,wav,ogg,woff,woff2,webmanifest,json,txt}'
+            'client/**/*.{js,css,html,ico,png,svg,webp,jpg,jpeg,gif,mp3,wav,ogg,woff,woff2,webmanifest,json,txt}'
           ],
           globIgnores: ['**/.DS_Store', 'server/**', '**/*.map'],
           // This is a pure SPA: there is no `prerendered/` output, and PWA v2
