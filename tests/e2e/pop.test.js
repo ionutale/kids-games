@@ -373,6 +373,7 @@ test.describe('Pop — the Rising Pond', () => {
       await expect(page.locator('.ladder-bar')).toBeVisible();
       await expect(page.locator('.ladder-step')).toHaveCount(10);
       const steps = page.locator('.ladder-step');
+      const ladderTops = new Set();
       for (let i = 0; i < 10; i += 1) {
         const step = steps.nth(i);
         await expect(step).toBeVisible();
@@ -380,7 +381,10 @@ test.describe('Pop — the Rising Pond', () => {
         expect(box.x).toBeGreaterThanOrEqual(0);
         expect(box.x + box.width).toBeLessThanOrEqual(viewport.width + 0.5);
         expect(box.width).toBeGreaterThanOrEqual(24);
+        ladderTops.add(Math.round(box.y));
       }
+      // The game header has room for one row; only a narrow win card wraps.
+      expect(ladderTops.size).toBe(1);
 
       const overflow = await page.evaluate(() => ({
         scrollWidth: document.documentElement.scrollWidth,

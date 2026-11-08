@@ -34,23 +34,22 @@
 <style>
   .ladder-bar {
     display: flex;
-    /* `safe` keeps step 1 on screen if a narrow phone still needs to scroll. */
+    /* Center each row; `safe` avoids clipping if a row ever overflows. */
     justify-content: safe center;
-    flex-wrap: nowrap;
-    gap: 2px;
+    /* Ten 24px steps need 258px. A narrow win-card content box wraps onto a
+       second row instead of squeezing every step below a tappable size. */
+    flex-wrap: wrap;
+    gap: 4px 2px;
     padding-bottom: calc(8px + var(--safe-bottom));
-    padding-left: 4px;
-    padding-right: 4px;
-    overflow-x: auto;
-    scrollbar-width: none;
+    padding-left: 2px;
+    padding-right: 2px;
   }
-  .ladder-bar::-webkit-scrollbar { display: none; }
   .ladder-step {
-    /* Steps share the row on a 320 px phone instead of clipping at the edges. */
+    /* One row of ~28px steps on a 320px header; two rows of ~32px in a win card. */
     width: 32px;
     height: 32px;
-    min-width: 0;
-    flex: 1 1 32px;
+    min-width: 24px;
+    flex: 1 1 28px;
     max-width: 32px;
     border-radius: 8px;
     font-size: 12px;
