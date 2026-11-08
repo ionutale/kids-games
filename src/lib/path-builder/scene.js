@@ -12,8 +12,20 @@ export const LAYOUTS = 5;
 export const DEST_RADIUS = 62;
 /** Forgiving distance at which the Walker collects a Star. */
 export const STAR_RADIUS = 46;
-/** Extra collision padding around a Blocker so the stroke rests on its edge. */
-export const BLOCKER_PAD = 8;
+/** Half the visible Road stroke width: the tip's centre rests this far outside
+ *  the Blocker art so the drawn edge of the Road meets the drawn edge of the art. */
+export const ROAD_HALF = 11;
+/** Collision padding around a Blocker. Equal to the Road half-width, so the
+ *  stroke stops with its visible edge on the Blocker's drawn edge. */
+export const BLOCKER_PAD = ROAD_HALF;
+/** Tolerance around a Blocker edge, so a tip resting exactly on it can move again. */
+export const EDGE_EPS = 1.5;
+/**
+ * How much of its 64×64 icon box each Blocker drawing covers, as a fraction of
+ * the box half-width (measured to the outer edge of its stroke). The page scales
+ * the icon by 1/extent, which makes the drawn radius equal the collision radius.
+ */
+export const BLOCKER_ART_EXTENT = { rock: 0.9375, pond: 0.928, hedge: 0.975 };
 /** How close a press must be to an earlier road point to truncate there. */
 export const TRUNCATE_RADIUS = 44;
 /** How close a press must be to the road tip to keep drawing. */
@@ -36,15 +48,17 @@ export function near(a, b, radius) {
  * Used both for road collision and for keeping Blockers off the guide route.
  */
 export function segmentHitsCircle(a, b, c, r) {
+  return dist(closestOnSegment(a, b, c), c) <= r;
+}
+
+/** Point on the segment a→b closest to p (clamped to the segment). */
+export function closestOnSegment(a, b, p) {
   const dx = b.x - a.x;
   const dy = b.y - a.y;
   const len2 = dx * dx + dy * dy;
-  if (len2 === 0) return dist(a, c) <= r;
-  let t = ((c.x - a.x) * dx + (c.y - a.y) * dy) / len2;
-  t = clamp(t, 0, 1);
-  const px = a.x + dx * t;
-  const py = a.y + dy * t;
-  return Math.hypot(c.x - px, c.y - py) <= r;
+  if (len2 === 0) return { x: a.x, y: a.y };
+  const t = clamp(((p.x - a.x) * dx + (p.y - a.y) * dy) / len2, 0, 1);
+  return { x: a.x + dx * t, y: a.y + dy * t };
 }
 
 /**
@@ -131,21 +145,42 @@ export function nearestRoadIndex(points, p, radius) {
   return best;
 }
 
-/** Closest Blocker hit by a→b, or null. Padded so the stroke never enters art. */
+/**
+ * Blocker that stops a stroke from `a` to `b`, or null.
+ *
+ * A tip resting exactly on a Blocker's padded edge (the normal result of a
+ * previous collision) is allowed to slide along that edge or move away from it;
+ * only motion that pushes deeper into the circle is refused. Without this,
+ * every later segment started on the edge counts as a fresh hit and the Road
+ * freezes for good.
+ */
 export function blockerHit(blockers, a, b) {
   let hit = null;
   let hitAt = Infinity;
   for (const blocker of blockers) {
     const r = blocker.r + BLOCKER_PAD;
-    if (!segmentHitsCircle(a, b, blocker, r)) continue;
-    const at = clipSegmentToCircle(a, b, blocker, r);
-    const ahead = at ? dist(a, at) : 0;
+    const closest = closestOnSegment(a, b, blocker);
+    if (dist(closest, blocker) >= r - EDGE_EPS) continue;
+    const touching = dist(a, blocker) <= r + EDGE_EPS;
+    const at = touching ? { x: a.x, y: a.y } : clipSegmentToCircle(a, b, blocker, r);
+    if (!at) continue;
+    const ahead = dist(a, at);
     if (ahead < hitAt) {
       hit = blocker;
       hitAt = ahead;
     }
   }
   return hit;
+}
+
+/** Icon box width that makes a Blocker's drawn radius equal its collision radius. */
+export function blockerArtSize(blocker) {
+  return (blocker.r * 2) / (BLOCKER_ART_EXTENT[blocker.kind] ?? 0.9375);
+}
+
+/** Radius the Blocker art actually draws, in scene units. */
+export function blockerArtRadius(blocker) {
+  return (blockerArtSize(blocker) / 2) * (BLOCKER_ART_EXTENT[blocker.kind] ?? 0.9375);
 }
 
 export function roadReachesDestination(scene, road) {
@@ -199,17 +234,42 @@ export function levelSpec(level) {
   };
 }
 
-function buildRoute(home, dest, curve, sign, level, layout) {
+/**
+ * Per-Layout presentation shifts. Home stays bottom-left and the cabin
+ * top-right (the "opposite sides" rule), but the exact spots, the sway of the
+ * suggested route and the phase of its second bend all change, so five Layouts
+ * never look like the same road re-rendered.
+ */
+const LAYOUT_SHIFTS = [
+  { home: { x: -18, y: 12 }, dest: { x: 16, y: -12 }, sway: 0.86, phase: 0.4, bend: 1.0 },
+  { home: { x: 10, y: -16 }, dest: { x: -14, y: 10 }, sway: 1.14, phase: 1.5, bend: 1.25 },
+  { home: { x: -6, y: 20 }, dest: { x: 20, y: 6 }, sway: 0.96, phase: 2.7, bend: 0.8 },
+  { home: { x: 16, y: 0 }, dest: { x: -20, y: -16 }, sway: 1.22, phase: 3.9, bend: 1.15 },
+  { home: { x: 0, y: -8 }, dest: { x: 4, y: 18 }, sway: 1.05, phase: 5.1, bend: 0.9 }
+];
+
+function layoutShift(layout) {
+  return LAYOUT_SHIFTS[clamp(Math.round(layout) || 0, 0, LAYOUTS - 1)];
+}
+
+function buildRoute(spec, sign, layout) {
+  const shift = layoutShift(layout);
+  const home = { x: spec.home.x + shift.home.x, y: spec.home.y + shift.home.y };
+  const dest = { x: spec.dest.x + shift.dest.x, y: spec.dest.y + shift.dest.y };
   const points = [];
-  const bump = 8 * Math.sin((Math.PI * (level + layout)) / 5);
+  const bump = 8 * Math.sin((Math.PI * (spec.level + layout)) / 5);
   for (let i = 0; i <= 36; i += 1) {
     const t = i / 36;
+    const arc = Math.sin(Math.PI * t);
+    const wave =
+      (spec.curve + bump) * arc +
+      spec.curve * 0.34 * Math.sin(2 * Math.PI * t + shift.phase) * arc * shift.bend;
     points.push({
-      x: home.x + (dest.x - home.x) * t + (curve + bump) * Math.sin(Math.PI * t) * sign,
-      y: home.y + (dest.y - home.y) * t
+      x: home.x + (dest.x - home.x) * t + shift.sway * sign * wave,
+      y: home.y + (dest.y - home.y) * t + 10 * Math.sin(2 * Math.PI * t + shift.phase) * arc
     });
   }
-  return points;
+  return { home, dest, points };
 }
 
 function starSpots(route, count, layout, rng) {
@@ -226,7 +286,7 @@ function starSpots(route, count, layout, rng) {
   return spots;
 }
 
-function placeBlockers(spec, route, rng, layout) {
+function placeBlockers(spec, route, home, dest, rng, layout) {
   const placed = [];
   for (let i = 0; i < spec.blockers; i += 1) {
     const kind = BLOCKER_KINDS[(i + layout + spec.level) % BLOCKER_KINDS.length];
@@ -249,7 +309,7 @@ function placeBlockers(spec, route, rng, layout) {
       const y = base.y + ny * (r + gap);
       const candidate = { x, y, r, kind };
       if (x - r < 14 || x + r > W - 14 || y - r < 120 || y + r > H - 90) continue;
-      if (dist(candidate, spec.home) < r + 92 || dist(candidate, spec.dest) < r + 92) continue;
+      if (dist(candidate, home) < r + 92 || dist(candidate, dest) < r + 92) continue;
       if (placed.some((other) => dist(candidate, other) < r + other.r + 26)) continue;
       const blocksRoute = distanceToPath(route, candidate) <= r + 12;
       if (blocksRoute) continue;
@@ -260,30 +320,120 @@ function placeBlockers(spec, route, rng, layout) {
   return placed;
 }
 
+// Forest dressing anchors. Each Layout jitters them and shifts a soft clearing,
+// so two Layouts of the same Level read as two different places.
+const TREE_ANCHORS = [
+  { x: 52, y: 140, s: 52 },
+  { x: 566, y: 190, s: 46 },
+  { x: 46, y: 410, s: 60 },
+  { x: 574, y: 500, s: 54 },
+  { x: 58, y: 740, s: 64 },
+  { x: 560, y: 830, s: 58 },
+  { x: 84, y: 930, s: 50 },
+  { x: 540, y: 960, s: 48 }
+];
+
+const MUSHROOM_ANCHORS = [
+  { x: 70, y: 640, s: 26 },
+  { x: 548, y: 700, s: 22 },
+  { x: 110, y: 960, s: 24 },
+  { x: 520, y: 950, s: 20 }
+];
+
+const FIREFLY_ANCHORS = [
+  { x: 150, y: 250 },
+  { x: 470, y: 300 },
+  { x: 90, y: 560 },
+  { x: 540, y: 620 },
+  { x: 200, y: 940 },
+  { x: 460, y: 900 }
+];
+
+const CLEARING_ANCHORS = [
+  { x: 330, y: 640, rx: 210, ry: 150 },
+  { x: 250, y: 720, rx: 176, ry: 128 },
+  { x: 388, y: 552, rx: 196, ry: 158 },
+  { x: 286, y: 486, rx: 168, ry: 138 },
+  { x: 356, y: 756, rx: 188, ry: 142 }
+];
+
+function decorFor(layout, rng) {
+  const jitter = (n) => (rng() - 0.5) * n;
+  const trees = TREE_ANCHORS.map((spot) => ({
+    kind: 'tree',
+    x: clamp(spot.x + jitter(24) + (layout - 2) * 3, 28, W - 28),
+    y: clamp(spot.y + jitter(30), 104, H - 22),
+    s: Math.round(spot.s + jitter(10))
+  }));
+  const mushrooms = MUSHROOM_ANCHORS.map((spot, i) => ({
+    kind: 'mushroom',
+    x: clamp(spot.x + jitter(18) + (i % 2 === 0 ? -layout * 3 : layout * 3), 24, W - 24),
+    y: clamp(spot.y + jitter(22), 120, H - 18),
+    s: Math.round(spot.s + jitter(6))
+  }));
+  const fireflies = FIREFLY_ANCHORS.map((spot) => ({
+    kind: 'firefly',
+    x: clamp(spot.x + jitter(36) + layout * 5, 20, W - 20),
+    y: clamp(spot.y + jitter(40) - layout * 4, 110, H - 30),
+    s: 0
+  }));
+  return [...trees, ...mushrooms, ...fireflies];
+}
+
+function clearingFor(layout, rng) {
+  const base = CLEARING_ANCHORS[layout % CLEARING_ANCHORS.length];
+  return {
+    x: clamp(base.x + (rng() - 0.5) * 40, 190, W - 190),
+    y: clamp(base.y + (rng() - 0.5) * 50, 280, H - 240),
+    rx: base.rx,
+    ry: base.ry
+  };
+}
+
+/** One comparable string for everything a child sees in a Scene. Tests use it
+ *  to prove five Layouts differ on screen, not only in their route points. */
+export function sceneSignature(scene) {
+  const r = (n) => Math.round(n);
+  return [
+    `${r(scene.home.x)},${r(scene.home.y)}`,
+    `${r(scene.dest.x)},${r(scene.dest.y)}`,
+    `${r(scene.clearing.x)},${r(scene.clearing.y)},${r(scene.clearing.rx)},${r(scene.clearing.ry)}`,
+    scene.route.map((p) => `${r(p.x)},${r(p.y)}`).join(' '),
+    scene.blockers.map((b) => `${b.kind}:${r(b.x)},${r(b.y)},${r(b.r)}`).join(' '),
+    scene.stars.map((s) => `${s.required ? 'r' : 'o'}:${r(s.x)},${r(s.y)}`).join(' '),
+    scene.decor.map((d) => `${d.kind}:${r(d.x)},${r(d.y)},${d.s}`).join(' ')
+  ].join('|');
+}
+
 /**
  * Build the Scene for one ladder Step + Layout. Deterministic: same inputs give
- * the same cottage, cabin, route, Blockers and Stars.
+ * the same cottage, cabin, route, Blockers, Stars and forest dressing.
  */
 export function sceneFor(level, layout = 0) {
   const spec = levelSpec(level);
   const step = clamp(Math.round(layout) || 0, 0, LAYOUTS - 1);
   const sign = (spec.level + step) % 2 === 0 ? 1 : -1;
-  const route = buildRoute(spec.home, spec.dest, spec.curve, sign, spec.level, step);
+  const { home, dest, points: route } = buildRoute(spec, sign, step);
   const rng = makeRng(spec.level * 7919 + step * 104729 + 13);
   const stars = starSpots(route, spec.stars, step, rng).map((star, i) => ({
     ...star,
     id: `${spec.level}-${step}-${i}`,
     required: i < spec.required
   }));
-  const blockers = placeBlockers(spec, route, rng, step);
+  const blockers = placeBlockers(spec, route, home, dest, rng, step);
+  const decor = decorFor(step, rng);
+  const clearing = clearingFor(step, rng);
   return {
     level: spec.level,
     layout: step,
-    home: { ...spec.home },
-    dest: { ...spec.dest },
+    home,
+    dest,
     route,
     blockers,
     stars,
+    decor,
+    clearing,
     required: Math.min(spec.required, stars.length)
   };
 }
+

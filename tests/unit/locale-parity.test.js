@@ -10,6 +10,7 @@ const NEW_KEYS = [
   'pbHome',
   'pbDest',
   'pbStarsLeft',
+  'pbOptionalLeft',
   'pbWalking',
   'pbMadeIt',
   'pbMissedStar',

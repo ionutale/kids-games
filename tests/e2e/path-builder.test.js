@@ -1,6 +1,8 @@
 import { test, expect } from '@playwright/test';
 
 const SCENE = '[data-testid="scene"]';
+/** Mirrors BLOCKER_PAD in the scene model: the Road's visible half-width. */
+const BLOCKER_PAD = 11;
 
 function pointer(x, y, extra = {}) {
   return {
@@ -142,6 +144,23 @@ function detourAround(route, star, blockers, amount = 76) {
   return options[0];
 }
 
+async function expectPortraitFit(page, width, height) {
+  await page.setViewportSize({ width, height });
+  await page.goto('/games/path-builder');
+  await expect(page.getByTestId('scene')).toBeVisible();
+  await expect(page.getByTestId('home')).toBeVisible();
+  await expect(page.getByTestId('destination')).toBeVisible();
+
+  const fit = await page.evaluate(() => ({
+    scrollWidth: document.documentElement.scrollWidth,
+    innerWidth: window.innerWidth,
+    board: document.querySelector('[data-testid="scene"]').getBoundingClientRect().toJSON()
+  }));
+  expect(fit.scrollWidth).toBeLessThanOrEqual(fit.innerWidth + 1);
+  expect(fit.board.width).toBeGreaterThan(200);
+  expect(fit.board.height).toBeGreaterThan(280);
+}
+
 test.describe('Path Builder — Forest Road', () => {
   test('drawing a road makes the fox walk it and solves the layout', async ({ page }) => {
     await page.goto('/games/path-builder');
@@ -150,6 +169,12 @@ test.describe('Path Builder — Forest Road', () => {
     const root = page.getByTestId('pb-root');
     await expect(root).toHaveAttribute('data-level', '1');
     await expect(root).toHaveAttribute('data-road', '1');
+    // No press yet: the page starts in the explicit idle state.
+    await expect(root).toHaveAttribute('data-state', 'idle');
+    // The pointer-only board is not an application widget, and the game owns a
+    // single live region (the status line) besides SvelteKit's route announcer.
+    await expect(page.getByTestId('scene')).toHaveAttribute('role', 'img');
+    await expect(page.getByTestId('pb-root').locator('[aria-live]')).toHaveCount(1);
 
     const home = await landmark(page, 'home');
     const dest = await landmark(page, 'destination');
@@ -174,10 +199,11 @@ test.describe('Path Builder — Forest Road', () => {
     // Arriving solves the layout and auto-advances to the next road.
     await expect(page.getByTestId('round-done')).toBeVisible({ timeout: 6000 });
     await expect(page.getByTestId('round-done')).toContainText('fox');
+    await expect(root).toHaveAttribute('data-state', 'solved');
     await expect(root).toHaveAttribute('data-road', '2', { timeout: 6000 });
   });
 
-  test('a stroke into a Rock stops at its edge and never enters it', async ({ page }) => {
+  test('a stroke into a Rock stops at its drawn edge and never enters it', async ({ page }) => {
     await page.addInitScript(() => localStorage.setItem('pathBuilderLevel', '3'));
     await page.goto('/games/path-builder');
 
@@ -188,6 +214,8 @@ test.describe('Path Builder — Forest Road', () => {
       y: Number(await blocker.getAttribute('data-y'))
     };
     const radius = Number(await blocker.getAttribute('data-r'));
+    // The art is scaled so its drawn radius is the collision radius.
+    expect(Number(await blocker.getAttribute('data-art')) / 2).toBeGreaterThan(radius);
     const home = await landmark(page, 'home');
 
     await drawStroke(page, [
@@ -199,13 +227,137 @@ test.describe('Path Builder — Forest Road', () => {
 
     const tip = await roadTip(page);
     const distance = Math.hypot(tip.x - center.x, tip.y - center.y);
-    expect(distance).toBeGreaterThan(radius - 1);
-    expect(distance).toBeLessThan(radius + 16);
+    expect(distance).toBeGreaterThan(radius + BLOCKER_PAD - 2);
+    expect(distance).toBeLessThan(radius + BLOCKER_PAD + 8);
 
     const inside = (await roadPoints(page)).filter(
       (p) => Math.hypot(p.x - center.x, p.y - center.y) < radius
     );
     expect(inside).toEqual([]);
+  });
+
+  test('lifting at a Rock and drawing around it still completes the road', async ({ page }) => {
+    await page.addInitScript(() => localStorage.setItem('pathBuilderLevel', '3'));
+    await page.goto('/games/path-builder');
+
+    const blocker = page.getByTestId('blocker').first();
+    await expect(blocker).toBeVisible();
+    const center = {
+      x: Number(await blocker.getAttribute('data-x')),
+      y: Number(await blocker.getAttribute('data-y'))
+    };
+    const radius = Number(await blocker.getAttribute('data-r'));
+    const home = await landmark(page, 'home');
+    const dest = await landmark(page, 'destination');
+
+    // Stroke straight into the rock and lift.
+    await drawStroke(page, [home, lerp(home, center, 0.5), lerp(home, center, 0.85), center]);
+    const tip = await roadTip(page);
+    expect(Math.hypot(tip.x - center.x, tip.y - center.y)).toBeGreaterThan(radius + BLOCKER_PAD - 2);
+
+    // The next stroke starts on that edge and goes around the rock. Before the
+    // fix every later segment counted as a fresh hit and the road froze here.
+    const startAngle = Math.atan2(tip.y - center.y, tip.x - center.x);
+    const arcRadius = radius + BLOCKER_PAD + 26;
+
+    const arcFor = (direction) =>
+      Array.from({ length: 12 }, (_, i) => {
+        const angle = startAngle + direction * ((i + 1) / 12) * (Math.PI * 1.1);
+        return { x: center.x + Math.cos(angle) * arcRadius, y: center.y + Math.sin(angle) * arcRadius };
+      });
+
+    const options = [1, -1]
+      .map((direction) => ({ direction, arc: arcFor(direction) }))
+      .filter(({ arc }) => arc.every((p) => p.x > 20 && p.x < 600 && p.y > 20 && p.y < 980));
+    expect(options.length).toBeGreaterThan(0);
+    options.sort((one, two) => {
+      const end = (arc) => Math.hypot(arc[arc.length - 1].x - dest.x, arc[arc.length - 1].y - dest.y);
+      return end(one.arc) - end(two.arc);
+    });
+    const around = options[0].arc;
+
+    await drawStroke(page, [tip, ...around, dest]);
+
+    // The road continued past the rock and reached the cabin.
+    await expect(page.getByTestId('round-done')).toBeVisible({ timeout: 8000 });
+    const road = await roadPoints(page);
+    expect(road.length).toBeGreaterThan(8);
+    expect(
+      road.filter((p) => Math.hypot(p.x - center.x, p.y - center.y) < radius)
+    ).toEqual([]);
+  });
+
+  test('pressing near an earlier road point truncates the road there', async ({ page }) => {
+    await page.goto('/games/path-builder');
+    const home = await landmark(page, 'home');
+    const dest = await landmark(page, 'destination');
+
+    await drawStroke(page, [
+      home,
+      lerp(home, dest, 0.25),
+      lerp(home, dest, 0.5),
+      lerp(home, dest, 0.75)
+    ]);
+    const before = await roadPoints(page);
+    expect(before.length).toBe(4);
+    const target = before[1];
+
+    // Press on the second point and pull away: everything after it is erased.
+    const at = await sceneToClient(page, target);
+    await page.dispatchEvent(SCENE, 'pointerdown', pointer(at.x, at.y));
+    const away = await sceneToClient(page, { x: target.x + 44, y: target.y - 30 });
+    await page.dispatchEvent(':root', 'pointermove', pointer(away.x, away.y));
+    await page.dispatchEvent(':root', 'pointerup', pointer(away.x, away.y));
+    await page.waitForTimeout(120);
+
+    const after = await roadPoints(page);
+    expect(after.length).toBe(3);
+    expect(after[0]).toEqual(before[0]);
+    expect(after[1]).toEqual(before[1]);
+    expect(Math.hypot(after[2].x - target.x - 44, after[2].y - target.y + 30)).toBeLessThan(3);
+    // The layout did not advance: the road is still being edited.
+    await expect(page.getByTestId('pb-root')).toHaveAttribute('data-road', '1');
+  });
+
+  test('Redraw clears the road and sends the fox back Home', async ({ page }) => {
+    await page.goto('/games/path-builder');
+    const home = await landmark(page, 'home');
+    const dest = await landmark(page, 'destination');
+
+    await drawStroke(page, [home, lerp(home, dest, 0.3), lerp(home, dest, 0.55)]);
+    await expect(page.getByTestId('road')).toHaveAttribute('data-points', '3');
+
+    await page.locator('.pb-redraw').click();
+    await expect(page.getByTestId('road')).toHaveAttribute('data-points', '0');
+    const walker = page.getByTestId('walker');
+    await expect.poll(async () => Number(await walker.getAttribute('data-x'))).toBeCloseTo(home.x, 0);
+    await expect(page.getByTestId('pb-root')).toHaveAttribute('data-state', 'idle');
+    await expect(page.getByTestId('pb-root')).toHaveAttribute('data-road', '1');
+
+    // Playable again right away.
+    await drawStroke(page, [home, lerp(home, dest, 0.5), dest]);
+    await expect(page.getByTestId('round-done')).toBeVisible({ timeout: 6000 });
+  });
+
+  test('a press far from the tip continues the road instead of doing nothing', async ({ page }) => {
+    await page.goto('/games/path-builder');
+    const home = await landmark(page, 'home');
+    const dest = await landmark(page, 'destination');
+
+    await drawStroke(page, [home, lerp(home, dest, 0.3)]);
+    expect((await roadPoints(page)).length).toBe(2);
+
+    // Pull the road again from far away (well beyond CONTINUE_RADIUS) and
+    // finish at the cabin. The start-anywhere rule bridges the gap.
+    const far = lerp(home, dest, 0.62);
+    const at = await sceneToClient(page, far);
+    await page.dispatchEvent(SCENE, 'pointerdown', pointer(at.x, at.y));
+    const end = await sceneToClient(page, dest);
+    await page.dispatchEvent(':root', 'pointermove', pointer(end.x, end.y));
+    await page.dispatchEvent(':root', 'pointerup', pointer(end.x, end.y));
+
+    await expect(page.getByTestId('round-done')).toBeVisible({ timeout: 7000 });
+    expect((await roadPoints(page)).length).toBeGreaterThan(2);
   });
 
   test('the ghost hand demonstrates the first road once per device', async ({ page }) => {
@@ -244,6 +396,31 @@ test.describe('Path Builder — Forest Road', () => {
     expect((await page.getByTestId('road').getAttribute('data-points'))).toBe('1');
   });
 
+  test('reduced motion keeps the ghost and the Guide static and playable', async ({ page }) => {
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    await page.goto('/games/path-builder');
+    await expect(page.getByTestId('scene')).toBeVisible();
+
+    // The ghost hand is shown still, not drifting along the route.
+    const ghost = page.getByTestId('ghost-hand');
+    await expect(ghost).toBeVisible({ timeout: 4000 });
+    const still = await ghost.getAttribute('transform');
+    await page.waitForTimeout(450);
+    expect(await ghost.getAttribute('transform')).toBe(still);
+
+    // The idle Guide is static too.
+    const guide = page.getByTestId('guide');
+    await expect(guide).toBeVisible({ timeout: 9000 });
+    await expect(guide).toHaveClass(/still/);
+
+    // And the game is still playable: draw the Guide route to solve.
+    const route = await guideRoute(page);
+    expect(route.length).toBeGreaterThan(5);
+    await drawStroke(page, route);
+    await expect(page.getByTestId('round-done')).toBeVisible({ timeout: 7000 });
+    await expect(page.getByTestId('pb-root')).toHaveAttribute('data-road', '2', { timeout: 7000 });
+  });
+
   test('late levels show required Stars and the ladder still switches', async ({ page }) => {
     await page.addInitScript(() => localStorage.setItem('pathBuilderLevel', '9'));
     await page.goto('/games/path-builder');
@@ -255,10 +432,16 @@ test.describe('Path Builder — Forest Road', () => {
     await expect(stars.first()).toHaveAttribute('data-required', 'true');
     await expect(page.locator('.ladder-step.active')).toHaveText('9');
 
+    // The summary counts required Stars, not every Star.
+    await expect(page.getByTestId('pb-summary')).toContainText('Stars needed: 2');
+    await expect(page.getByTestId('pb-summary')).not.toContainText('Extra stars');
+
     await page.locator('.ladder-step').nth(3).click();
     await expect(root).toHaveAttribute('data-level', '4');
     await expect(root).toHaveAttribute('data-road', '1');
     await expect(page.getByTestId('pb-summary')).toContainText('4');
+    // Level 4's Star is optional, so the summary says so instead of "needed".
+    await expect(page.getByTestId('pb-summary')).toContainText('Extra stars: 1');
   });
 
   test('a late level solves along the Guide and gathers its required Stars', async ({ page }) => {
@@ -294,7 +477,7 @@ test.describe('Path Builder — Forest Road', () => {
     });
 
     const detour = detourAround(route, star, blockers);
-    expect(blockersClearance(detour, blockers)).toBeGreaterThan(10);
+    expect(blockersClearance(detour, blockers)).toBeGreaterThan(BLOCKER_PAD + 5);
     expect(
       Math.min(...detour.map((p) => Math.hypot(p.x - star.x, p.y - star.y)))
     ).toBeGreaterThan(54);
@@ -327,20 +510,11 @@ test.describe('Path Builder — Forest Road', () => {
     expect(errors).toEqual([]);
   });
 
-  test('fits a small phone in portrait with no horizontal overflow', async ({ page }) => {
-    await page.setViewportSize({ width: 320, height: 568 });
-    await page.goto('/games/path-builder');
-    await expect(page.getByTestId('scene')).toBeVisible();
-    await expect(page.getByTestId('home')).toBeVisible();
-    await expect(page.getByTestId('destination')).toBeVisible();
+  test('fits 320×568 portrait with no horizontal overflow', async ({ page }) => {
+    await expectPortraitFit(page, 320, 568);
+  });
 
-    const fit = await page.evaluate(() => ({
-      scrollWidth: document.documentElement.scrollWidth,
-      innerWidth: window.innerWidth,
-      board: document.querySelector('[data-testid="scene"]').getBoundingClientRect().toJSON()
-    }));
-    expect(fit.scrollWidth).toBeLessThanOrEqual(fit.innerWidth + 1);
-    expect(fit.board.width).toBeGreaterThan(200);
-    expect(fit.board.height).toBeGreaterThan(280);
+  test('fits 390×844 portrait with no horizontal overflow', async ({ page }) => {
+    await expectPortraitFit(page, 390, 844);
   });
 });

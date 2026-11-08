@@ -7,6 +7,7 @@ import {
   DEST_RADIUS,
   STAR_RADIUS,
   BLOCKER_PAD,
+  ROAD_HALF,
   dist,
   distanceToPath,
   segmentHitsCircle,
@@ -15,13 +16,56 @@ import {
   pointAt,
   nearestRoadIndex,
   blockerHit,
+  blockerArtSize,
+  blockerArtRadius,
   roadReachesDestination,
   starCollected,
   requiredStarsCollected,
   hasRequiredStars,
   levelSpec,
-  sceneFor
+  sceneFor,
+  sceneSignature
 } from '../../src/lib/path-builder/scene.js';
+
+/** Coarse, route-independent walkability check: can a 6-unit grid walker get
+ *  from `from` to `to` around the padded Blockers inside the Scene? */
+function canReach(scene, from, to, step = 6) {
+  const cols = Math.floor(W / step);
+  const rows = Math.floor(H / step);
+  const blocked = (cx, cy) => {
+    const x = (cx + 0.5) * step;
+    const y = (cy + 0.5) * step;
+    if (x < 16 || x > W - 16 || y < 16 || y > H - 16) return true;
+    return scene.blockers.some((b) => Math.hypot(x - b.x, y - b.y) <= b.r + BLOCKER_PAD);
+  };
+  const cellOf = (p) => [
+    Math.min(cols - 1, Math.max(0, Math.floor(p.x / step))),
+    Math.min(rows - 1, Math.max(0, Math.floor(p.y / step)))
+  ];
+  const [sx, sy] = cellOf(from);
+  if (blocked(sx, sy)) return false;
+  const seen = new Set([`${sx},${sy}`]);
+  const queue = [[sx, sy]];
+  while (queue.length) {
+    const [cx, cy] = queue.shift();
+    if (Math.hypot((cx + 0.5) * step - to.x, (cy + 0.5) * step - to.y) <= step) return true;
+    for (const [dx, dy] of [
+      [1, 0],
+      [-1, 0],
+      [0, 1],
+      [0, -1]
+    ]) {
+      const nx = cx + dx;
+      const ny = cy + dy;
+      if (nx < 0 || ny < 0 || nx >= cols || ny >= rows) continue;
+      const key = `${nx},${ny}`;
+      if (seen.has(key) || blocked(nx, ny)) continue;
+      seen.add(key);
+      queue.push([nx, ny]);
+    }
+  }
+  return false;
+}
 
 describe('geometry', () => {
   it('measures distances and path length', () => {
@@ -115,6 +159,38 @@ describe('geometry', () => {
     const edge = clipSegmentToCircle({ x: 0, y: 100 }, { x: 200, y: 100 }, blocker, blocker.r + BLOCKER_PAD);
     expect(hit).toBe(blocker);
     expect(dist(edge, blocker)).toBeCloseTo(blocker.r + BLOCKER_PAD, 5);
+  });
+
+  it('lets a stroke resting on a Blocker edge slide along it or move away', () => {
+    const blocker = { x: 100, y: 100, r: 40, kind: 'rock' };
+    const edge = { x: 100 - (40 + BLOCKER_PAD), y: 100 };
+
+    // Moving straight away from the rock.
+    expect(blockerHit([blocker], edge, { x: edge.x - 40, y: 100 })).toBeNull();
+    // Sliding tangentially along the rock's edge.
+    expect(blockerHit([blocker], edge, { x: edge.x, y: edge.y + 70 })).toBeNull();
+    // Pushing back into the rock is still refused.
+    expect(blockerHit([blocker], edge, { x: 100, y: 100 })).toBe(blocker);
+    // Cutting a chord through the rock is still refused.
+    expect(blockerHit([blocker], edge, { x: 160, y: 160 })).toBe(blocker);
+  });
+
+  it('ties every Blocker art extent to its collision radius', () => {
+    expect(BLOCKER_PAD).toBe(ROAD_HALF);
+    for (const kind of ['rock', 'pond', 'hedge']) {
+      const blocker = { x: 200, y: 200, r: 48, kind };
+      // The drawn art reaches the collision circle, so the tip that stopped at
+      // radius + BLOCKER_PAD leaves the Road's visible edge on the drawn edge.
+      expect(blockerArtRadius(blocker)).toBeCloseTo(blocker.r, 5);
+      expect(blockerArtSize(blocker) / 2).toBeGreaterThan(blocker.r);
+      const edge = clipSegmentToCircle(
+        { x: 0, y: 200 },
+        { x: 400, y: 200 },
+        blocker,
+        blocker.r + BLOCKER_PAD
+      );
+      expect(dist(edge, blocker) - ROAD_HALF).toBeCloseTo(blockerArtRadius(blocker), 5);
+    }
   });
 });
 
@@ -226,7 +302,7 @@ describe('scene generation', () => {
         for (const blocker of scene.blockers) {
           const nearest = distanceToPath(scene.route, blocker);
           expect(nearest, `L${level}/${layout} ${blocker.kind} route clearance`).toBeGreaterThan(
-            blocker.r + 8
+            blocker.r + BLOCKER_PAD
           );
           expect(dist(blocker, scene.home)).toBeGreaterThan(blocker.r + 40);
           expect(dist(blocker, scene.dest)).toBeGreaterThan(blocker.r + 40);
@@ -263,7 +339,26 @@ describe('scene generation', () => {
     }
   });
 
-  it('never fully seals the scene: a route always connects Home to Destination', () => {
+  it('never fully seals the scene: an independent corridor reaches every goal', () => {
+    for (let level = 1; level <= LEVELS; level += 1) {
+      for (let layout = 0; layout < LAYOUTS; layout += 1) {
+        const scene = sceneFor(level, layout);
+        const label = `L${level}/${layout}`;
+
+        // A grid walker that knows nothing about the suggested route must still
+        // get from the cottage to the cabin.
+        expect(canReach(scene, scene.home, scene.dest), `${label} corridor`).toBe(true);
+
+        // Every required Star sits on that open corridor, both ways.
+        for (const star of scene.stars.filter((s) => s.required)) {
+          expect(canReach(scene, scene.home, star), `${label} star from home`).toBe(true);
+          expect(canReach(scene, star, scene.dest), `${label} star to cabin`).toBe(true);
+        }
+      }
+    }
+  });
+
+  it('keeps the suggested route clear of every Blocker', () => {
     for (let level = 1; level <= LEVELS; level += 1) {
       for (let layout = 0; layout < LAYOUTS; layout += 1) {
         const scene = sceneFor(level, layout);
@@ -288,15 +383,16 @@ describe('scene generation', () => {
   it('gives every level five visibly different layouts', () => {
     for (let level = 1; level <= LEVELS; level += 1) {
       const layouts = Array.from({ length: LAYOUTS }, (_, layout) => sceneFor(level, layout));
-      const shapes = new Set(
-        layouts.map((scene) => scene.blockers.map((b) => `${Math.round(b.x)},${Math.round(b.y)}`).join('|'))
-      );
-      const routes = new Set(
-        layouts.map((scene) => scene.route.map((p) => `${Math.round(p.x)},${Math.round(p.y)}`).join('|'))
-      );
-      // Levels 1–2 have no Blockers, so their routes must carry the variety.
-      expect(routes.size, `L${level} routes`).toBe(LAYOUTS);
-      if (levelSpec(level).blockers > 0) expect(shapes.size, `L${level} blockers`).toBeGreaterThan(1);
+      const signatures = new Set(layouts.map((scene) => sceneSignature(scene)));
+      // The signature covers Home/Destination placement, the route, the
+      // clearing, the Blockers, the Stars and the forest dressing, so it proves
+      // the five roads differ on screen rather than only in route points.
+      expect(signatures.size, `L${level} visible scenes`).toBe(LAYOUTS);
+
+      const homes = new Set(layouts.map((s) => `${Math.round(s.home.x)},${Math.round(s.home.y)}`));
+      const dens = new Set(layouts.map((s) => `${Math.round(s.dest.x)},${Math.round(s.dest.y)}`));
+      expect(homes.size, `L${level} Home spots`).toBeGreaterThan(1);
+      expect(dens.size, `L${level} cabin spots`).toBeGreaterThan(1);
     }
   });
 

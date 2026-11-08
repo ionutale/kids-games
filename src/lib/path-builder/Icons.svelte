@@ -37,17 +37,20 @@
     <path d="M46 10v18" stroke="#6B4326" stroke-width="3" />
     <path d="M46 10h12l-3 5 3 5H46z" fill="#F2C14E" />
   {:else if id === 'rock'}
-    <path d="M12 46 20 24l14-8 16 12 4 18-12 8H22z" fill="#8F8C97" />
-    <path d="M24 26l8 8-4 10" stroke="#6C6975" stroke-width="2" />
+    <path d="M32 3.5 47 8 57 20 59.5 34 55 48 44 58 30 60.5 16 56 6.5 44 4.5 29 11 15 21 6.5z" fill="#8F8C97" />
+    <path d="M22 24l8 8-3 9" stroke="#6C6975" stroke-width="2" />
+    <path d="M40 20l-4 9 6 4" stroke="#6C6975" stroke-width="2" />
   {:else if id === 'pond'}
-    <ellipse cx="32" cy="38" rx="26" ry="14" fill="#4E9BD4" />
-    <ellipse cx="32" cy="35" rx="18" ry="8" fill="#7FB6E6" />
-    <path d="M14 38c6 3 30 3 36 0" stroke="#FFF8EC" stroke-width="2" opacity=".5" />
+    <ellipse cx="32" cy="32" rx="28.5" ry="28.5" fill="#4E9BD4" />
+    <ellipse cx="32" cy="30" rx="19" ry="17" fill="#7FB6E6" />
+    <path d="M14 34c6 3 30 3 36 0" stroke="#FFF8EC" stroke-width="2" opacity=".5" />
   {:else if id === 'hedge'}
-    <circle cx="18" cy="40" r="12" fill="#57A773" />
-    <circle cx="32" cy="34" r="14" fill="#6FBF8E" />
-    <circle cx="46" cy="40" r="12" fill="#57A773" />
-    <rect x="16" y="46" width="32" height="8" rx="3" fill="#6B4326" />
+    <circle cx="16" cy="34" r="14" fill="#57A773" />
+    <circle cx="48" cy="34" r="14" fill="#57A773" />
+    <circle cx="32" cy="20" r="15" fill="#6FBF8E" />
+    <circle cx="20" cy="48" r="11" fill="#57A773" />
+    <circle cx="44" cy="48" r="11" fill="#57A773" />
+    <rect x="26" y="46" width="12" height="13" rx="3" fill="#6B4326" />
   {:else if id === 'star'}
     <path d="M32 6 39.5 24 59 25.5 44 38.5 48.5 57.5 32 47 15.5 57.5 20 38.5 5 25.5 24.5 24z" fill="#F2C14E" />
   {:else if id === 'tree'}

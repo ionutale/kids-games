@@ -24,6 +24,7 @@
     sceneFor,
     roadReachesDestination,
     blockerHit,
+    blockerArtSize,
     clipSegmentToCircle,
     dist,
     near,
@@ -31,6 +32,7 @@
     pointAt,
     pathLength,
     starCollected,
+    requiredStarsCollected,
     hasRequiredStars
   } from '#lib/path-builder/scene.js';
 
@@ -55,6 +57,7 @@
   let guide = $state(false);
   let ghost = $state(null);
   let hitBlocker = $state(-1);
+  let nudgeTick = $state(0);
   let roundDone = $state(false);
   let levelDone = $state(null);
   let won = $state(false);
@@ -71,34 +74,11 @@
 
   const sound = createForestSound();
 
-  const trees = [
-    { x: 52, y: 140, s: 52 },
-    { x: 566, y: 190, s: 46 },
-    { x: 46, y: 410, s: 60 },
-    { x: 574, y: 500, s: 54 },
-    { x: 58, y: 740, s: 64 },
-    { x: 560, y: 830, s: 58 },
-    { x: 84, y: 930, s: 50 },
-    { x: 540, y: 960, s: 48 }
-  ];
-
-  const fireflies = [
-    { x: 150, y: 250 },
-    { x: 470, y: 300 },
-    { x: 90, y: 560 },
-    { x: 540, y: 620 },
-    { x: 200, y: 940 },
-    { x: 460, y: 900 }
-  ];
-
-  const mushrooms = [
-    { x: 70, y: 640, s: 26 },
-    { x: 548, y: 700, s: 22 },
-    { x: 110, y: 960, s: 24 },
-    { x: 520, y: 950, s: 20 }
-  ];
-
   const reduced = $derived($reducedMotion);
+  const starsNeeded = $derived(scene.required - requiredStarsCollected(scene, collected));
+  const optionalLeft = $derived(
+    scene.stars.filter((star) => !star.required && !collected.includes(star.id)).length
+  );
 
   function ghostAlreadySeen() {
     try {
@@ -206,6 +186,28 @@
     resetRound();
   }
 
+  function nudgeBlocker(blocker) {
+    const index = scene.blockers.indexOf(blocker);
+    if (index < 0) return;
+    if (hitBlocker !== index) {
+      hitBlocker = index;
+      nudgeTick += 1;
+    }
+    sound.bump();
+    clearTimeout(pulseTimer);
+    pulseTimer = setTimeout(() => {
+      hitBlocker = -1;
+    }, 360);
+  }
+
+  /** Point where a→b has to stop for a Blocker, or null when the stroke is clear. */
+  function stoppedAt(a, b) {
+    const hit = blockerHit(scene.blockers, a, b);
+    if (!hit) return { point: b, blocker: null };
+    const edge = clipSegmentToCircle(a, b, hit, hit.r + BLOCKER_PAD);
+    return { point: edge, blocker: hit };
+  }
+
   function startDrawing(event) {
     if (walking || solved || roundDone || won) return;
     if (event.pointerType === 'mouse' && event.button !== 0) return;
@@ -219,8 +221,10 @@
     if (road.length === 0) {
       // Start anywhere: seed the road at Home, then draw toward the press.
       road = [{ ...scene.home }];
-      if (dist(p, scene.home) > 6 && !blockerHit(scene.blockers, scene.home, p)) {
-        road = [...road, p];
+      const seed = stoppedAt(scene.home, p);
+      if (dist(p, scene.home) > 6) {
+        if (seed.blocker) nudgeBlocker(seed.blocker);
+        if (seed.point && dist(seed.point, scene.home) > 6) road = [...road, seed.point];
       }
     } else {
       const tip = road[road.length - 1];
@@ -229,7 +233,12 @@
         // Rubbing back over the road erases everything after that point.
         road = road.slice(0, Math.max(1, idx + 1));
       } else if (!near(p, tip, CONTINUE_RADIUS)) {
-        return;
+        // Pressing far from the tip follows the start-anywhere rule: the road
+        // still reaches toward the press (stopping at a Blocker edge) instead
+        // of silently ignoring the child.
+        const bridge = stoppedAt(tip, p);
+        if (bridge.blocker) nudgeBlocker(bridge.blocker);
+        if (bridge.point && dist(bridge.point, tip) > 6) road = [...road, bridge.point];
       }
     }
 
@@ -251,15 +260,11 @@
 
     const hit = blockerHit(scene.blockers, last, p);
     if (hit) {
-      // Stop at the Blocker edge and keep the last valid point.
+      // Stop at the Blocker edge and keep the last valid point. A tip that is
+      // already resting on that edge is free to slide away on the next move.
       const edge = clipSegmentToCircle(last, p, hit, hit.r + BLOCKER_PAD);
       if (edge && dist(edge, last) > 5) road = [...road, edge];
-      hitBlocker = scene.blockers.indexOf(hit);
-      sound.bump();
-      clearTimeout(pulseTimer);
-      pulseTimer = setTimeout(() => {
-        hitBlocker = -1;
-      }, 360);
+      nudgeBlocker(hit);
       return;
     }
 
@@ -417,7 +422,17 @@
     data-testid="pb-root"
     data-level={level}
     data-road={layout + 1}
-    data-state={solved ? 'solved' : needsStars ? 'missed' : walking ? 'walking' : 'drawing'}
+    data-state={solved
+      ? 'solved'
+      : needsStars
+        ? 'missed'
+        : walking
+          ? 'walking'
+          : drawing
+            ? 'drawing'
+            : road.length > 1
+              ? 'ready'
+              : 'idle'}
   >
     <div class="pb-board-wrap">
       <svg
@@ -425,7 +440,7 @@
         class="board"
         viewBox="0 0 {W} {H}"
         preserveAspectRatio="xMidYMid meet"
-        role="application"
+        role="img"
         aria-label={$_('pbDrawRoad')}
         data-testid="scene"
         onpointerdown={startDrawing}
@@ -444,10 +459,18 @@
         <rect width={W} height={H} fill="url(#pb-sky)" />
         <circle cx="500" cy="110" r="42" fill="#ffe3a3" opacity=".28" />
         <ellipse cx="310" cy="560" rx="330" ry="470" fill="#4a5a34" opacity=".55" />
+        <ellipse
+          cx={scene.clearing.x}
+          cy={scene.clearing.y}
+          rx={scene.clearing.rx}
+          ry={scene.clearing.ry}
+          fill="#6f7d47"
+          opacity=".45"
+        />
         <ellipse cx="310" cy="620" rx="296" ry="400" fill="#5d6b3c" opacity=".55" />
 
         <g aria-hidden="true">
-          {#each trees as t (t.x + '-' + t.y)}
+          {#each scene.decor.filter((d) => d.kind === 'tree') as t (t.x + '-' + t.y)}
             <g transform="translate({t.x - t.s / 2},{t.y - t.s / 2})" opacity=".9">
               <Icons id="tree" size={t.s} />
             </g>
@@ -456,14 +479,14 @@
 
         {#if !reduced}
           <g aria-hidden="true" data-testid="fireflies">
-            {#each fireflies as f, i (i)}
+            {#each scene.decor.filter((d) => d.kind === 'firefly') as f, i (i)}
               <circle class="fly" cx={f.x} cy={f.y} r="3.2" fill="#ffe3a3" style:animation-delay="{-i * 1.3}s" />
             {/each}
           </g>
         {/if}
 
         <g aria-hidden="true">
-          {#each mushrooms as m, i (i)}
+          {#each scene.decor.filter((d) => d.kind === 'mushroom') as m, i (i)}
             <g transform="translate({m.x - m.s / 2},{m.y - m.s / 2})" opacity=".9">
               <Icons id="mushroom" size={m.s} />
             </g>
@@ -492,18 +515,22 @@
         </g>
 
         {#each scene.blockers as b, i (i)}
+          {@const art = blockerArtSize(b)}
           <g
-            transform="translate({b.x - b.r},{b.y - b.r})"
+            transform="translate({b.x - art / 2},{b.y - art / 2})"
             style:filter="url(#pb-soft)"
             data-testid="blocker"
             data-kind={b.kind}
             data-x={b.x}
             data-y={b.y}
             data-r={b.r}
+            data-art={art}
           >
-            <g class:blocked={hitBlocker === i}>
-              <Icons id={b.kind} size={b.r * 2} />
-            </g>
+            {#key nudgeTick}
+              <g class:blocked={hitBlocker === i}>
+                <Icons id={b.kind} size={art} />
+              </g>
+            {/key}
           </g>
         {/each}
 
@@ -551,9 +578,28 @@
             data-x={star.x}
             data-y={star.y}
             data-required={star.required}
+            data-collected={got}
             aria-hidden="true"
           >
-            <circle cx={star.x} cy={star.y} r="42" fill="#ffe3a3" opacity={got ? 0 : 0.16} />
+            <circle class="star-glow" cx={star.x} cy={star.y} r="42" opacity={got ? 0 : 0.16} />
+            {#if got && !reduced}
+              <g transform="translate({star.x},{star.y})">
+                <g class="sparkle">
+                  {#each [0, 45, 90, 135, 180, 225, 270, 315] as angle (angle)}
+                    <line
+                      x1="0"
+                      y1="-16"
+                      x2="0"
+                      y2="-25"
+                      transform="rotate({angle})"
+                      stroke="#ffe3a3"
+                      stroke-width="3"
+                      stroke-linecap="round"
+                    />
+                  {/each}
+                </g>
+              </g>
+            {/if}
             <g transform="translate({star.x - 22},{star.y - 22})">
               <g class:got>
                 <Icons id="star" size={44} />
@@ -592,19 +638,20 @@
       </button>
 
       {#if roundDone && !won}
-        <div class="pb-round-done" data-testid="round-done" role="status">
+        <div class="pb-round-done" data-testid="round-done">
           <p class="pb-round-title">{$_('pbMadeIt')}</p>
           <button class="pb-next" type="button" onclick={advance}>{$_('pbNextRoad')} ▶</button>
         </div>
       {/if}
 
       {#if levelDone}
-        <div class="pb-level-done" data-testid="level-overlay" role="status">
+        <div class="pb-level-done" data-testid="level-overlay">
           <p>{$_('levelComplete', { n: levelDone })}</p>
         </div>
       {/if}
     </div>
 
+    <!-- The single live region: drawing, walking, solved and missed-Star copy. -->
     <p class="pb-status" data-testid="pb-status" aria-live="polite">
       {#if solved}
         {$_('pbMadeIt')}
@@ -617,10 +664,13 @@
       {/if}
     </p>
 
-    <p class="pb-summary" data-testid="pb-summary" aria-live="polite">
+    <p class="pb-summary" data-testid="pb-summary">
       {$_('pbLevelOf', { n: level, m: LEVELS })}, {$_('pbRoadOf', { n: layout + 1, m: LAYOUTS })}.
-      {#if scene.stars.length > collected.length}
-        {$_('pbStarsLeft', { n: scene.stars.length - collected.length })}
+      {#if starsNeeded > 0}
+        {$_('pbStarsLeft', { n: starsNeeded })}
+      {/if}
+      {#if optionalLeft > 0}
+        {$_('pbOptionalLeft', { n: optionalLeft })}
       {/if}
     </p>
 
@@ -772,7 +822,17 @@
   .got {
     opacity: 0.3;
     transform: scale(0.65);
+    transform-box: fill-box;
+    transform-origin: center;
     transition: opacity 0.3s ease, transform 0.3s ease;
+  }
+  .star-glow {
+    transition: opacity 0.3s ease;
+  }
+  .sparkle {
+    animation: pbSpark 0.7s ease-out both;
+    transform-box: fill-box;
+    transform-origin: center;
   }
   @keyframes pbGuideFade {
     0% { opacity: 0; }
@@ -787,6 +847,10 @@
   @keyframes pbBob {
     0%, 100% { transform: translateY(0); }
     50% { transform: translateY(-4px); }
+  }
+  @keyframes pbSpark {
+    0% { opacity: 1; transform: scale(0.5); }
+    100% { opacity: 0; transform: scale(1.6); }
   }
   @keyframes pbDrift {
     0%, 100% { transform: translate(0, 0); opacity: 0.2; }
