@@ -2,22 +2,25 @@
   // The firefly jar: the only progress display. One firefly lights per catch;
   // the jar fills to the goal. Decorative for screen readers; the route owns the
   // live status that announces the count.
+  import { jarDots, jarPercent } from '#lib/focus-tap/layout.js';
+
   let { caught = 0, goal = 7, reduced = false } = $props();
 
-  const pct = $derived(Math.min(1, caught / Math.max(1, goal)));
-  const dots = $derived(Array.from({ length: Math.max(0, Math.min(goal, 20)) }, (_, i) => i));
+  const pct = $derived(jarPercent(caught, goal));
+  const dots = $derived(jarDots(goal));
 </script>
 
 <div class="jar" class:calm={reduced} aria-hidden="true">
   <span class="lid"></span>
   <div class="glass">
     <span class="fill" style:height="{pct * 100}%"></span>
-    {#each dots as i (i)}
+    {#each dots as dot, i (i)}
       <span
         class="fly"
+        class:dense={dot.dense}
         class:on={i < caught}
-        style:left="{10 + ((i * 47) % 74)}%"
-        style:bottom="{5 + ((i * 31) % 70)}%"
+        style:left="{dot.left}%"
+        style:bottom="{dot.bottom}%"
       ></span>
     {/each}
     <span class="shine"></span>
@@ -72,9 +75,18 @@
       opacity 0.25s,
       box-shadow 0.25s;
   }
+  .fly.dense {
+    width: 5px;
+    height: 5px;
+    margin-left: -2.5px;
+    margin-bottom: -2.5px;
+  }
   .fly.on {
     opacity: 1;
     box-shadow: 0 0 8px 2px rgba(255, 214, 140, 0.7);
+  }
+  .fly.dense.on {
+    box-shadow: 0 0 6px 1.5px rgba(255, 214, 140, 0.7);
   }
   .shine {
     position: absolute;

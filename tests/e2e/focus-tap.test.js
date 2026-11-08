@@ -65,6 +65,7 @@ test.describe('Focus Tap — Pond Catch E2E', () => {
     expect((await page.getByTestId('jar').textContent())?.trim()).toBe('');
     expect(await page.locator('.hud-item').count()).toBe(1);
     expect(await page.locator('.hud-item').first().textContent()).not.toMatch(/\d+\s*\/\s*\d+/);
+    await expect(page.getByTestId('focus-tap')).toHaveAttribute('data-tier', 'same');
   });
 
   test('tapping a target flicks the tongue, pops it and lights one firefly', async ({ page }) => {
@@ -88,6 +89,54 @@ test.describe('Focus Tap — Pond Catch E2E', () => {
     await expect(page.getByTestId('jar-status')).toContainText('1 of 7');
     await expect(page.getByTestId('catch-fx')).toBeVisible({ timeout: 2000 });
     await expect.poll(() => page.evaluate(() => window.__tongueSeen)).toBe(true);
+    await expect(page.getByTestId('focus-tap')).toHaveAttribute('data-tier', 'cross');
+  });
+
+  test('a keyboard activation catches the target too', async ({ page }) => {
+    test.setTimeout(60000);
+    await page.goto('/games/focus-tap/play/1?seed=42');
+    const target = nextTarget(page);
+    await expect(target).toBeVisible({ timeout: 15000 });
+    await target.focus();
+    await page.keyboard.press('Enter');
+
+    await expect(page.getByTestId('jar')).toHaveAttribute('data-count', '1');
+    await expect(page.getByTestId('jar-status')).toContainText('1 of 7');
+  });
+
+  test('the sparkle lands where the target was tapped', async ({ page }) => {
+    test.setTimeout(60000);
+    await page.goto('/games/focus-tap/play/1?seed=42');
+    await expect(nextTarget(page)).toBeVisible({ timeout: 15000 });
+
+    // Record the target's rect at pointerdown — the exact moment the sparkle is
+    // anchored.
+    await page.evaluate(() => {
+      window.__tapRect = null;
+      document.addEventListener(
+        'pointerdown',
+        (event) => {
+          const el = event.target?.closest?.('[data-testid="target"]');
+          if (el && !window.__tapRect) window.__tapRect = el.getBoundingClientRect().toJSON();
+        },
+        true
+      );
+    });
+
+    await nextTarget(page).click({ force: true });
+
+    const tapRect = await page.evaluate(() => window.__tapRect);
+    expect(tapRect).not.toBeNull();
+    const fx = page.getByTestId('catch-fx');
+    await expect(fx).toBeVisible({ timeout: 3000 });
+    const fxBox = await fx.boundingBox();
+    expect(fxBox).not.toBeNull();
+    const targetCx = tapRect.left + tapRect.width / 2;
+    const targetCy = tapRect.top + tapRect.height / 2;
+    const fxCx = fxBox.x + fxBox.width / 2;
+    const fxCy = fxBox.y + fxBox.height / 2;
+    expect(Math.abs(fxCx - targetCx)).toBeLessThan(25);
+    expect(Math.abs(fxCy - targetCy)).toBeLessThan(25);
   });
 
   test('tapping a distractor only wobbles it and never fills the jar', async ({ page }) => {
@@ -104,6 +153,68 @@ test.describe('Focus Tap — Pond Catch E2E', () => {
     expect((await jarState(page)).count).toBe(before);
     await expect(page.getByTestId('catch-fx')).toHaveCount(0);
     await expect(page.getByTestId('tongue')).toHaveCount(0);
+  });
+
+  test('tapping a distractor does not teleport or restart it', async ({ page }) => {
+    test.setTimeout(60000);
+    await page.goto('/games/focus-tap/play/1?seed=42');
+
+    // Wait until a distractor is in the middle band, where resetting the rise
+    // animation would move it by hundreds of pixels.
+    await page.waitForFunction(
+      () => {
+        const el = document.querySelector('[data-testid="distractor"]');
+        if (!el) return false;
+        const rect = el.getBoundingClientRect();
+        return rect.top > 180 && rect.bottom < window.innerHeight - 180;
+      },
+      null,
+      { timeout: 20000 }
+    );
+
+    const distractor = page.locator('[data-testid="distractor"]').first();
+    const before = await distractor.boundingBox();
+    await distractor.click({ force: true });
+    await page.waitForTimeout(150);
+    const after = await distractor.boundingBox();
+    expect(after).not.toBeNull();
+    const beforeCy = before.y + before.height / 2;
+    const afterCy = after.y + after.height / 2;
+    expect(Math.abs(afterCy - beforeCy)).toBeLessThan(60);
+  });
+
+  test('the stream stays clear of both docks and never clips at the edge', async ({ page }) => {
+    test.setTimeout(60000);
+    for (const viewport of [
+      { width: 320, height: 568 },
+      { width: 390, height: 844 }
+    ]) {
+      await page.setViewportSize(viewport);
+      await page.goto('/games/focus-tap/play/10?seed=7');
+      await expect(nextTarget(page)).toBeVisible({ timeout: 15000 });
+      await page.waitForTimeout(2000); // let a few more stream items appear
+
+      const pond = await page.getByTestId('pond').boundingBox();
+      const docks = [
+        await page.getByTestId('frog').boundingBox(),
+        await page.getByTestId('jar').boundingBox()
+      ];
+      const boxes = await page
+        .locator('[data-testid="target"], [data-testid="distractor"]')
+        .evaluateAll((elements) => elements.map((el) => el.getBoundingClientRect().toJSON()));
+      expect(boxes.length).toBeGreaterThan(0);
+
+      for (const box of boxes) {
+        expect(box.left).toBeGreaterThanOrEqual(pond.x - 0.5);
+        expect(box.right).toBeLessThanOrEqual(pond.x + pond.width + 0.5);
+        for (const dock of docks) {
+          expect(dock).not.toBeNull();
+          const overlapsX = box.right > dock.x && box.left < dock.x + dock.width;
+          const overlapsY = box.bottom > dock.y && box.top < dock.y + dock.height;
+          expect(overlapsX && overlapsY).toBe(false);
+        }
+      }
+    }
   });
 
   test('filling the jar ends the round and Next Level starts a fresh round', async ({ page }) => {
@@ -149,21 +260,26 @@ test.describe('Focus Tap — Pond Catch E2E', () => {
     expect(saved).toBe('3');
   });
 
-  test('a late level keeps the goal, tiers and a playable stream', async ({ page }) => {
+  test('a late level keeps the goal, lookalike tier and a playable stream', async ({ page }) => {
     test.setTimeout(60000);
     await page.goto('/games/focus-tap/play/10?seed=7');
     await expect(page.getByTestId('focus-tap')).toHaveAttribute('data-level', '10');
+    await expect(page.getByTestId('focus-tap')).toHaveAttribute('data-tier', 'lookalike');
     await expect(nextTarget(page)).toBeVisible({ timeout: 15000 });
     const state = await jarState(page);
     expect(state.count).toBe(0);
     expect(state.goal).toBe(16);
+
+    // The high goal uses the compact firefly grid so the dots still read.
+    await expect(page.locator('[data-testid="jar"] .fly')).toHaveCount(16);
+    await expect(page.locator('[data-testid="jar"] .fly.dense')).toHaveCount(16);
 
     await nextTarget(page).click({ force: true });
     await expect(page.getByTestId('jar')).toHaveAttribute('data-count', '1');
   });
 
   test('reduced motion calms the fireflies and sparkle but stays playable', async ({ page }) => {
-    test.setTimeout(60000);
+    test.setTimeout(120000);
     await page.emulateMedia({ reducedMotion: 'reduce' });
     await page.goto('/games/focus-tap/play/1?seed=42');
     await expect(page.getByTestId('pond')).toBeVisible();
@@ -173,6 +289,13 @@ test.describe('Focus Tap — Pond Catch E2E', () => {
     await nextTarget(page).click({ force: true });
     await expect(page.getByTestId('jar')).toHaveAttribute('data-count', '1');
     await expect(page.getByTestId('catch-fx')).toHaveCount(0);
+
+    // Finishing the round keeps the static starfield; only the falling confetti
+    // is calmed.
+    await solveRound(page);
+    await expect(winOverlay(page)).toBeVisible({ timeout: 15000 });
+    await expect(winOverlay(page).locator('.starfield')).toBeVisible();
+    await expect(winOverlay(page).locator('.confetti-container')).toBeHidden();
   });
 
   test('the sound toggle mutes the pond cues, not just page errors', async ({ page }) => {

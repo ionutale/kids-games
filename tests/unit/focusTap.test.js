@@ -7,6 +7,13 @@ import {
   nextSpawn,
   SPAWN_LIFETIME_GRACE_MS
 } from '../../src/lib/trainers/focusTap.js';
+import {
+  streamX,
+  STREAM_BAND,
+  jarDots,
+  jarPercent,
+  MAX_JAR_DOTS
+} from '../../src/lib/focus-tap/layout.js';
 
 // The Pond Catch reuses the trainer engine unchanged. This suite pins the
 // contract the PRD and tickets promise: goal 6 + level (cap 20), the three
@@ -29,7 +36,7 @@ describe('Focus Tap — pond round rules', () => {
     }
   });
 
-  it('clamps out-of-range levels like the route does', () => {
+  it('clamps out-of-range levels in the level config', () => {
     expect(levelConfig(0)).toEqual(levelConfig(1));
     expect(levelConfig(99).goal).toBe(20);
   });
@@ -116,5 +123,80 @@ describe('Focus Tap — stream spawns', () => {
     const next = nextSpawn(state, stale, 1, later);
     expect(next.items.length).toBe(1);
     expect(next.items[0].id).not.toBe(stale[0].id);
+  });
+});
+
+describe('Focus Tap — stream safe band', () => {
+  it('remaps the engine x range into the central band', () => {
+    expect(streamX(6)).toBe(STREAM_BAND.min);
+    expect(streamX(90)).toBe(STREAM_BAND.max);
+    expect(streamX(48)).toBeCloseTo((STREAM_BAND.min + STREAM_BAND.max) / 2);
+  });
+
+  it('clamps stray engine positions and stays monotonic', () => {
+    expect(streamX(-50)).toBe(STREAM_BAND.min);
+    expect(streamX(500)).toBe(STREAM_BAND.max);
+    let previous = -1;
+    for (let x = 6; x <= 90; x += 1) {
+      const mapped = streamX(x);
+      expect(mapped).toBeGreaterThanOrEqual(STREAM_BAND.min);
+      expect(mapped).toBeLessThanOrEqual(STREAM_BAND.max);
+      expect(mapped).toBeGreaterThanOrEqual(previous);
+      previous = mapped;
+    }
+  });
+
+  it('leaves room for the frog and jar docks on both phone widths', () => {
+    // 320 wide: ~300px pond, 48px emoji. 390 wide: ~370px pond, 49px emoji.
+    for (const { pond, emoji } of [
+      { pond: 300, emoji: 48 },
+      { pond: 370, emoji: 49 }
+    ]) {
+      const half = (emoji / 2 / pond) * 100;
+      const leftEdge = STREAM_BAND.min - half;
+      const rightEdge = STREAM_BAND.max + half;
+      expect(leftEdge).toBeGreaterThan(27.5); // frog dock right edge
+      expect(rightEdge).toBeLessThan(80); // jar dock left edge
+    }
+  });
+});
+
+describe('Focus Tap — firefly jar layout', () => {
+  it('fills from 0 to the goal and clamps', () => {
+    expect(jarPercent(0, 7)).toBe(0);
+    expect(jarPercent(4, 8)).toBe(0.5);
+    expect(jarPercent(8, 8)).toBe(1);
+    expect(jarPercent(12, 8)).toBe(1);
+    expect(jarPercent(1, 0)).toBe(1);
+  });
+
+  it('keeps one dot per catch, capped at 20', () => {
+    expect(jarDots(7)).toHaveLength(7);
+    expect(jarDots(16)).toHaveLength(16);
+    expect(jarDots(20)).toHaveLength(20);
+    expect(jarDots(99)).toHaveLength(MAX_JAR_DOTS);
+    expect(jarDots(0)).toEqual([]);
+  });
+
+  it('switches to a smaller grid for high goals', () => {
+    expect(jarDots(7).every((dot) => !dot.dense)).toBe(true);
+    expect(jarDots(12).every((dot) => !dot.dense)).toBe(true);
+    expect(jarDots(13).every((dot) => dot.dense)).toBe(true);
+    expect(jarDots(16).every((dot) => dot.dense)).toBe(true);
+    expect(jarDots(20).every((dot) => dot.dense)).toBe(true);
+  });
+
+  it('keeps every dot inside the glass and in a countable grid', () => {
+    for (const goal of [13, 16, 20]) {
+      const dots = jarDots(goal);
+      expect(new Set(dots.map((dot) => dot.left)).size).toBeGreaterThanOrEqual(4);
+      expect(new Set(dots.map((dot) => dot.bottom)).size).toBeGreaterThanOrEqual(4);
+      for (const dot of dots) {
+        expect(dot.left).toBeGreaterThanOrEqual(10);
+        expect(dot.left).toBeLessThanOrEqual(88);
+        expect(dot.bottom).toBeGreaterThanOrEqual(8);
+        expect(dot.bottom).toBeLessThanOrEqual(74);
+      }
+    }
   });
 });

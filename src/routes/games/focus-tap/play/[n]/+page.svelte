@@ -14,6 +14,7 @@
   import Frog from '#lib/focus-tap/Frog.svelte';
   import FireflyJar from '#lib/focus-tap/FireflyJar.svelte';
   import { createPondSound } from '#lib/focus-tap/sound.js';
+  import { streamX } from '#lib/focus-tap/layout.js';
   import '#lib/trainers/fx.css';
 
   import { makeRoundState, nextSpawn } from '#lib/trainers/focusTap.js';
@@ -41,6 +42,8 @@
   let spawnTimer = null;
   let touchLock = false;
   let streamEl = $state(null);
+  let frogEl = $state(null);
+  let jarEl = $state(null);
   let timers = new Set();
 
   const sound = createPondSound();
@@ -84,12 +87,34 @@
     const rect = el.getBoundingClientRect();
     if (!pond || !pond.width || !pond.height) return null;
     return {
-      x: ((rect.left + rect.width / 2 - pond.left) / pond.width) * 100,
-      y: ((rect.top + rect.height / 2 - pond.top) / pond.height) * 100
+      // Positions inside an overflow container are layout-relative: add back
+      // the container's scroll offset so a focus/click scroll cannot displace
+      // the tongue or the sparkle from the tapped emoji.
+      x:
+        ((rect.left + rect.width / 2 - pond.left + streamEl.scrollLeft) / pond.width) * 100,
+      y: ((rect.top + rect.height / 2 - pond.top + streamEl.scrollTop) / pond.height) * 100
     };
   }
 
+  // The docks sit above the stream. Never let a tap that lands on the frog or
+  // the jar activate an emoji hidden behind it.
+  function overDock(event) {
+    const x = event.clientX ?? 0;
+    const y = event.clientY ?? 0;
+    if (!x && !y) return false; // keyboard / assistive activation has no point
+    return [frogEl, jarEl].some((el) => {
+      const rect = el?.getBoundingClientRect();
+      return Boolean(rect) && x >= rect.left && x <= rect.right && y >= rect.top && y <= rect.bottom;
+    });
+  }
+
   function tap(event, item) {
+    if (overDock(event)) return;
+    // A pointer press normally emits pointerdown then click. Handle the press
+    // once; a later keyboard/AT click has no pointer mark and still lands here.
+    if (event.type === 'pointerdown') item.pointerAt = performance.now();
+    else if (item.pointerAt != null && performance.now() - item.pointerAt < 700) return;
+
     if (touchLock || won || item.popping) return;
     touchLock = true;
     later(() => (touchLock = false), 70);
@@ -134,7 +159,9 @@
   function finish() {
     won = true;
     stopSpawning();
-    sound.fill();
+    // Let the catch plop and croak land before the jar chime. The win card is
+    // silent (see WinOverlay below), so the fill is the one positive audio beat.
+    later(() => sound.fill(), 240);
   }
 
   function resetRound() {
@@ -185,7 +212,7 @@
     </span>
   {/snippet}
 
-  <div class="pond-catch" data-testid="focus-tap" data-level={level}>
+  <div class="pond-catch" data-testid="focus-tap" data-level={level} data-tier={round.tier}>
     <div class="pond" data-testid="pond" role="group" aria-label={$_('ftPond')}>
       <Pond {reduced} />
 
@@ -197,8 +224,9 @@
             class:wrong={wrongId === item.id}
             type="button"
             onpointerdown={(event) => tap(event, item)}
+            onclick={(event) => tap(event, item)}
             aria-label={item.isTarget ? $_('catchTarget', { e: item.emoji }) : $_('ftFriend')}
-            style:left="{item.x}%"
+            style:left="{streamX(item.x)}%"
             style:--rise="{round.config.riseSec}s"
             data-testid={item.isTarget ? 'target' : 'distractor'}
             oncontextmenu={(event) => event.preventDefault()}
@@ -244,7 +272,7 @@
         {/if}
       </div>
 
-      <div class="frog-dock" data-testid="frog">
+      <div class="frog-dock" data-testid="frog" bind:this={frogEl}>
         <Frog target={round.target} />
       </div>
 
@@ -253,6 +281,7 @@
         data-testid="jar"
         data-count={caught}
         data-goal={goal}
+        bind:this={jarEl}
         aria-hidden="true"
       >
         <FireflyJar caught={caught} {goal} {reduced} />
@@ -266,7 +295,7 @@
 
 {#if won}
   <div class="win-wrap" class:calm={reduced}>
-    <WinOverlay title={$_('jarFull')} subtitle={$_('ftWinSub')}>
+    <WinOverlay title={$_('jarFull')} subtitle={$_('ftWinSub')} sound={false}>
       {#snippet badge()}<img
           class="win-badge"
           src="/art/trainers/focus-tap/win-badge.png"
@@ -364,7 +393,7 @@
     bottom: 2%;
     width: clamp(88px, 27vw, 122px);
     z-index: 5;
-    pointer-events: none;
+    pointer-events: auto;
   }
   .jar-dock {
     position: absolute;
@@ -372,16 +401,15 @@
     bottom: 3%;
     width: clamp(50px, 15vw, 66px);
     z-index: 5;
-    pointer-events: none;
+    pointer-events: auto;
   }
   .win-wrap {
     display: contents;
   }
   /* WinOverlay always mounts Confetti/Starfield. A child who asked for reduced
-     motion should not get a falling celebration, so the route hides those two
-     layers; the win card and ladder actions stay. */
-  .win-wrap.calm :global(.confetti-container),
-  .win-wrap.calm :global(.starfield) {
+     motion should not get a falling celebration; the static starfield and the
+     win card stay. */
+  .win-wrap.calm :global(.confetti-container) {
     display: none;
   }
   .win-badge {
@@ -446,9 +474,6 @@
        stays playable while the fireflies and sparkle stay still. */
     .emoji {
       animation-duration: var(--rise, 7s) !important;
-    }
-    .sparkle {
-      animation: none;
     }
   }
 </style>
