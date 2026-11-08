@@ -56,7 +56,13 @@ const NEW_KEYS = [
   'spotCompleteSub',
   'spotLook',
   'spotWhatChanged',
-  'spotPeek'
+  'spotPeek',
+  'ftPond',
+  'ftSign',
+  'ftJarFill',
+  'ftRemaining',
+  'ftFriend',
+  'ftWinSub'
 ];
 
 describe('locale parity', () => {
@@ -91,6 +97,15 @@ describe('locale parity', () => {
   it('preserves placeholders in every locale', () => {
     for (const code of LOCALES) {
       expect(translations[code].catchTarget, code).toContain('{e}');
+    }
+  });
+
+  it('keeps the focus-tap pond placeholders in every locale', () => {
+    for (const code of LOCALES) {
+      expect(translations[code].ftSign, `${code}.ftSign`).toContain('{e}');
+      expect(translations[code].ftJarFill, `${code}.ftJarFill`).toContain('{n}');
+      expect(translations[code].ftJarFill, `${code}.ftJarFill`).toContain('{m}');
+      expect(translations[code].ftRemaining, `${code}.ftRemaining`).toContain('{n}');
     }
   });
 

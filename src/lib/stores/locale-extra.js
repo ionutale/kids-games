@@ -54,7 +54,13 @@ export const extraTranslations = {
     spotCompleteSub: 'You found every difference.',
     spotLook: 'Look carefully…',
     spotWhatChanged: 'What changed?',
-    spotPeek: 'one more look'
+    spotPeek: 'one more look',
+    ftPond: 'Moonlit pond',
+    ftSign: 'Target: {e}',
+    ftJarFill: 'Firefly jar: {n} of {m}',
+    ftRemaining: 'Still needed: {n}',
+    ftFriend: 'Pond friend',
+    ftWinSub: 'You filled the jar with fireflies.'
   },
   it: {
     goodTry: 'Bel tentativo',
@@ -109,7 +115,13 @@ export const extraTranslations = {
     spotCompleteSub: 'Hai trovato tutte le differenze.',
     spotLook: 'Guarda bene…',
     spotWhatChanged: 'Cosa è cambiato?',
-    spotPeek: 'ancora uno sguardo'
+    spotPeek: 'ancora uno sguardo',
+    ftPond: 'Stagno al chiaro di luna',
+    ftSign: 'Obiettivo: {e}',
+    ftJarFill: 'Barattolo di lucciole: {n} di {m}',
+    ftRemaining: 'Ancora da prendere: {n}',
+    ftFriend: 'Amico dello stagno',
+    ftWinSub: 'Hai riempito il barattolo di lucciole.'
   },
   ro: {
     goodTry: 'Bună încercare',
@@ -164,7 +176,13 @@ export const extraTranslations = {
     spotCompleteSub: 'Ai găsit toate diferențele.',
     spotLook: 'Privește cu atenție…',
     spotWhatChanged: 'Ce s-a schimbat?',
-    spotPeek: 'încă o privire'
+    spotPeek: 'încă o privire',
+    ftPond: 'Lac la lumina lunii',
+    ftSign: 'Țintă: {e}',
+    ftJarFill: 'Borcanul cu licurici: {n} din {m}',
+    ftRemaining: 'Mai trebuie: {n}',
+    ftFriend: 'Prieten de la lac',
+    ftWinSub: 'Ai umplut borcanul cu licurici.'
   },
   de: {
     goodTry: 'Gut versucht',
@@ -219,7 +237,13 @@ export const extraTranslations = {
     spotCompleteSub: 'Du hast alle Unterschiede gefunden.',
     spotLook: 'Schau genau…',
     spotWhatChanged: 'Was hat sich verändert?',
-    spotPeek: 'noch ein Blick'
+    spotPeek: 'noch ein Blick',
+    ftPond: 'Mondbeschienener Teich',
+    ftSign: 'Ziel: {e}',
+    ftJarFill: 'Glühwürmchenglas: {n} von {m}',
+    ftRemaining: 'Noch nötig: {n}',
+    ftFriend: 'Teichfreund',
+    ftWinSub: 'Du hast das Glas mit Glühwürmchen gefüllt.'
   },
   fr: {
     goodTry: 'Bien essayé',
@@ -274,7 +298,13 @@ export const extraTranslations = {
     spotCompleteSub: 'Tu as trouvé toutes les différences.',
     spotLook: 'Regarde bien…',
     spotWhatChanged: 'Qu’est-ce qui a changé ?',
-    spotPeek: 'encore un regard'
+    spotPeek: 'encore un regard',
+    ftPond: 'Étang au clair de lune',
+    ftSign: 'Cible : {e}',
+    ftJarFill: 'Bocal à lucioles : {n} sur {m}',
+    ftRemaining: 'Encore à attraper : {n}',
+    ftFriend: 'Ami de l’étang',
+    ftWinSub: 'Tu as rempli le bocal de lucioles.'
   },
   zh: {
     goodTry: '做得不错',
@@ -329,6 +359,12 @@ export const extraTranslations = {
     spotCompleteSub: '你找出了所有不同。',
     spotLook: '仔细看…',
     spotWhatChanged: '哪里变了？',
-    spotPeek: '再看一次'
+    spotPeek: '再看一次',
+    ftPond: '月光池塘',
+    ftSign: '目标：{e}',
+    ftJarFill: '萤火虫罐：{n}/{m}',
+    ftRemaining: '还需要：{n}',
+    ftFriend: '池塘朋友',
+    ftWinSub: '你把萤火虫装满了罐子。'
   }
 };
