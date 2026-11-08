@@ -1,10 +1,11 @@
 <script>
   // Picture progress without digits: one token per difference in this puzzle
-  // and one slot per picture in the five-picture set.
-  let { found = 0, total = 0, step = 0, steps = 5, label = '' } = $props();
+  // and one slot per picture in the five-picture set. The route's status line
+  // is the single live announcement; the visual HUD stays silent.
+  let { found = 0, total = 0, step = 0, steps = 5 } = $props();
 </script>
 
-<div class="hud" data-testid="spot-progress" role="img" aria-label={label}>
+<div class="hud" data-testid="spot-progress" aria-hidden="true">
   <div class="tokens" aria-hidden="true">
     {#each Array(Math.max(0, total)) as _, i (i)}
       <span class="token" class:on={i < found}></span>

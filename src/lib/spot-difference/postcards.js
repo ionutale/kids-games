@@ -23,11 +23,13 @@ export function loadPostcards(storage = storageOrNull()) {
 }
 
 /**
- * Prepend a postcard and persist the whole album. Returns the new in-memory
- * album even when the write fails, so the set card never goes blank.
+ * Prepend a postcard and persist the whole album. `base` lets the route keep its
+ * accumulated session album when storage is blocked or full; without it the
+ * store is read first. Returns the new in-memory album even when the write
+ * fails, so the set card never goes blank.
  */
-export function addPostcard(card, storage = storageOrNull()) {
-  const all = loadPostcards(storage);
+export function addPostcard(card, base = null, storage = storageOrNull()) {
+  const all = Array.isArray(base) ? base : loadPostcards(storage);
   const next = [{ ...card, at: card?.at ?? Date.now() }, ...all];
   if (storage) {
     try {

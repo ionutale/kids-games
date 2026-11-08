@@ -2,7 +2,7 @@
   // Spot the Difference — Twin Postcards. Two stacked harbor pictures; tap a
   // changed spot in either one and both ring it. Five pictures make a set, each
   // solve adds a postcard to the album. No timer, no fail, no mistake count.
-  import { onDestroy, onMount } from 'svelte';
+  import { onDestroy, onMount, tick } from 'svelte';
   import { page } from '$app/state';
   import { makeSeed, seedFromUrl } from '#lib/game/seed.js';
   import { _ } from '#lib/stores/locale.js';
@@ -16,6 +16,7 @@
     SET_SIZE,
     ageSpec,
     findDiffAt,
+    foundDiffAt,
     makeScenePuzzle,
     sceneFor
   } from '#lib/spot-difference/scene.js';
@@ -38,6 +39,8 @@
   let wrong = $state(null);
   let phase = $state('play'); // play → toast → done
   let postcards = $state([]);
+  let catReacts = $state(0);
+  let playAgainButton = $state(null);
 
   let timers = [];
   let hintTimer = null;
@@ -55,6 +58,14 @@
     $_('spotSetProgress', { n: Math.min(step + 1, SET_SIZE), m: SET_SIZE })
   );
   const statusText = $derived(`${foundLabel}. ${setLabel}`);
+
+  // The set-complete card is modal: move focus to its primary action so a
+  // keyboard or switch user is not left behind on the hidden picture.
+  $effect(() => {
+    if (phase === 'done') {
+      tick().then(() => playAgainButton?.focus());
+    }
+  });
 
   function later(fn, ms) {
     const id = setTimeout(() => {
@@ -130,10 +141,14 @@
     if (diff) {
       if (found.includes(diff.id)) return;
       found = [...found, diff.id];
+      catReacts += 1;
       sound.find();
       clearHint();
       if (found.length === puzzle.diffs.length) solve();
       else armHint();
+    } else if (foundDiffAt(puzzle, point.px, point.py, point.w, point.h, found)) {
+      // Tapping a difference that is already ringed is not a wrong answer.
+      return;
     } else {
       wrongKey += 1;
       wrong = { x: point.x, y: point.y, side, key: wrongKey };
@@ -149,13 +164,14 @@
     clearHint();
     sound.jingle();
     setDone += 1;
-    postcards = addPostcard({ age: setAge, seed: puzzle.seed });
+    postcards = addPostcard({ age: setAge, seed: puzzle.seed }, postcards);
     later(() => {
       if (step < SET_SIZE - 1) {
         startPuzzle(step + 1);
       } else {
         phase = 'done';
-        postcards = loadPostcards();
+        // Keep the accumulated session album. Re-reading storage here would
+        // erase the in-memory fallback when localStorage is blocked or full.
         sound.bell();
       }
     }, TOAST_DURATION);
@@ -176,7 +192,6 @@
       total={total}
       step={setDone}
       steps={SET_SIZE}
-      label={statusText}
     />
   {/snippet}
 
@@ -204,6 +219,7 @@
             onpick={(point) => pick(side, point)}
             label={side === 'left' ? $_('picture1') : $_('picture2')}
             testid={`panel-${side}`}
+            catReact={catReacts}
             {reduced}
           />
         {/each}
@@ -234,7 +250,12 @@
             countLabel={$_('spotPostcardCount', { n: postcards.length })}
           />
           <div class="actions">
-            <button class="primary" type="button" onclick={startSet}>{$_('playAgain')}</button>
+            <button
+              class="primary"
+              type="button"
+              bind:this={playAgainButton}
+              onclick={startSet}
+            >{$_('playAgain')}</button>
             <a class="ghost" href="/" data-testid="spot-back">{$_('back')}</a>
           </div>
         </div>

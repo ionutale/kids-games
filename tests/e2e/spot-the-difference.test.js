@@ -171,6 +171,18 @@ test.describe('Spot the Difference — Twin Postcards', () => {
     await expect(page.getByTestId('spot-progress').locator('.token.on')).toHaveCount(1);
     await expect(page.getByTestId('spot-root')).toHaveAttribute('data-found', '1');
     await expect(page.getByTestId('spot-status')).toContainText('Found 1 of 2 differences');
+
+    // The cat reacts to the find, then settles.
+    const cat = page.getByTestId('panel-left').locator('.cat');
+    await expect(cat).toHaveAttribute('data-reacting', 'true');
+    await expect(cat).toHaveAttribute('data-reacting', 'false', { timeout: 2500 });
+
+    // Tapping the same, already-found spot is a silent no-op, not a wrong tap.
+    await tapAt(page, 'left', diffs[0].x, diffs[0].y);
+    await page.waitForTimeout(150);
+    await expect(page.getByTestId('panel-left').locator('.wrong')).toHaveCount(0);
+    await expect(page.getByTestId('spot-progress').locator('.token.on')).toHaveCount(1);
+    await expect(page.getByTestId('spot-root')).toHaveAttribute('data-found', '1');
   });
 
   test('tapping a match only wobbles, never counts', async ({ page }) => {
@@ -233,6 +245,10 @@ test.describe('Spot the Difference — Twin Postcards', () => {
     test.setTimeout(120000);
     await open(page, { age: 3, seed: 2 });
     for (let i = 0; i < 5; i += 1) {
+      // The set is flat: every picture keeps the age-3 prop and difference count.
+      await expect(page.getByTestId('spot-root')).toHaveAttribute('data-age', '3');
+      await expect(page.getByTestId('panel-left').locator('.prop')).toHaveCount(9);
+      await expect(page.getByTestId('spot-progress').locator('.token')).toHaveCount(2);
       await solveCurrentPuzzle(page);
       await expect(page.getByTestId('postcard-toast')).toBeVisible({ timeout: 5000 });
       if (i < 4) {
@@ -244,6 +260,7 @@ test.describe('Spot the Difference — Twin Postcards', () => {
     }
 
     await expect(page.getByTestId('set-complete')).toBeVisible({ timeout: 6000 });
+    await expect(page.locator('[data-testid="set-complete"] .primary')).toBeFocused();
     await expect(page.getByTestId('postcard-album').locator('[data-testid="postcard"]')).toHaveCount(
       5
     );
@@ -281,6 +298,32 @@ test.describe('Spot the Difference — Twin Postcards', () => {
     await expect(page.getByTestId('spot-root')).toHaveAttribute('data-step', '0');
     await expect(page.getByTestId('spot-root')).toHaveAttribute('data-solved', '0');
     await expect(page.getByTestId('spot-progress').locator('.slot.done')).toHaveCount(0);
+  });
+
+  test('a blocked postcard store still shows the session album on the set card', async ({ page }) => {
+    test.setTimeout(120000);
+    await page.addInitScript(() => {
+      const original = Storage.prototype.setItem;
+      Storage.prototype.setItem = function setItem(key, value) {
+        if (key === 'spotPostcards') throw new Error('storage blocked');
+        return original.call(this, key, value);
+      };
+    });
+    await open(page, { age: 3, seed: 2 });
+    for (let i = 0; i < 5; i += 1) {
+      await solveCurrentPuzzle(page);
+      if (i < 4) {
+        await expect(page.getByTestId('spot-root')).toHaveAttribute('data-step', String(i + 1), {
+          timeout: 5000
+        });
+      }
+    }
+
+    await expect(page.getByTestId('set-complete')).toBeVisible({ timeout: 6000 });
+    await expect(page.getByTestId('postcard-album').locator('[data-testid="postcard"]')).toHaveCount(
+      5
+    );
+    expect(await page.evaluate(() => localStorage.getItem('spotPostcards'))).toBeNull();
   });
 
   test('the set-complete Back link returns to the hub', async ({ page }) => {
@@ -357,6 +400,11 @@ test.describe('Spot the Difference — Twin Postcards', () => {
       .evaluate((node) => getComputedStyle(node).animationName);
     expect(ringAnimation).toBe('none');
     await expect(page.getByTestId('spot-root')).toHaveAttribute('data-found', '1');
+    await page.waitForTimeout(150);
+    await expect(page.getByTestId('panel-left').locator('.cat')).toHaveAttribute(
+      'data-reacting',
+      'false'
+    );
   });
 
   test('muted sound still plays the whole loop without errors', async ({ page }) => {

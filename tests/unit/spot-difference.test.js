@@ -1,13 +1,17 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import {
+  BADGE_ZONE,
   CAT_ZONE,
   DIFF_TYPES,
+  MOVE_CLEARANCE,
   PROP_POOL,
   SET_SIZE,
   ageSpec,
   diffPointsPx,
   findDiffAt,
+  foundDiffAt,
   hotspotRadius,
+  inBadgeZone,
   inCatZone,
   makeScenePuzzle,
   sceneFor
@@ -126,6 +130,41 @@ describe('makeScenePuzzle', () => {
     }
   });
 
+  it('keeps every moved landing clear of other props and the Picture badge', () => {
+    let checked = 0;
+    for (const age of [3, 4, 5]) {
+      for (let seed = 1; seed <= 160; seed += 1) {
+        const puzzle = makeScenePuzzle(age, seed);
+        for (const diff of puzzle.diffs.filter((d) => d.type === 'moved')) {
+          const landing = diff.right;
+          expect(landing, `age ${age} seed ${seed}`).toBeTruthy();
+          expect(inBadgeZone(landing.x, landing.y), `badge age ${age} seed ${seed}`).toBe(false);
+          expect(inCatZone(landing.x, landing.y), `cat age ${age} seed ${seed}`).toBe(false);
+          let nearest = Infinity;
+          for (const prop of puzzle.props) {
+            if (prop.id === diff.id) continue;
+            nearest = Math.min(
+              nearest,
+              Math.hypot(prop.x - landing.x, (prop.y - landing.y) * 0.78)
+            );
+          }
+          expect(nearest, `clearance age ${age} seed ${seed}`).toBeGreaterThanOrEqual(
+            MOVE_CLEARANCE
+          );
+          checked += 1;
+        }
+      }
+    }
+    expect(checked).toBeGreaterThan(50);
+  });
+
+  it('keeps the badge box off limits even at its edges', () => {
+    expect(inBadgeZone(BADGE_ZONE.x, BADGE_ZONE.y)).toBe(true);
+    expect(inBadgeZone(BADGE_ZONE.x + 0.1, BADGE_ZONE.y)).toBe(false);
+    expect(inBadgeZone(BADGE_ZONE.x, BADGE_ZONE.y + 0.1)).toBe(false);
+    expect(inBadgeZone(40, 12)).toBe(false);
+  });
+
   it('age 3 swaps in an emoji that appears nowhere in the scene', () => {
     let checked = 0;
     for (const seed of SEEDS) {
@@ -237,6 +276,16 @@ describe('findDiffAt', () => {
     expect(findDiffAt(puzzle, px, py, 320, 220, found)).toBeNull();
   });
 
+  it('recognises a tap on an already-found difference for a silent no-op', () => {
+    const puzzle = makeScenePuzzle(3, 42);
+    const diff = puzzle.diffs[0];
+    const px = (diff.left.x / 100) * 320;
+    const py = (diff.left.y / 100) * 220;
+    expect(foundDiffAt(puzzle, px, py, 320, 220, [diff.id])?.id).toBe(diff.id);
+    expect(foundDiffAt(puzzle, px, py, 320, 220, [])).toBeNull();
+    expect(foundDiffAt(puzzle, -500, -500, 320, 220, [diff.id])).toBeNull();
+  });
+
   it('counts a moved prop from its old position, its new position and along the path', () => {
     const puzzle = makeScenePuzzle(5, 2026);
     const moved = puzzle.diffs.find((diff) => diff.type === 'moved');
@@ -286,12 +335,12 @@ describe('postcard album', () => {
   });
 
   it('prepends a postcard with a timestamp and persists every card', () => {
-    const one = addPostcard({ age: 3, seed: 11 }, localStorage);
+    const one = addPostcard({ age: 3, seed: 11 }, null, localStorage);
     expect(one).toHaveLength(1);
     expect(one[0]).toMatchObject({ age: 3, seed: 11 });
     expect(typeof one[0].at).toBe('number');
 
-    const two = addPostcard({ age: 4, seed: 12 }, localStorage);
+    const two = addPostcard({ age: 4, seed: 12 }, one, localStorage);
     expect(two).toHaveLength(2);
     expect(two[0]).toMatchObject({ age: 4, seed: 12 });
     expect(two[1]).toMatchObject({ age: 3, seed: 11 });
@@ -299,7 +348,7 @@ describe('postcard album', () => {
   });
 
   it('keeps every card in storage but shows only the latest twelve', () => {
-    for (let i = 0; i < 15; i += 1) addPostcard({ age: 5, seed: i }, localStorage);
+    for (let i = 0; i < 15; i += 1) addPostcard({ age: 5, seed: i }, null, localStorage);
     const all = loadPostcards();
     expect(all).toHaveLength(15);
     expect(all[0].seed).toBe(14);
@@ -316,7 +365,7 @@ describe('postcard album', () => {
     expect(loadPostcards()).toEqual([]);
   });
 
-  it('tolerates a storage that throws', () => {
+  it('tolerates a storage that throws and still accumulates the session album', () => {
     const broken = {
       getItem() {
         throw new Error('blocked');
@@ -326,8 +375,13 @@ describe('postcard album', () => {
       }
     };
     expect(loadPostcards(broken)).toEqual([]);
-    expect(() => addPostcard({ age: 3, seed: 1 }, broken)).not.toThrow();
-    expect(addPostcard({ age: 3, seed: 2 }, broken)).toHaveLength(1);
+    expect(() => addPostcard({ age: 3, seed: 1 }, null, broken)).not.toThrow();
+    const first = addPostcard({ age: 3, seed: 1 }, null, broken);
+    const second = addPostcard({ age: 3, seed: 2 }, first, broken);
+    expect(second).toHaveLength(2);
+    expect(second[0].seed).toBe(2);
+    expect(second[1].seed).toBe(1);
+    expect(latestPostcards(second)).toHaveLength(2);
   });
 
   it('ships a five-picture set', () => {

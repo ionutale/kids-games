@@ -13,6 +13,7 @@
     onpick = null,
     label = '',
     reduced = false,
+    catReact = 0,
     testid = null
   } = $props();
 
@@ -184,7 +185,7 @@
     {/key}
   {/if}
 
-  <HarborCat {reduced} />
+  <HarborCat {reduced} react={catReact} />
   {#if label}<span class="label">{label}</span>{/if}
 </div>
 

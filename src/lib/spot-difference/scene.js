@@ -18,8 +18,18 @@ export const PROP_POOL = [
 /** The cat occupies the bottom-right corner. Props stay out of it. */
 export const CAT_ZONE = { x: 72, y: 58 };
 
+/** The "Picture 1/2" badge sits in the top-left corner. */
+export const BADGE_ZONE = { x: 22, y: 17 };
+
+/** A moved prop never lands closer than this (normalized units) to another prop. */
+export const MOVE_CLEARANCE = 9;
+
 export function inCatZone(x, y) {
   return x > CAT_ZONE.x && y > CAT_ZONE.y;
+}
+
+export function inBadgeZone(x, y) {
+  return x <= BADGE_ZONE.x && y <= BADGE_ZONE.y;
 }
 
 /**
@@ -64,37 +74,97 @@ function nearestPropDistance(props, x, y, skipId = -1) {
   return nearest;
 }
 
+function inMoveBounds(x, y) {
+  return x >= 9 && x <= 91 && y >= 10 && y <= 69;
+}
+
+function isClearLanding(props, baseId, x, y) {
+  if (!inMoveBounds(x, y)) return false;
+  if (inCatZone(x, y) || inBadgeZone(x, y)) return false;
+  return nearestPropDistance(props, x, y, baseId) >= MOVE_CLEARANCE;
+}
+
+function moveScore(clearance, travelled, target) {
+  return (
+    Math.min(clearance, 22) * 1.8 +
+    Math.min(travelled, 36) -
+    Math.abs(travelled - target) * 0.35
+  );
+}
+
+/**
+ * Pick where the moved prop lands. Every candidate must clear every other prop
+ * by `MOVE_CLEARANCE` and stay out of the Picture badge and the cat corner. If
+ * no straight direction works, a dense lattice scan guarantees a clear landing.
+ */
 function moveTarget(base, props, spec, rng) {
   const directions = shuffle(
     [
       [-1, -1],
       [1, -1],
       [-1, 1],
-      [1, 1]
+      [1, 1],
+      [-1, 0],
+      [1, 0],
+      [0, -1],
+      [0, 1]
     ],
     rng
   );
   let best = null;
   let bestScore = -Infinity;
+
   for (const [dx, dy] of directions) {
     const x = Math.max(9, Math.min(91, base.x + dx * spec.move));
     const y = Math.max(10, Math.min(69, base.y + dy * spec.move * 0.72));
-    if (inCatZone(x, y)) continue;
+    if (!isClearLanding(props, base.id, x, y)) continue;
     const travelled = Math.hypot(x - base.x, (y - base.y) * 0.78);
     // A move that is mostly eaten by the panel edge is not a readable change.
     if (travelled < spec.move * 0.45) continue;
     const clearance = nearestPropDistance(props, x, y, base.id);
-    // Prefer a roomy landing, then a clearly visible distance.
-    const score = Math.min(clearance, 22) + Math.min(travelled, 32) * 1.4;
+    const score = moveScore(clearance, travelled, spec.move);
     if (score > bestScore) {
       bestScore = score;
       best = { x, y };
     }
   }
-  // Every direction was crowded or in the cat corner: fall back to the roomiest
-  // legal point rather than giving up on the moved difference.
   if (best) return best;
-  return { x: Math.max(9, Math.min(60, base.x)), y: Math.max(10, base.y - spec.move * 0.72) };
+
+  // Guaranteed-clear fallback: scan the panel for an open landing. Prefer one
+  // near the intended move distance, but a clear landing wins over distance.
+  for (let y = 12; y <= 67; y += 3) {
+    for (let x = 12; x <= 89; x += 3) {
+      if (!isClearLanding(props, base.id, x, y)) continue;
+      const travelled = Math.hypot(x - base.x, (y - base.y) * 0.78);
+      if (travelled < 5) continue;
+      const clearance = nearestPropDistance(props, x, y, base.id);
+      const score = moveScore(clearance, travelled, spec.move);
+      if (score > bestScore) {
+        bestScore = score;
+        best = { x, y };
+      }
+    }
+  }
+  if (best) return best;
+
+  // The panel would have to be impossibly crowded to reach this. Still never
+  // land in the badge or cat corner.
+  let lastResort = {
+    x: Math.max(9, Math.min(60, base.x)),
+    y: Math.max(18, base.y - spec.move * 0.72)
+  };
+  let lastClearance = -Infinity;
+  for (let y = 18; y <= 67; y += 3) {
+    for (let x = 24; x <= 89; x += 3) {
+      if (!inMoveBounds(x, y) || inCatZone(x, y) || inBadgeZone(x, y)) continue;
+      const clearance = nearestPropDistance(props, x, y, base.id);
+      if (clearance > lastClearance) {
+        lastClearance = clearance;
+        lastResort = { x, y };
+      }
+    }
+  }
+  return lastResort;
 }
 
 function makeDiff(id, type, left, right) {
@@ -131,7 +201,6 @@ export function makeScenePuzzle(ageLevel, seed = Date.now()) {
     rng
   ).slice(0, spec.diffs);
   const types = shuffle(DIFF_TYPES, rng);
-  const usedReplacements = new Set();
 
   const diffs = diffIds.map((id, index) => {
     const base = props[id];
@@ -145,18 +214,12 @@ export function makeScenePuzzle(ageLevel, seed = Date.now()) {
       } else {
         // Older bands reuse an emoji already in the scene, so the child has to
         // compare positions instead of scanning for a foreign object.
-        candidates = props
-          .map((p) => p.emoji)
-          .filter((e) => e !== base.emoji && !usedReplacements.has(e));
-        if (!candidates.length) {
-          candidates = props.map((p) => p.emoji).filter((e) => e !== base.emoji);
-        }
+        candidates = props.map((p) => p.emoji).filter((e) => e !== base.emoji);
       }
       if (!candidates.length) {
         candidates = PROP_POOL.filter((e) => e !== base.emoji);
       }
       const replacement = candidates[Math.floor(rng() * candidates.length) % candidates.length];
-      usedReplacements.add(replacement);
       return makeDiff(id, type, base, { ...base, emoji: replacement });
     }
 
@@ -232,6 +295,13 @@ export function hotspotRadius(width) {
   return Math.max(22, width * 0.07);
 }
 
+function diffDistancePx(diff, px, py, width, height) {
+  const points = diffPointsPx(diff, width, height);
+  return points.length > 1
+    ? distanceToSegment(px, py, points[0], points[points.length - 1])
+    : Math.hypot(px - points[0].x, py - points[0].y);
+}
+
 /**
  * The nearest unfound difference under a tap. A moved prop is one capsule
  * between its two positions, so either end — or anywhere along the move —
@@ -244,11 +314,27 @@ export function findDiffAt(puzzle, px, py, width, height, found = []) {
   let bestDistance = Infinity;
   for (const diff of puzzle.diffs) {
     if (found.includes(diff.id)) continue;
-    const points = diffPointsPx(diff, width, height);
-    const distance =
-      points.length > 1
-        ? distanceToSegment(px, py, points[0], points[points.length - 1])
-        : Math.hypot(px - points[0].x, py - points[0].y);
+    const distance = diffDistancePx(diff, px, py, width, height);
+    if (distance <= radius && distance < bestDistance) {
+      bestDistance = distance;
+      best = diff;
+    }
+  }
+  return best;
+}
+
+/**
+ * A tap that lands on an already-found difference is a silent no-op, not a
+ * wrong answer. The route checks this after `findDiffAt` returns null.
+ */
+export function foundDiffAt(puzzle, px, py, width, height, found = []) {
+  if (!puzzle || !found.length) return null;
+  const radius = hotspotRadius(width);
+  let best = null;
+  let bestDistance = Infinity;
+  for (const diff of puzzle.diffs) {
+    if (!found.includes(diff.id)) continue;
+    const distance = diffDistancePx(diff, px, py, width, height);
     if (distance <= radius && distance < bestDistance) {
       bestDistance = distance;
       best = diff;
