@@ -34,7 +34,8 @@
 
 ## Current Inventory
 
-- **SvelteKit** 2.70.2, **adapter-static** 3.0.10, **svelte** 5.56.4, **vite** 8.1.0, **PWA** 1.1.0, **Vitest** 4.1.9.
+- **Post-codemod state (SvelteKit 3.1.1):** `vite.config.js` uses `withPwa(sveltekitOptions, pwaOptions)` and keeps the `index.html` fallback; `svelte.config.js` is gone; `jsconfig.json` extends `$app/tsconfig`; PWA is 2.0.1; Vitest is 5.1.0. Task 4 renames the config to `.ts`; Task 10 cleans the PWA warnings.
+- **Original pre-migration state:** SvelteKit 2.70.2, adapter-static 3.0.10, svelte 5.56.4, vite 8.1.0, PWA 1.1.0, Vitest 4.1.9.
 - **120 files** and **425 occurrences** of `$lib` — 72 in `src`, 48 in `tests`; 66 `.js`, 54 `.svelte`.
 - **`$app/stores`** in 3 files: `src/routes/games/glossary-puzzle/+page.svelte`, `.../play/+page.svelte`, `.../play/[level]/+page.svelte`. They read `$page.url` and `$page.params`.
 - **`$app/environment`** in `src/routes/+layout.svelte` (`dev`).
@@ -188,60 +189,61 @@ If the codemod already produced a valid `vite.config.ts` and `package.json#impor
 Keep the existing PWA manifest and workbox blocks verbatim. The skeleton must be:
 
 ```ts
-/// <reference types="vitest/config" />
-import { defineConfig } from 'vite';
-import { sveltekit } from '@sveltejs/kit/vite';
-import { SvelteKitPWA } from '@vite-pwa/sveltekit';
 import adapter from '@sveltejs/adapter-static';
+import { defineConfig } from 'vite';
+import { withPwa } from '@vite-pwa/sveltekit';
 
 export default defineConfig({
   plugins: [
-    sveltekit({
-      // Former svelte.config.js: kit.paths.relative === false
-      paths: { relative: false },
-      adapter: adapter({
-        pages: 'public',
-        assets: 'public',
-        fallback: '200.html',
-        precompress: false,
-        strict: true
-      })
-    }),
-    SvelteKitPWA({
-      registerType: 'autoUpdate',
-      injectRegister: null,
-      kit: {
-        adapterFallback: '200.html',
-        spa: { fallbackMapping: '/' }
+    // PWA v2 wraps the SvelteKit plugin and builds the service worker before
+    // the static adapter writes `public/`.
+    withPwa(
+      {
+        // Former svelte.config.js: kit.paths.relative === false
+        paths: { relative: false },
+        adapter: adapter({
+          pages: 'public',
+          assets: 'public',
+          fallback: 'index.html',
+          precompress: false,
+          strict: true
+        })
       },
-      manifest: {
-        // Copy the current manifest block unchanged.
-      },
-      workbox: {
-        // Copy the current workbox block unchanged.
+      {
+        registerType: 'autoUpdate',
+        injectRegister: null,
+        maximumFileSizeToCacheInBytes: 3 * 1024 * 1024,
+        kit: {
+          adapterFallback: 'index.html',
+          spa: { fallbackMapping: '/' }
+        },
+        manifest: {
+          // Copy the current manifest block unchanged.
+        },
+        workbox: {
+          // Copy the current workbox block unchanged; Task 10 renames the key
+          // to `generateSW` if the v2 warning still applies.
+        }
       }
-    })
-  ],
-  test: {
-    environment: 'jsdom',
-    setupFiles: ['./tests/setup.js']
-  }
+    )
+  ]
 });
 ```
 
 - [ ] **Step 2: Remove the old config**
 
 ```bash
-git rm svelte.config.js vite.config.js
+git rm vite.config.js
 ```
+`svelte.config.js` is already removed by the codemod. The new file keeps `withPwa`; do not reintroduce the removed `SvelteKitPWA` export.
 
 - [ ] **Step 3: Verify the fallback artifact**
 
 ```bash
 pnpm build
-ls public/200.html
+ls public/index.html
 ```
-Expected: `public/200.html` exists. If the PWA plugin v2 or adapter rejects `200.html`, keep `index.html` in **both** places (`fallback` and `adapterFallback`) and record the deviation in the plan; do not mix the two names.
+Expected: `public/index.html` exists. The repo already ships `index.html` with `adapterFallback: 'index.html'`; do not switch to `200.html` in this task. Task 10 verifies the offline deep link and owns any fallback change.
 
 - [ ] **Step 4: Check**
 
@@ -400,7 +402,9 @@ git commit -m "chore(types): adopt \$app/tsconfig and the v3 layout"
 
 ---
 
-### Task 8: Convert the remaining v3 app APIs
+### Task 8: Verify the remaining v3 app APIs (codemod already converted)
+
+**Post-codemod note:** the 3.1.1 codemod already rewrote `$app/stores` to `$app/state` and `$app/environment` to `$app/env`; the current tree greps clean. Run the steps below as verification and fix only a residual hit.
 
 **Files:**
 - Modify: `src/routes/games/glossary-puzzle/+page.svelte`
@@ -476,7 +480,7 @@ afterEach(() => cleanup());
 
 function installMapLocalStorage() {
   const store = new Map();
-  globalThis.localStorage = {
+  const storage = {
     getItem: (key) => (store.has(key) ? store.get(key) : null),
     setItem: (key, value) => store.set(key, String(value)),
     removeItem: (key) => store.delete(key),
@@ -486,6 +490,10 @@ function installMapLocalStorage() {
       return store.size;
     }
   };
+  Object.defineProperty(globalThis, 'localStorage', {
+    value: storage,
+    configurable: true
+  });
 }
 
 try {
@@ -497,9 +505,21 @@ try {
 ```
 If `localStorage` is `undefined`, the `try` throws and the fallback installs. The same fallback also covers an opaque-origin jsdom.
 
-- [ ] **Step 3: Configure Vitest**
+- [ ] **Step 3: Add the Vitest test block**
 
-Keep the `test` block from Task 4 (`environment: 'jsdom'`, `setupFiles: ['./tests/setup.js']`). If TypeScript complains about `test` on the Vite config, add the `/// <reference types="vitest/config" />` line or import `defineConfig` from `vitest/config`.
+Task 4 deliberately leaves the test block out (the setup file does not exist yet). Add it to `vite.config.ts`:
+```ts
+/// <reference types="vitest/config" />
+// ... existing imports ...
+export default defineConfig({
+  // ... plugins ...
+  test: {
+    environment: 'jsdom',
+    setupFiles: ['./tests/setup.js']
+  }
+});
+```
+If TypeScript complains about `test`, keep the triple-slash reference or import `defineConfig` from `vitest/config`.
 
 - [ ] **Step 4: Run the suite**
 
@@ -517,11 +537,18 @@ git commit -m "test(setup): add jsdom and a Map-backed localStorage fallback"
 
 ---
 
-### Task 10: PWA, fallback and offline verification
+### Task 10: PWA cleanup, fallback and offline verification
 
-**Files:** `vite.config.ts` only if the fallback name needs correcting.
+**Files:** `vite.config.ts`, `package.json`, `pnpm-lock.yaml`, `pnpm-workspace.yaml`.
 
 **Interfaces:** produces a precached shell that boots a deep link offline.
+
+- [ ] **Step 0: Clean the PWA dependencies and the v2 warning**
+
+- Remove the now-unused `vite-plugin-pwa` devDependency (`@vite-pwa/sveltekit@2` uses `@unplugin-pwa/*`).
+- Rename the `workbox` option to `generateSW` if `pnpm build` still prints the deprecation warning; `globStrict` is valid there.
+- Remove the stale `cookie@0.7.0` `minimumReleaseAgeExclude` and the redundant `overrides.cookie` if the sole consumer already requires `^2.0.1`.
+- Keep `index.html` in both `fallback` and `adapterFallback`.
 
 - [ ] **Step 1: Build and preview**
 
@@ -533,7 +560,7 @@ Expected: build succeeds; the preview serves `/` and `/games/focus-tap/play/1`.
 
 - [ ] **Step 2: Check the service worker and the fallback**
 
-Open the preview in a fresh profile, load `/`, wait for the service worker to activate, then reload `/games/focus-tap/play/1` with DevTools offline. Expected: the game boots from the precached shell; no 404; no stale-route loop. If the PWA plugin v2 requires `index.html`, set both `fallback` and `adapterFallback` to `index.html` and re-run this step.
+Open the preview in a fresh profile, load `/`, wait for the service worker to activate, then reload `/games/focus-tap/play/1` with DevTools offline. Expected: the game boots from the precached shell; no 404; no stale-route loop. Keep `index.html` in both `fallback` and `adapterFallback`; if a fallback change is ever needed, change both names in the same commit.
 
 - [ ] **Step 3: Check the upgrade path**
 
@@ -560,9 +587,9 @@ git commit -m "chore(pwa): align the adapter fallback"
 pnpm test
 pnpm check
 pnpm build
-pnpm test:e2e
+CI=1 pnpm test:e2e
 ```
-Expected: 515+/515; 0 errors (the known warning is fine); build succeeds; e2e green.
+Expected: 515+/515; 0 errors (the known warning is fine); build succeeds; e2e green on a fresh server (`CI=1` avoids reuse of the stale preview on 4173).
 
 - [ ] **Step 2: Verify saved data**
 
@@ -576,14 +603,24 @@ In one profile: set a sound preference, change the locale, advance a ladder leve
 - an old service worker upgrading;
 - the saved-data pass.
 
-- [ ] **Step 4: Record the result and tag**
+- [ ] **Step 4: Refresh the tracked static site and drop the codemod checklist**
+
+```bash
+pnpm build
+git add public
+git rm MIGRATION_TASKS.md
+git commit -m "chore(build): refresh the static site and drop the migration checklist"
+```
+Expected: `public/` contains the new `index.html`, `sw.js` and workbox bundle; `MIGRATION_TASKS.md` is gone.
+
+- [ ] **Step 5: Record the result and tag**
 
 ```bash
 git tag sveltekit-3
 ```
 Write the versions and the e2e config used in the commit message or the plan.
 
-- [ ] **Step 5: Handoff**
+- [ ] **Step 6: Handoff**
 
 The branch is ready to merge only when all gates pass. The old `main` and the `pre-sveltekit-3` tag remain the rollback path.
 
@@ -594,10 +631,11 @@ The branch is ready to merge only when all gates pass. The old `main` and the `p
 - **Code:** `git switch main` (or `git switch --detach pre-sveltekit-3`); the migration branch contains no data migrations.
 - **Deploy:** redeploy the prior `public/` build. The storage keys are unchanged, so saved data remains readable.
 - **Service worker:** a returning client may keep the new shell; if a rollback needs an immediate reset, bump the cache name or unregister the worker and reload once. Do not clear user data.
-- **Fallback:** if `200.html` causes an offline regression, revert both `fallback` and `adapterFallback` to `index.html` in one commit and re-run Task 10.
+- **Fallback:** the migration keeps `index.html` in both `fallback` and `adapterFallback`; if a later change to `200.html` causes an offline regression, revert both names together in one commit and re-run Task 10.
 
 ## Self-Review Notes
 
-- **Spec coverage:** config move (Task 4), `#lib` (Task 5), relative tests (Task 6), `$app/state`/`$app/env` (Task 8), test setup/localStorage (Task 9), PWA/offline (Task 10), verification (Task 11). The workspace's "no `svelte.config.js`", "tests relative", and "Map-backed localStorage" rules each have a task.
-- **Type consistency:** the alias is `#lib/*` everywhere; the fallback name is one value (`200.html` or `index.html`) in both configs; the test setup path is `./tests/setup.js`.
+- **Spec coverage:** config move (Task 4), `#lib` (Task 5), relative tests (Task 6), `$app/state`/`$app/env` verification (Task 8), test setup/localStorage (Task 9), PWA cleanup/offline (Task 10), final gate + tracked build (Task 11). The workspace's "no `svelte.config.js`", "tests relative", and "Map-backed localStorage" rules each have a task.
+- **Post-codemod corrections:** the PWA v2 helper is `withPwa`, not `SvelteKitPWA`; Task 4 preserves the working `index.html` fallback and does not reintroduce the removed export.
+- **Type consistency:** the alias is `#lib/*` everywhere; the fallback is `index.html` in both configs; the test setup path is `./tests/setup.js`.
 - **Out of scope:** rewriting the pure-logic behavioral tests to Testing Library, changing the game implementations, merging the prototype branches, and migrating the prototype `?variant=` hooks (they live on other branches and are not on `main`).
