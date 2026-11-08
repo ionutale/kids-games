@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { patternTier, ladderFor, makePrompt, roundGoal } from '$lib/trainers/whatComesNext.js';
-import { categoryOfEmoji, lookalikePartner } from '$lib/trainers/emojiSets.js';
+import { patternTier, ladderFor, makePrompt, roundGoal } from '#lib/trainers/whatComesNext.js';
+import { categoryOfEmoji, lookalikePartner } from '#lib/trainers/emojiSets.js';
 
 describe('patternTier', () => {
   it('maps level bands', () => {

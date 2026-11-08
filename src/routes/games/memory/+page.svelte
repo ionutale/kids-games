@@ -1,13 +1,13 @@
 <script>
   import { onDestroy } from 'svelte';
-  import { settings } from '$lib/stores/settings';
-  import { _, locale } from '$lib/stores/locale';
-  import { playTap, playMatch, playError } from '$lib/sounds/audioManager';
-  import GameShell from '$lib/components/ui/GameShell.svelte';
-  import LadderBar from '$lib/ladder/LadderBar.svelte';
-  import LadderActions from '$lib/ladder/LadderActions.svelte';
-  import WinOverlay from '$lib/components/ui/WinOverlay.svelte';
-  import { loadLevel, saveLevel, loadMastered, saveMastered, MAX_LEVEL } from '$lib/ladder/progress';
+  import { settings } from '#lib/stores/settings.js';
+  import { _, locale } from '#lib/stores/locale.js';
+  import { playTap, playMatch, playError } from '#lib/sounds/audioManager.js';
+  import GameShell from '#lib/components/ui/GameShell.svelte';
+  import LadderBar from '#lib/ladder/LadderBar.svelte';
+  import LadderActions from '#lib/ladder/LadderActions.svelte';
+  import WinOverlay from '#lib/components/ui/WinOverlay.svelte';
+  import { loadLevel, saveLevel, loadMastered, saveMastered, MAX_LEVEL } from '#lib/ladder/progress.js';
 
   const emojis = ['🐶', '🐱', '🐰', '🐻', '🐸', '🐵', '🦊', '🐯', '🐭', '🐼', '🐨', '🦁'];
 

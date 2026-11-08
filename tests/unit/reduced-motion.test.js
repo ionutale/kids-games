@@ -24,13 +24,13 @@ afterEach(() => {
 describe('reduced motion', () => {
   it('reads the media query for imperative loops', async () => {
     stubMatchMedia(true);
-    const { prefersReducedMotion } = await import('$lib/stores/reducedMotion.js');
+    const { prefersReducedMotion } = await import('#lib/stores/reducedMotion.js');
     expect(prefersReducedMotion()).toBe(true);
   });
 
   it('exposes a readable store that starts from the query', async () => {
     stubMatchMedia(true);
-    const { reducedMotion } = await import('$lib/stores/reducedMotion.js');
+    const { reducedMotion } = await import('#lib/stores/reducedMotion.js');
     const { get } = await import('svelte/store');
     const unsubscribe = reducedMotion.subscribe(() => {});
 
@@ -40,7 +40,7 @@ describe('reduced motion', () => {
 
   it('updates when the query changes', async () => {
     const { listeners } = stubMatchMedia(false);
-    const { reducedMotion } = await import('$lib/stores/reducedMotion.js');
+    const { reducedMotion } = await import('#lib/stores/reducedMotion.js');
     const { get } = await import('svelte/store');
     const unsubscribe = reducedMotion.subscribe(() => {});
 
@@ -51,7 +51,7 @@ describe('reduced motion', () => {
 
   it('defaults to false without matchMedia', async () => {
     vi.stubGlobal('window', {});
-    const { prefersReducedMotion, reducedMotion } = await import('$lib/stores/reducedMotion.js');
+    const { prefersReducedMotion, reducedMotion } = await import('#lib/stores/reducedMotion.js');
     const { get } = await import('svelte/store');
 
     expect(prefersReducedMotion()).toBe(false);

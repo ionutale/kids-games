@@ -10,7 +10,7 @@ import {
   toNormalized,
   fromNormalized,
   thinPoint
-} from '$lib/paint/geometry.js';
+} from '#lib/paint/geometry.js';
 
 const point = (x, y) => ({ x, y });
 const rect = { left: 10, top: 20, width: 200, height: 400 };

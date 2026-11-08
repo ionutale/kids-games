@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { LOCALES, TOPICS } from '$lib/quiz/topics.js';
+import { LOCALES, TOPICS } from '#lib/quiz/topics.js';
 
 const ANIMALS = TOPICS.animals.items;
 

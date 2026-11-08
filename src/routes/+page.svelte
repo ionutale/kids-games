@@ -1,12 +1,12 @@
 <script>
   import { onMount } from 'svelte';
   import { goto } from '$app/navigation';
-  import { _, locale } from '$lib/stores/locale';
-  import SoundToggle from '$lib/components/SoundToggle.svelte';
-  import FullscreenToggle from '$lib/components/FullscreenToggle.svelte';
-  import AgeSelector from '$lib/components/AgeSelector.svelte';
-  import Starfield from '$lib/components/ui/Starfield.svelte';
-  import { loadLevel, loadMastered, MAX_LEVEL } from '$lib/ladder/progress.js';
+  import { _, locale } from '#lib/stores/locale.js';
+  import SoundToggle from '#lib/components/SoundToggle.svelte';
+  import FullscreenToggle from '#lib/components/FullscreenToggle.svelte';
+  import AgeSelector from '#lib/components/AgeSelector.svelte';
+  import Starfield from '#lib/components/ui/Starfield.svelte';
+  import { loadLevel, loadMastered, MAX_LEVEL } from '#lib/ladder/progress.js';
 
   // `ladder: true` games show per-tile progress from the shared ladder store.
   const games = [

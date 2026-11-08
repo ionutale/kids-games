@@ -1,6 +1,6 @@
 <script>
-  import BackButton from '$lib/components/BackButton.svelte';
-  import SoundToggle from '$lib/components/SoundToggle.svelte';
+  import BackButton from '#lib/components/BackButton.svelte';
+  import SoundToggle from '#lib/components/SoundToggle.svelte';
   import Starfield from './Starfield.svelte';
 
   let { accent = '#7FD8FF', hudLeft = null, hudRight = null, children } = $props();

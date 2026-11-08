@@ -1,19 +1,19 @@
 <script>
   import { onMount } from 'svelte';
   import { page } from '$app/state';
-  import { seedFromUrl } from '$lib/game/seed.js';
-  import { _ } from '$lib/stores/locale';
-  import GameShell from '$lib/components/ui/GameShell.svelte';
-  import '$lib/trainers/fx.css';
-  import HudPill from '$lib/components/ui/HudPill.svelte';
-  import BigButton from '$lib/components/ui/BigButton.svelte';
-  import Confetti from '$lib/components/Confetti.svelte';
-  import WinOverlay from '$lib/components/ui/WinOverlay.svelte';
-  import LadderBar from '$lib/ladder/LadderBar.svelte';
-  import LadderActions from '$lib/ladder/LadderActions.svelte';
-  import { loadLevel, saveLevel, loadMastered, saveMastered, MAX_LEVEL } from '$lib/ladder/progress.js';
-  import { playTap, playMatch, playWin } from '$lib/sounds/audioManager.js';
-  import { generatePuzzle, validatePath, hintCell, levelSpec } from '$lib/path-builder/engine.js';
+  import { seedFromUrl } from '#lib/game/seed.js';
+  import { _ } from '#lib/stores/locale.js';
+  import GameShell from '#lib/components/ui/GameShell.svelte';
+  import '#lib/trainers/fx.css';
+  import HudPill from '#lib/components/ui/HudPill.svelte';
+  import BigButton from '#lib/components/ui/BigButton.svelte';
+  import Confetti from '#lib/components/Confetti.svelte';
+  import WinOverlay from '#lib/components/ui/WinOverlay.svelte';
+  import LadderBar from '#lib/ladder/LadderBar.svelte';
+  import LadderActions from '#lib/ladder/LadderActions.svelte';
+  import { loadLevel, saveLevel, loadMastered, saveMastered, MAX_LEVEL } from '#lib/ladder/progress.js';
+  import { playTap, playMatch, playWin } from '#lib/sounds/audioManager.js';
+  import { generatePuzzle, validatePath, hintCell, levelSpec } from '#lib/path-builder/engine.js';
 
   const PUZZLES_PER_LEVEL = 5;
 

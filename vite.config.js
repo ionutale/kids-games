@@ -1,10 +1,24 @@
+import adapter from '@sveltejs/adapter-static';
 import { sveltekit } from '@sveltejs/kit/vite';
 import { defineConfig } from 'vite';
 import { SvelteKitPWA } from '@vite-pwa/sveltekit';
 
 export default defineConfig({
   plugins: [
-    sveltekit(),
+    sveltekit({
+      // Root-absolute /_app URLs. Relative ones break when the cached shell is
+      // opened at /games/..., which is every offline deep link and refresh.
+      paths: { relative: false },
+
+      adapter: adapter({
+        pages: 'public',
+        assets: 'public',
+        fallback: 'index.html',
+        precompress: false,
+        strict: true
+      })
+    }),
+
     SvelteKitPWA({
       registerType: 'autoUpdate',
       // Registration is done from the root layout. SvelteKit writes index.html

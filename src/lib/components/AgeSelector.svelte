@@ -1,6 +1,6 @@
 <script>
-  import { settings } from '$lib/stores/settings';
-  import { _ } from '$lib/stores/locale';
+  import { settings } from '#lib/stores/settings.js';
+  import { _ } from '#lib/stores/locale.js';
 
   let age = $derived($settings.ageLevel);
 </script>

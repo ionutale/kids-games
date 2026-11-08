@@ -1,20 +1,18 @@
 <script>
   import { get } from 'svelte/store';
-  import { page } from '$app/stores';
-  import PuzzleBoard from '$lib/glossary-puzzle/PuzzleBoard.svelte';
-  import { PUZZLE_IMAGES, resolveImage, revokeVM } from '$lib/glossary-puzzle/images.js';
-  import { readSave, clearSave, restorePlaced, takeHandoff } from '$lib/glossary-puzzle/save.js';
-  import { _ } from '$lib/stores/locale';
-  import { MAX_LEVEL } from '$lib/ladder/progress.js';
+  import { page } from '$app/state';
+  import PuzzleBoard from '#lib/glossary-puzzle/PuzzleBoard.svelte';
+  import { PUZZLE_IMAGES, resolveImage, revokeVM } from '#lib/glossary-puzzle/images.js';
+  import { readSave, clearSave, restorePlaced, takeHandoff } from '#lib/glossary-puzzle/save.js';
+  import { _ } from '#lib/stores/locale.js';
+  import { MAX_LEVEL } from '#lib/ladder/progress.js';
 
   // The ladder ends at MAX_LEVEL; deeper links clamp.
-  let level = $derived(Math.min(MAX_LEVEL, Math.max(1, parseInt($page.params.level, 10) || 1)));
+  let level = $derived(Math.min(MAX_LEVEL, Math.max(1, parseInt(page.params.level, 10) || 1)));
   // ?place= is a test/debug seam only: without debug=1 the ids are ignored.
-  let placeIds = $derived(
-    import.meta.env.DEV || $page.url.searchParams.get('debug') === '1'
-      ? ($page.url.searchParams.get('place') || '').split(',').map(x => x.trim()).filter(Boolean)
-      : []
-  );
+  let placeIds = $derived(import.meta.env.DEV || page.url.searchParams.get('debug') === '1'
+    ? (page.url.searchParams.get('place') || '').split(',').map((x) => x.trim()).filter(Boolean)
+    : []);
 
   // Image resolution is async — a `photo:<uuid>` id is read from IndexedDB — so
   // the board must not mount until it settles. A photo resume that first rendered
@@ -22,7 +20,7 @@
   let state = $state({ image: null, initialPlaced: null, ready: false });
 
   $effect(() => {
-    const href = $page.url.href;
+    const href = page.url.href;
     let alive = true;
     (async () => {
       // Drop the previous board while the new URL resolves, so a stale photo VM
@@ -30,7 +28,7 @@
       state = { image: null, initialPlaced: null, ready: false };
       const params = new URL(href).searchParams;
       const requested = params.get('image');
-      const lvl = Math.min(MAX_LEVEL, Math.max(1, parseInt($page.params.level, 10) || 1));
+      const lvl = Math.min(MAX_LEVEL, Math.max(1, parseInt(page.params.level, 10) || 1));
       const resume = params.get('resume') === '1';
       // A storage failure (IndexedDB blocked/evicted) must degrade exactly like
       // an unresolvable photo — never reject out of the effect and blank the page.
@@ -42,10 +40,15 @@
           vm = null;
         }
       }
-      if (!alive) { revokeVM(vm); return; }
-      const image = vm
-        ?? PUZZLE_IMAGES.find(i => i.id === requested)
-        ?? PUZZLE_IMAGES[(lvl - 1) % PUZZLE_IMAGES.length];
+
+      if (!alive) {
+        revokeVM(vm);
+
+        return;
+      }
+
+      const image = vm ?? PUZZLE_IMAGES.find((i) => i.id === requested) ?? PUZZLE_IMAGES[(lvl - 1) % PUZZLE_IMAGES.length];
+
       // Resume is a per-navigation, consume-once decision: the handoff is taken
       // (and removed) exactly once here, never on a re-render.
       const initialPlaced = resume
@@ -64,12 +67,12 @@
 </svelte:head>
 
 {#if state.ready && state.image}
-  {#key $page.url.href}
+  {#key page.url.href}
     <PuzzleBoard
       image={state.image}
-      {level}
+      level={level}
       initialPlaced={state.initialPlaced}
-      {placeIds}
+      placeIds={placeIds}
       backHref="/games/glossary-puzzle"
       onWin={() => clearSave()}
     />

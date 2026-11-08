@@ -7,7 +7,7 @@ import {
   STAMPS,
   AGE2_STAMPS,
   getToolsForAge
-} from '$lib/paint/tools.js';
+} from '#lib/paint/tools.js';
 
 const HEXES = [
   '#FF6B6B',

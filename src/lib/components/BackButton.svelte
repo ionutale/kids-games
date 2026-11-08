@@ -1,6 +1,6 @@
 <script>
   import { goto } from '$app/navigation';
-  import { _ } from '$lib/stores/locale';
+  import { _ } from '#lib/stores/locale.js';
 
   let { to = '/' } = $props();
 

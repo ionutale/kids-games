@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { LEVELS, exercisesFor, roundGoal, prepareExercise } from '$lib/grammar/italian.js';
-import { makeRng } from '$lib/trainers/rng.js';
+import { LEVELS, exercisesFor, roundGoal, prepareExercise } from '#lib/grammar/italian.js';
+import { makeRng } from '#lib/trainers/rng.js';
 
 const TYPES = ['verb', 'article', 'plural', 'preposition', 'imperative', 'picture'];
 

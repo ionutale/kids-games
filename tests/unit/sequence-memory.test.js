@@ -6,7 +6,7 @@ import {
   generateSequence,
   validateTap,
   scoreFor
-} from '$lib/sequence-memory/game.js';
+} from '#lib/sequence-memory/game.js';
 
 describe('pads', () => {
   it('has 4 pads with emoji, color and distinct rising tones', () => {

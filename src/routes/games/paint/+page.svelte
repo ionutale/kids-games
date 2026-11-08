@@ -1,29 +1,29 @@
 <script>
   import { onMount, tick } from 'svelte';
   import { goto } from '$app/navigation';
-  import { settings } from '$lib/stores/settings';
-  import { _ } from '$lib/stores/locale';
-  import { playTap, playPop, playSplash } from '$lib/sounds/audioManager';
-  import SoundToggle from '$lib/components/SoundToggle.svelte';
-  import StampDefs from '$lib/paint/StampDefs.svelte';
-  import PaintStamp from '$lib/paint/PaintStamp.svelte';
-  import PaintDock from '$lib/paint/PaintDock.svelte';
-  import PaintPalette from '$lib/paint/PaintPalette.svelte';
-  import PaintStampTray from '$lib/paint/PaintStampTray.svelte';
-  import PaintPaperTray from '$lib/paint/PaintPaperTray.svelte';
-  import PaintClearCard from '$lib/paint/PaintClearCard.svelte';
-  import PaintPaperThumb from '$lib/paint/PaintPaperThumb.svelte';
-  import { getSheet, getSheets } from '$lib/paint/sheets.js';
-  import { getSheetArt, SHEET_REGION_IDS } from '$lib/paint/sheetArt.js';
-  import { getToolsForAge } from '$lib/paint/tools.js';
-  import { createPaintDocument } from '$lib/paint/document.js';
-  import { getStorage, loadPaint, savePaint } from '$lib/paint/save.js';
+  import { settings } from '#lib/stores/settings.js';
+  import { _ } from '#lib/stores/locale.js';
+  import { playTap, playPop, playSplash } from '#lib/sounds/audioManager.js';
+  import SoundToggle from '#lib/components/SoundToggle.svelte';
+  import StampDefs from '#lib/paint/StampDefs.svelte';
+  import PaintStamp from '#lib/paint/PaintStamp.svelte';
+  import PaintDock from '#lib/paint/PaintDock.svelte';
+  import PaintPalette from '#lib/paint/PaintPalette.svelte';
+  import PaintStampTray from '#lib/paint/PaintStampTray.svelte';
+  import PaintPaperTray from '#lib/paint/PaintPaperTray.svelte';
+  import PaintClearCard from '#lib/paint/PaintClearCard.svelte';
+  import PaintPaperThumb from '#lib/paint/PaintPaperThumb.svelte';
+  import { getSheet, getSheets } from '#lib/paint/sheets.js';
+  import { getSheetArt, SHEET_REGION_IDS } from '#lib/paint/sheetArt.js';
+  import { getToolsForAge } from '#lib/paint/tools.js';
+  import { createPaintDocument } from '#lib/paint/document.js';
+  import { getStorage, loadPaint, savePaint } from '#lib/paint/save.js';
   import {
     isTap,
     toNormalized,
     MIN_POINT_DISTANCE_PX,
     DEFAULT_ARTBOARD
-  } from '$lib/paint/geometry.js';
+  } from '#lib/paint/geometry.js';
 
   // Eraser passes live in the sheet as regular strokes with this sentinel
   // colour, so they save, reload and undo with the rest of the artwork. The

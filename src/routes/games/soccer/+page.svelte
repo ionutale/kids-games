@@ -1,16 +1,16 @@
 <script>
   import { onDestroy, onMount } from 'svelte';
   import { page } from '$app/state';
-  import { seedFromUrl } from '$lib/game/seed.js';
-  import { settings } from '$lib/stores/settings';
-  import { _ } from '$lib/stores/locale';
-  import { playTap, playGoal as playGoalSound } from '$lib/sounds/audioManager';
-  import Confetti from '$lib/components/Confetti.svelte';
-  import GameShell from '$lib/components/ui/GameShell.svelte';
-  import LadderBar from '$lib/ladder/LadderBar.svelte';
-  import LadderActions from '$lib/ladder/LadderActions.svelte';
-  import WinOverlay from '$lib/components/ui/WinOverlay.svelte';
-  import { loadLevel, saveLevel, loadMastered, saveMastered, MAX_LEVEL } from '$lib/ladder/progress.js';
+  import { seedFromUrl } from '#lib/game/seed.js';
+  import { settings } from '#lib/stores/settings.js';
+  import { _ } from '#lib/stores/locale.js';
+  import { playTap, playGoal as playGoalSound } from '#lib/sounds/audioManager.js';
+  import Confetti from '#lib/components/Confetti.svelte';
+  import GameShell from '#lib/components/ui/GameShell.svelte';
+  import LadderBar from '#lib/ladder/LadderBar.svelte';
+  import LadderActions from '#lib/ladder/LadderActions.svelte';
+  import WinOverlay from '#lib/components/ui/WinOverlay.svelte';
+  import { loadLevel, saveLevel, loadMastered, saveMastered, MAX_LEVEL } from '#lib/ladder/progress.js';
   import {
     BALL_START,
     controlPoint,
@@ -21,7 +21,7 @@
     shotResult,
     starsFor,
     targetScoreFor
-  } from '$lib/soccer/engine.js';
+  } from '#lib/soccer/engine.js';
 
   const keeperPhase = (seedFromUrl(page.url) ?? 0) / 1000;
 

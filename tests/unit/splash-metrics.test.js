@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { addFrame, frameStats, FRAME_WINDOW_MS } from '$lib/splash/metrics.js';
+import { addFrame, frameStats, FRAME_WINDOW_MS } from '#lib/splash/metrics.js';
 
 describe('Splash frame metrics', () => {
   it('uses a 10-second frame window', () => {

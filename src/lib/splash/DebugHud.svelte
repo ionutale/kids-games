@@ -1,6 +1,6 @@
 <script>
   import { onMount } from 'svelte';
-  import { addFrame, frameStats } from '$lib/splash/metrics.js';
+  import { addFrame, frameStats } from '#lib/splash/metrics.js';
 
   let { liveCount = 0, cap = 0, measureStart = 0, dragging = false } = $props();
 

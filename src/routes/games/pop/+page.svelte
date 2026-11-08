@@ -1,19 +1,19 @@
 <script>
   import { onMount } from 'svelte';
   import { page } from '$app/state';
-  import { seedFromUrl } from '$lib/game/seed.js';
-  import { makeRng } from '$lib/trainers/rng.js';
-  import { settings } from '$lib/stores/settings';
-  import { _ } from '$lib/stores/locale';
-  import { playPop } from '$lib/sounds/audioManager';
-  import GameShell from '$lib/components/ui/GameShell.svelte';
-  import HudPill from '$lib/components/ui/HudPill.svelte';
-  import LadderBar from '$lib/ladder/LadderBar.svelte';
-  import LadderActions from '$lib/ladder/LadderActions.svelte';
-  import WinOverlay from '$lib/components/ui/WinOverlay.svelte';
-  import SoundToggle from '$lib/components/SoundToggle.svelte';
-  import { loadLevel, saveLevel, loadMastered, saveMastered, MAX_LEVEL } from '$lib/ladder/progress.js';
-  import { levelConfig, targetFor } from '$lib/pop/config.js';
+  import { seedFromUrl } from '#lib/game/seed.js';
+  import { makeRng } from '#lib/trainers/rng.js';
+  import { settings } from '#lib/stores/settings.js';
+  import { _ } from '#lib/stores/locale.js';
+  import { playPop } from '#lib/sounds/audioManager.js';
+  import GameShell from '#lib/components/ui/GameShell.svelte';
+  import HudPill from '#lib/components/ui/HudPill.svelte';
+  import LadderBar from '#lib/ladder/LadderBar.svelte';
+  import LadderActions from '#lib/ladder/LadderActions.svelte';
+  import WinOverlay from '#lib/components/ui/WinOverlay.svelte';
+  import SoundToggle from '#lib/components/SoundToggle.svelte';
+  import { loadLevel, saveLevel, loadMastered, saveMastered, MAX_LEVEL } from '#lib/ladder/progress.js';
+  import { levelConfig, targetFor } from '#lib/pop/config.js';
 
   const items = ['🫧', '🐟', '🦋', '⭐', '🌟', '💫', '🌸', '🍎'];
   let bubbles = $state([]);

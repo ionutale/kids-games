@@ -1,4 +1,4 @@
-import { saveLevel, MAX_LEVEL } from '$lib/ladder/progress.js';
+import { saveLevel, MAX_LEVEL } from '#lib/ladder/progress.js';
 
 export function load({ params, url }) {
   const level = Math.min(MAX_LEVEL, Math.max(1, parseInt(params.n, 10) || 1));

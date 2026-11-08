@@ -1,6 +1,6 @@
 <script>
-  import TrainerLanding from '$lib/components/trainers/TrainerLanding.svelte';
-  import { _ } from '$lib/stores/locale';
+  import TrainerLanding from '#lib/components/trainers/TrainerLanding.svelte';
+  import { _ } from '#lib/stores/locale.js';
 </script>
 
 <TrainerLanding

@@ -1,5 +1,5 @@
 import { get } from 'svelte/store';
-import { settings } from '$lib/stores/settings.js';
+import { settings } from '#lib/stores/settings.js';
 
 let ctx = null;
 

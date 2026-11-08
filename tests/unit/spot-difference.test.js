@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { makePuzzle, isDifference, gridSpecFor, POOL } from '$lib/spot-difference/game.js';
+import { makePuzzle, isDifference, gridSpecFor, POOL } from '#lib/spot-difference/game.js';
 
 describe('grid spec by age', () => {
   it('matches the spec table', () => {

@@ -5,7 +5,7 @@ import {
   UNDER_THE_SEA_LINES,
   UNDER_THE_SEA_DOTS,
   UNDER_THE_SEA_SMILES
-} from '$lib/paint/paper/underTheSea.js';
+} from '#lib/paint/paper/underTheSea.js';
 
 const EXPECTED_IDS = [
   'water',

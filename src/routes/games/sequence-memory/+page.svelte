@@ -1,14 +1,14 @@
 <script>
   import { onMount } from 'svelte';
-  import { makeRng } from '$lib/trainers/rng.js';
-  import { _ } from '$lib/stores/locale';
-  import GameShell from '$lib/components/ui/GameShell.svelte';
-  import HudPill from '$lib/components/ui/HudPill.svelte';
-  import BigButton from '$lib/components/ui/BigButton.svelte';
-  import WinOverlay from '$lib/components/ui/WinOverlay.svelte';
-  import Confetti from '$lib/components/Confetti.svelte';
-  import { playMatch, playWin } from '$lib/sounds/audioManager.js';
-  import { playPadTone, playRetryTone } from '$lib/sounds/padSounds.js';
+  import { makeRng } from '#lib/trainers/rng.js';
+  import { _ } from '#lib/stores/locale.js';
+  import GameShell from '#lib/components/ui/GameShell.svelte';
+  import HudPill from '#lib/components/ui/HudPill.svelte';
+  import BigButton from '#lib/components/ui/BigButton.svelte';
+  import WinOverlay from '#lib/components/ui/WinOverlay.svelte';
+  import Confetti from '#lib/components/Confetti.svelte';
+  import { playMatch, playWin } from '#lib/sounds/audioManager.js';
+  import { playPadTone, playRetryTone } from '#lib/sounds/padSounds.js';
   import {
     PADS,
     generateSequence,
@@ -17,7 +17,7 @@
     gapMs,
     validateTap,
     scoreFor
-  } from '$lib/sequence-memory/game.js';
+  } from '#lib/sequence-memory/game.js';
 
   let { data } = $props();
   let screen = $state('idle'); // idle | watching | listening | correct | gameOver | paused

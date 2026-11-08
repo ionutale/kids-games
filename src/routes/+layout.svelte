@@ -1,8 +1,8 @@
 <script>
   import { onMount } from 'svelte';
-  import { dev } from '$app/environment';
-  import { settings } from '$lib/stores/settings';
-  import { _ } from '$lib/stores/locale';
+  import { dev } from '$app/env';
+  import { settings } from '#lib/stores/settings.js';
+  import { _ } from '#lib/stores/locale.js';
   import '../app.css';
 
   let { children } = $props();
@@ -54,7 +54,11 @@
     <div class="install-banner">
       <span>{$_('install')}</span>
       <button class="install-btn" onclick={installApp}>{$_('installBtn')}</button>
-      <button class="dismiss-btn" onclick={() => showInstall = false}>&times;</button>
+
+      <button
+        class="dismiss-btn"
+        onclick={() => showInstall = false}
+      >×</button>
     </div>
   {/if}
 </div>

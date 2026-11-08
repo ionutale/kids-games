@@ -4,7 +4,7 @@ import {
   SAVE_VERSION,
   loadWorld,
   saveWorld
-} from '$lib/stickers/save.js';
+} from '#lib/stickers/save.js';
 
 function memoryStorage() {
   const data = new Map();

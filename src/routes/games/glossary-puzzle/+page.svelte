@@ -2,10 +2,10 @@
   import { onMount, onDestroy } from 'svelte';
   import { get } from 'svelte/store';
   import { goto } from '$app/navigation';
-  import { page } from '$app/stores';
-  import { _ } from '$lib/stores/locale';
-  import GameShell from '$lib/components/ui/GameShell.svelte';
-  import LadderBar from '$lib/ladder/LadderBar.svelte';
+  import { page } from '$app/state';
+  import { _ } from '#lib/stores/locale.js';
+  import GameShell from '#lib/components/ui/GameShell.svelte';
+  import LadderBar from '#lib/ladder/LadderBar.svelte';
   import {
     PUZZLE_IMAGES,
     CATEGORY_ORDER,
@@ -14,14 +14,14 @@
     photoToVM,
     revokeVM,
     levelConfig,
-  } from '$lib/glossary-puzzle/images.js';
-  import { listPhotos } from '$lib/glossary-puzzle/photos.js';
-  import { loadSolved, badgeFor } from '$lib/glossary-puzzle/solved.js';
-  import { readSave, clearSave, stashHandoff } from '$lib/glossary-puzzle/save.js';
-  import PreviewOverlay from '$lib/glossary-puzzle/PreviewOverlay.svelte';
-  import ParentGate from '$lib/glossary-puzzle/ParentGate.svelte';
-  import PhotosManager from '$lib/glossary-puzzle/PhotosManager.svelte';
-  import { loadLevel, loadMastered, MAX_LEVEL } from '$lib/ladder/progress.js';
+  } from '#lib/glossary-puzzle/images.js';
+  import { listPhotos } from '#lib/glossary-puzzle/photos.js';
+  import { loadSolved, badgeFor } from '#lib/glossary-puzzle/solved.js';
+  import { readSave, clearSave, stashHandoff } from '#lib/glossary-puzzle/save.js';
+  import PreviewOverlay from '#lib/glossary-puzzle/PreviewOverlay.svelte';
+  import ParentGate from '#lib/glossary-puzzle/ParentGate.svelte';
+  import PhotosManager from '#lib/glossary-puzzle/PhotosManager.svelte';
+  import { loadLevel, loadMastered, MAX_LEVEL } from '#lib/ladder/progress.js';
 
   // Builtins need no IndexedDB, so seed the grid synchronously: it renders on the
   // first paint instead of flashing empty while `listPhotos()` is in flight (and
@@ -43,7 +43,7 @@
   let mastered = $state(false);
 
   let urlLevel = $derived.by(() => {
-    const n = parseInt($page.url.searchParams.get('level'), 10);
+    const n = parseInt(page.url.searchParams.get('level'), 10);
     return Number.isFinite(n) && n >= 1 ? Math.min(MAX_LEVEL, n) : null;
   });
 
@@ -53,18 +53,21 @@
   // Chips: All first, My Photos always, then only non-empty categories in
   // CATEGORY_ORDER (unknown categories appended so nothing is unreachable).
   const cats = $derived.by(() => {
-    const present = new Set(images.map(i => i.category));
-    const known = CATEGORY_ORDER.filter(c => c !== 'myPhotos' && present.has(c));
-    const unknown = [...present].filter(c => c !== 'myPhotos' && !CATEGORY_ORDER.includes(c));
+    const present = new Set(images.map((i) => i.category));
+    const known = CATEGORY_ORDER.filter((c) => c !== 'myPhotos' && present.has(c));
+    const unknown = [...present].filter((c) => c !== 'myPhotos' && !CATEGORY_ORDER.includes(c));
     return ['all', 'myPhotos', ...known, ...unknown];
   });
 
-  const visibleImages = $derived(
-    activeCat === 'all' ? images : images.filter(i => i.category === activeCat)
-  );
+  const visibleImages = $derived(activeCat === 'all'
+    ? images
+    : images.filter((i) => i.category === activeCat));
 
   // Continue card only exists when the saved picture is still in the merged list.
-  const resumeImage = $derived(save ? (images.find(i => i.id === save.imageId) ?? null) : null);
+  const resumeImage = $derived(save
+    ? images.find((i) => i.id === save.imageId) ?? null
+    : null);
+
   const placedCount = $derived(save?.placedIds?.length ?? 0);
   const piecesTotal = $derived.by(() => {
     if (!save) return 0;
@@ -89,7 +92,7 @@
       save = null;
       return;
     }
-    if (images.some(i => i.id === data.imageId)) {
+    if (images.some((i) => i.id === data.imageId)) {
       save = data;
       return;
     }
@@ -116,7 +119,7 @@
     }
     // Revoke the previous batch before minting the new one — no leaked URLs.
     for (const vm of ownedVMs) revokeVM(vm);
-    ownedVMs = records.map(r => photoToVM(r, get(_)));
+    ownedVMs = records.map((r) => photoToVM(r, get(_)));
     images = buildImageList(PUZZLE_IMAGES, ownedVMs);
     resolveSave();
   }
@@ -155,14 +158,29 @@
   <div class="gp-gallery" style="--accent: #5EEAD4;">
     <h2 class="gp-gallery-title">🧩 {$_('puzzle')}</h2>
 
-    <LadderBar current={currentLevel} {mastered} hrefFor={(n) => `/games/glossary-puzzle/play/${n}`} />
+    <LadderBar
+      current={currentLevel}
+      mastered={mastered}
+      hrefFor={(n) => `/games/glossary-puzzle/play/${n}`}
+    />
 
     {#if save && resumeImage}
-      <button class="gp-resume-btn" type="button" onclick={startResume}>
-        <img class="gp-resume-thumb" src={resumeImage.thumb} alt="" />
-        <span class="gp-resume-ring" style="--p: {piecesTotal ? Math.round((placedCount / piecesTotal) * 100) : 0}">
-          <span class="gp-resume-count">{placedCount}/{piecesTotal}</span>
-        </span>
+      <button
+        class="gp-resume-btn"
+        type="button"
+        onclick={startResume}
+      >
+        <img
+          class="gp-resume-thumb"
+          src={resumeImage.thumb}
+          alt=""
+        />
+
+        <span
+          class="gp-resume-ring"
+          style="--p: {piecesTotal ? Math.round(placedCount / piecesTotal * 100) : 0}"
+        ><span class="gp-resume-count">{placedCount}/{piecesTotal}</span></span>
+
         <span class="gp-resume-text">
           <span class="gp-resume-label">▶ {$_('resume')}</span>
           <span class="gp-resume-name">{resumeImage.name}</span>
@@ -177,7 +195,7 @@
           class:active={activeCat === cat}
           data-cat={cat}
           type="button"
-          onclick={() => (activeCat = activeCat === cat ? 'all' : cat)}
+          onclick={() => activeCat = activeCat === cat ? 'all' : cat}
         >
           <span class="gp-cat-icon">{catIcon(cat)}</span>
           <span class="gp-cat-name">{catLabel(cat)}</span>
@@ -187,7 +205,7 @@
 
     {#if activeCat === 'myPhotos'}
       <div class="gp-lock-card">
-        <ParentGate onpass={() => (managerOpen = true)}>
+        <ParentGate onpass={() => managerOpen = true}>
           <span class="gp-lock-inner">
             <span class="gp-lock-icon">🔒</span>
             <span class="gp-lock-title">{$_('addPhotos')}</span>
@@ -228,7 +246,11 @@
 </GameShell>
 
 {#if previewImage}
-  <PreviewOverlay image={previewImage} level={currentLevel} onclose={() => (previewImage = null)} />
+  <PreviewOverlay
+    image={previewImage}
+    level={currentLevel}
+    onclose={() => previewImage = null}
+  />
 {/if}
 
 {#if managerOpen}

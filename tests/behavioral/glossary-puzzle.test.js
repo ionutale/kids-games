@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { levelConfig } from '$lib/glossary-puzzle/images.js';
-import { generatePieces, computeVisibleTray, TRAY_CAPACITY } from '$lib/glossary-puzzle/pieces.js';
+import { levelConfig } from '#lib/glossary-puzzle/images.js';
+import { generatePieces, computeVisibleTray, TRAY_CAPACITY } from '#lib/glossary-puzzle/pieces.js';
 
 describe('Glossary Puzzle behavior', () => {
   it('pieces are shuffled', () => {

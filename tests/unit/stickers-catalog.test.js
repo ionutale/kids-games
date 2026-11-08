@@ -11,7 +11,7 @@ import {
   getShelf,
   getShelfButtonSize,
   getPlacedSize
-} from '$lib/stickers/catalog.js';
+} from '#lib/stickers/catalog.js';
 
 function countGroups(types) {
   return types.reduce((counts, type) => {

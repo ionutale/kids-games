@@ -1,13 +1,13 @@
 <script>
   import { onMount, onDestroy, tick } from 'svelte';
   import { goto } from '$app/navigation';
-  import { settings } from '$lib/stores/settings';
-  import { _ } from '$lib/stores/locale';
-  import { playTap, playPop } from '$lib/sounds/audioManager';
-  import SoundToggle from '$lib/components/SoundToggle.svelte';
-  import DinoValley from '$lib/stickers/art/DinoValley.svelte';
-  import StickerDefs from '$lib/stickers/art/StickerDefs.svelte';
-  import StickerIcon from '$lib/stickers/StickerIcon.svelte';
+  import { settings } from '#lib/stores/settings.js';
+  import { _ } from '#lib/stores/locale.js';
+  import { playTap, playPop } from '#lib/sounds/audioManager.js';
+  import SoundToggle from '#lib/components/SoundToggle.svelte';
+  import DinoValley from '#lib/stickers/art/DinoValley.svelte';
+  import StickerDefs from '#lib/stickers/art/StickerDefs.svelte';
+  import StickerIcon from '#lib/stickers/StickerIcon.svelte';
   import {
     WORLD,
     SOFT_CAP,
@@ -15,20 +15,20 @@
     getShelfButtonSize,
     getSticker,
     getPlacedSize
-  } from '$lib/stickers/catalog.js';
-  import { getStorage, loadWorld, saveWorld } from '$lib/stickers/save.js';
+  } from '#lib/stickers/catalog.js';
+  import { getStorage, loadWorld, saveWorld } from '#lib/stickers/save.js';
   import {
     isOverShelf,
     clampPlacement,
     pointToPercent
-  } from '$lib/stickers/geometry.js';
+  } from '#lib/stickers/geometry.js';
   import {
     addPlacement,
     bringToFront,
     movePlacement,
     removePlacement,
     canAdd
-  } from '$lib/stickers/placements.js';
+  } from '#lib/stickers/placements.js';
 
   let placed = $state([]);
   let active = $state(null);

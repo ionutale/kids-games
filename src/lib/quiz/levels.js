@@ -1,4 +1,4 @@
-import { makeRng, shuffle } from '$lib/trainers/rng.js';
+import { makeRng, shuffle } from '#lib/trainers/rng.js';
 
 export const QUIZ_MAX_LEVEL = 10;
 

@@ -1,8 +1,8 @@
 <script>
   import { onMount } from 'svelte';
-  import Confetti from '$lib/components/Confetti.svelte';
-  import { settings } from '$lib/stores/settings';
-  import { playWinCheer } from '$lib/sounds/audioManager';
+  import Confetti from '#lib/components/Confetti.svelte';
+  import { settings } from '#lib/stores/settings.js';
+  import { playWinCheer } from '#lib/sounds/audioManager.js';
   import Starfield from './Starfield.svelte';
 
   let { title, subtitle = '', sound = true, badge = null, testid = null, children } = $props();

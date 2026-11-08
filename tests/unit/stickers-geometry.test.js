@@ -6,7 +6,7 @@ import {
   edgePercentForSize,
   pointToPercent,
   isOverShelf
-} from '$lib/stickers/geometry.js';
+} from '#lib/stickers/geometry.js';
 
 describe('Stickers geometry', () => {
   it('clamps positions away from the canvas edges', () => {

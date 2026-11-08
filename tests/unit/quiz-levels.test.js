@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { quizLevelConfig, buildQueue, QUIZ_MAX_LEVEL } from '$lib/quiz/levels.js';
-import { TOPICS } from '$lib/quiz/topics.js';
+import { quizLevelConfig, buildQueue, QUIZ_MAX_LEVEL } from '#lib/quiz/levels.js';
+import { TOPICS } from '#lib/quiz/topics.js';
 
 describe('quizLevelConfig', () => {
   it('grows questions and options along the 10-level ladder', () => {

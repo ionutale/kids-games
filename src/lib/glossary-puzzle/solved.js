@@ -1,4 +1,4 @@
-import { MAX_LEVEL } from '$lib/ladder/progress.js';
+import { MAX_LEVEL } from '#lib/ladder/progress.js';
 
 export const SOLVED_KEY = 'glossary-puzzle-solved';
 

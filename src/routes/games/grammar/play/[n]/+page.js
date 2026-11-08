@@ -1,4 +1,4 @@
-import { saveLevel, MAX_LEVEL } from '$lib/ladder/progress.js';
+import { saveLevel, MAX_LEVEL } from '#lib/ladder/progress.js';
 
 export function load({ params, url }) {
   // The grammar ladder ends at MAX_LEVEL; deeper links clamp instead of
