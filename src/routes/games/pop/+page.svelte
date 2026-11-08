@@ -1,5 +1,8 @@
 <script>
   import { onMount } from 'svelte';
+  import { page } from '$app/state';
+  import { seedFromUrl } from '$lib/game/seed.js';
+  import { makeRng } from '$lib/trainers/rng.js';
   import { settings } from '$lib/stores/settings';
   import { _ } from '$lib/stores/locale';
   import { playPop } from '$lib/sounds/audioManager';
@@ -22,17 +25,19 @@
   let mastered = $state(loadMastered('pop'));
 
   const target = $derived(targetFor(level));
+  const urlSeed = seedFromUrl(page.url);
+  const rand = urlSeed == null ? Math.random : makeRng(urlSeed);
 
   function spawnBubble() {
     if (!playing) return;
     const config = levelConfig(level);
     if (bubbles.length >= config.maxItems) return;
     bubbles = [...bubbles, {
-      id: Math.random(),
-      emoji: items[Math.floor(Math.random() * config.itemCount)],
-      x: 5 + Math.random() * 90,
-      size: level <= 3 ? 50 + Math.random() * 15 : 36 + Math.random() * 12,
-      fall: config.fallSec + Math.random() * 2
+      id: rand(),
+      emoji: items[Math.floor(rand() * config.itemCount)],
+      x: 5 + rand() * 90,
+      size: level <= 3 ? 50 + rand() * 15 : 36 + rand() * 12,
+      fall: config.fallSec + rand() * 2
     }];
   }
 

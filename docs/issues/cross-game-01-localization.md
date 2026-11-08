@@ -15,6 +15,10 @@ Add every new visible string for the six redesigns to all six locales in `src/li
 - [ ] `pnpm test` and `pnpm check` are green
 - [ ] No new dependencies
 
+## Foundation status (2026-11-07)
+
+The shared copy landed: 20 keys in all six locales (`src/lib/stores/locale-extra.js`, merged in `locale.js`) with a green `tests/unit/locale-parity.test.js`. Each game still needs to use these keys in its UI and verify the longest translations at 320×568.
+
 ## Blocked by
 
 None — do before the first game core. The six-game review (`2026-11-07-six-game-review.md`) is the source of the shared checklist.

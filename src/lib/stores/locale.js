@@ -1,8 +1,9 @@
 import { writable, derived } from 'svelte/store';
+import { extraTranslations } from './locale-extra.js';
 
 const STORAGE_KEY = 'kids-games-locale';
 
-const translations = {
+const baseTranslations = {
   en: {
     title: 'Kids Games', paint: 'Paint', stickers: 'Stickers', memory: 'Memory',
     puzzle: 'Puzzle', pop: 'Pop', soccer: 'Soccer', sorting: 'Sorting', splash: 'Splash',
@@ -328,6 +329,13 @@ resume: '继续',
     paintStampStar: '星星', paintStampHeart: '爱心', paintStampButterfly: '蝴蝶', paintStampFlower: '花朵',
   }
 };
+
+export const translations = Object.fromEntries(
+  Object.entries(baseTranslations).map(([code, dict]) => [
+    code,
+    { ...dict, ...(extraTranslations[code] ?? {}) }
+  ])
+);
 
 const defaultLocale = 'en';
 

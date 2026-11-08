@@ -1,5 +1,7 @@
 <script>
   import { onMount } from 'svelte';
+  import { page } from '$app/state';
+  import { seedFromUrl } from '$lib/game/seed.js';
   import { _ } from '$lib/stores/locale';
   import GameShell from '$lib/components/ui/GameShell.svelte';
   import '$lib/trainers/fx.css';
@@ -133,7 +135,7 @@
   }
 
   onMount(() => {
-    newPuzzle();
+    newPuzzle(seedFromUrl(page.url) ?? undefined);
     return clearTimers;
   });
 

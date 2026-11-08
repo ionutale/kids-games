@@ -1,5 +1,7 @@
 <script>
   import { onDestroy, onMount } from 'svelte';
+  import { page } from '$app/state';
+  import { seedFromUrl } from '$lib/game/seed.js';
   import { settings } from '$lib/stores/settings';
   import { _ } from '$lib/stores/locale';
   import { playTap, playGoal as playGoalSound } from '$lib/sounds/audioManager';
@@ -20,6 +22,8 @@
     starsFor,
     targetScoreFor
   } from '$lib/soccer/engine.js';
+
+  const keeperPhase = (seedFromUrl(page.url) ?? 0) / 1000;
 
   let ballX = $state(BALL_START.x);
   let ballY = $state(BALL_START.y);
@@ -231,7 +235,7 @@
 
   onMount(() => {
     const loop = (now) => {
-      if (!keeperHold) keeperXPos = keeperCenter(level, now / 1000);
+      if (!keeperHold) keeperXPos = keeperCenter(level, now / 1000 + keeperPhase);
       keeperRaf = requestAnimationFrame(loop);
     };
     keeperRaf = requestAnimationFrame(loop);

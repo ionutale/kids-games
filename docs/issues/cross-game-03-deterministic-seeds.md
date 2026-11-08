@@ -16,6 +16,10 @@ Give every scene/round generator an explicit seed and a dev/test-only way to set
 - [ ] Unit tests cover same-seed/same-output and different-seed/different-output
 - [ ] No new dependencies
 
+## Foundation status (2026-11-07)
+
+`src/lib/game/seed.js` landed with unit tests, and a hidden `?seed=` is wired on the existing Spot, Path Builder, Soccer and Pop routes. Verified in the browser: the same seed reproduces the Spot/Path grid, the first Pop bubble and the Soccer keeper phase; a different seed changes them. The new cores still consume the helper and add the per-game E2E assertions.
+
 ## Blocked by
 
 None — do before the first game core. The six-game review (`2026-11-07-six-game-review.md`) is the source of the shared checklist.

@@ -16,6 +16,10 @@ One sound helper that owns the AudioContext, the `settings.soundEnabled` check, 
 - [ ] Unit tests cover the mute path and the reduced-motion store
 - [ ] No new dependencies
 
+## Foundation status (2026-11-07)
+
+`src/lib/sounds/gameSound.js` and `src/lib/stores/reducedMotion.js` landed with unit coverage (7 sound tests, 4 motion tests). Each game still needs to adopt them and delete its own AudioContext/rAF motion checks.
+
 ## Blocked by
 
 None — do before the first juice/sound ticket. The six-game review (`2026-11-07-six-game-review.md`) is the source of the shared checklist.

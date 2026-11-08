@@ -17,6 +17,27 @@ function getContext() {
   return audioCtx;
 }
 
+export function getAudioContext() {
+  return getContext();
+}
+
+export function isSoundEnabled() {
+  return !muted();
+}
+
+export function unlockAudio() {
+  if (muted()) return;
+  try {
+    getContext();
+  } catch {}
+}
+
+export function suspendAudio() {
+  try {
+    if (audioCtx?.state === 'running') audioCtx.suspend?.();
+  } catch {}
+}
+
 function playTone(freq, duration, type = 'sine', volume = 0.3) {
   if (muted()) return;
   try {

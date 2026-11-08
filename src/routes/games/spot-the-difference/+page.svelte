@@ -1,5 +1,7 @@
 <script>
   import { onMount } from 'svelte';
+  import { page } from '$app/state';
+  import { seedFromUrl } from '$lib/game/seed.js';
   import { _ } from '$lib/stores/locale';
   import { settings } from '$lib/stores/settings';
   import GameShell from '$lib/components/ui/GameShell.svelte';
@@ -48,7 +50,7 @@
   }
 
   onMount(() => {
-    next();
+    next(seedFromUrl(page.url) ?? undefined);
     return () => { for (const t of timers) clearTimeout(t); };
   });
 
