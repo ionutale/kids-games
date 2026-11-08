@@ -8,7 +8,7 @@ import {
   itemsForLevel,
   buildRound,
   correctBin
-} from '#lib/category-sort/categories.js';
+} from '../../src/lib/category-sort/categories.js';
 
 describe('category data integrity', () => {
   it('every category has ≥8 unique items and metadata', () => {

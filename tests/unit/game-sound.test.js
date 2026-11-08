@@ -50,7 +50,7 @@ afterEach(() => {
 describe('createGameSound', () => {
   it('plays a registered cue through the shared context', async () => {
     const ctx = stubAudioContext();
-    const { createGameSound } = await import('#lib/sounds/gameSound.js');
+    const { createGameSound } = await import('../../src/lib/sounds/gameSound.js');
     const sound = createGameSound({ ping: ({ tone }) => tone({ freq: 440, dur: 0.05 }) });
 
     sound.unlock();
@@ -61,11 +61,11 @@ describe('createGameSound', () => {
 
   it('stays silent while muted and plays after unmute', async () => {
     const ctx = stubAudioContext();
-    const { settings } = await import('#lib/stores/settings.js');
+    const { settings } = await import('../../src/lib/stores/settings.js');
     const { get } = await import('svelte/store');
     if (get(settings).soundEnabled) settings.toggleSound();
 
-    const { createGameSound } = await import('#lib/sounds/gameSound.js');
+    const { createGameSound } = await import('../../src/lib/sounds/gameSound.js');
     const sound = createGameSound({ ping: ({ tone }) => tone({ freq: 440 }) });
     sound.unlock();
     sound.play('ping');
@@ -79,7 +79,7 @@ describe('createGameSound', () => {
   it('cancels delayed cues on stop', async () => {
     const ctx = stubAudioContext();
     vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
-    const { createGameSound } = await import('#lib/sounds/gameSound.js');
+    const { createGameSound } = await import('../../src/lib/sounds/gameSound.js');
     const sound = createGameSound({
       late: ({ after, tone }) => after(50, () => tone({ freq: 300 }))
     });
@@ -93,7 +93,7 @@ describe('createGameSound', () => {
 
   it('ignores cues after dispose and suspends the shared context', async () => {
     const ctx = stubAudioContext();
-    const { createGameSound } = await import('#lib/sounds/gameSound.js');
+    const { createGameSound } = await import('../../src/lib/sounds/gameSound.js');
     const sound = createGameSound({ ping: ({ tone }) => tone({ freq: 440 }) });
 
     sound.unlock();
@@ -108,7 +108,7 @@ describe('createGameSound', () => {
   it('resumes a suspended context on unlock', async () => {
     const ctx = stubAudioContext();
     ctx.state = 'suspended';
-    const { createGameSound } = await import('#lib/sounds/gameSound.js');
+    const { createGameSound } = await import('../../src/lib/sounds/gameSound.js');
     const sound = createGameSound({});
 
     sound.unlock();
@@ -118,7 +118,7 @@ describe('createGameSound', () => {
 
   it('plays a noise cue through the shared context', async () => {
     const ctx = stubAudioContext();
-    const { createGameSound } = await import('#lib/sounds/gameSound.js');
+    const { createGameSound } = await import('../../src/lib/sounds/gameSound.js');
     const sound = createGameSound({
       whoosh: ({ noise }) => noise({ dur: 0.05, vol: 0.02 })
     });
@@ -131,7 +131,7 @@ describe('createGameSound', () => {
 
   it('does not throw when there is no AudioContext', async () => {
     vi.stubGlobal('window', {});
-    const { createGameSound } = await import('#lib/sounds/gameSound.js');
+    const { createGameSound } = await import('../../src/lib/sounds/gameSound.js');
     const sound = createGameSound({ ping: ({ tone }) => tone({ freq: 440 }) });
 
     expect(() => sound.play('ping')).not.toThrow();

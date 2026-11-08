@@ -12,24 +12,24 @@ beforeEach(() => {
 
 describe('glossary-puzzle solved store', () => {
   it('returns an empty map when nothing is stored', async () => {
-    const { loadSolved } = await import('#lib/glossary-puzzle/solved.js');
+    const { loadSolved } = await import('../../src/lib/glossary-puzzle/solved.js');
     expect(loadSolved()).toEqual({});
   });
 
   it('returns an empty map for corrupt JSON', async () => {
-    const { loadSolved } = await import('#lib/glossary-puzzle/solved.js');
+    const { loadSolved } = await import('../../src/lib/glossary-puzzle/solved.js');
     localStorage.setItem('glossary-puzzle-solved', '{oops');
     expect(loadSolved()).toEqual({});
   });
 
   it('records the solved level per image', async () => {
-    const { loadSolved, recordSolved } = await import('#lib/glossary-puzzle/solved.js');
+    const { loadSolved, recordSolved } = await import('../../src/lib/glossary-puzzle/solved.js');
     recordSolved('garden', 3);
     expect(loadSolved().garden).toBe(3);
   });
 
   it('keeps the highest level ever solved', async () => {
-    const { loadSolved, recordSolved } = await import('#lib/glossary-puzzle/solved.js');
+    const { loadSolved, recordSolved } = await import('../../src/lib/glossary-puzzle/solved.js');
     recordSolved('garden', 3);
     recordSolved('garden', 2);
     expect(loadSolved().garden).toBe(3);
@@ -40,19 +40,19 @@ describe('glossary-puzzle solved store', () => {
 
 describe('badgeFor', () => {
   it('shows a check when solved at or beyond the current level', async () => {
-    const { badgeFor } = await import('#lib/glossary-puzzle/solved.js');
+    const { badgeFor } = await import('../../src/lib/glossary-puzzle/solved.js');
     expect(badgeFor({ garden: 3 }, 'garden', 3)).toBe('check');
     expect(badgeFor({ garden: 3 }, 'garden', 2)).toBe('check');
   });
 
   it('shows nothing when the current level is not yet solved', async () => {
-    const { badgeFor } = await import('#lib/glossary-puzzle/solved.js');
+    const { badgeFor } = await import('../../src/lib/glossary-puzzle/solved.js');
     expect(badgeFor({ garden: 3 }, 'garden', 5)).toBe('none');
     expect(badgeFor({}, 'ocean', 1)).toBe('none');
   });
 
   it('shows gold at the top level', async () => {
-    const { badgeFor } = await import('#lib/glossary-puzzle/solved.js');
+    const { badgeFor } = await import('../../src/lib/glossary-puzzle/solved.js');
     expect(badgeFor({ garden: 10 }, 'garden', 10)).toBe('gold');
   });
 });

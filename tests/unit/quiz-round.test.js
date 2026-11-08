@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { buildOptions } from '#lib/quiz/round.js';
-import { TOPICS } from '#lib/quiz/topics.js';
+import { buildOptions } from '../../src/lib/quiz/round.js';
+import { TOPICS } from '../../src/lib/quiz/topics.js';
 
 const items = TOPICS.animals.items;
 

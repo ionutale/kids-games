@@ -6,7 +6,7 @@ import {
   buildImageList,
   photoToVM,
   revokeVM,
-} from '#lib/glossary-puzzle/images.js';
+} from '../../src/lib/glossary-puzzle/images.js';
 
 describe('image category metadata', () => {
   it('gives every builtin image a category that has metadata', () => {

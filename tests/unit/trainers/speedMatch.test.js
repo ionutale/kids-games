@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { levelConfig, makeDeck, bandFor } from '#lib/trainers/speedMatch.js';
-import { categoryOfEmoji, LOOKALIKES } from '#lib/trainers/emojiSets.js';
+import { levelConfig, makeDeck, bandFor } from '../../../src/lib/trainers/speedMatch.js';
+import { categoryOfEmoji, LOOKALIKES } from '../../../src/lib/trainers/emojiSets.js';
 
 describe('bandFor', () => {
   it('maps levels to trickiness bands', () => {

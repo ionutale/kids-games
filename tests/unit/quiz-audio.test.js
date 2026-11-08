@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { SPEECH_LANGS, speechLangFor, speak, defaultQuizMode } from '#lib/quiz/audio.js';
+import { SPEECH_LANGS, speechLangFor, speak, defaultQuizMode } from '../../src/lib/quiz/audio.js';
 
 describe('speechLangFor', () => {
   it('maps every app locale to a speech tag', () => {

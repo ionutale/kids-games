@@ -12,7 +12,7 @@ beforeEach(() => {
 
 describe('makeRng (mulberry32)', () => {
   it('is deterministic for the same seed', async () => {
-    const { makeRng } = await import('#lib/trainers/rng.js');
+    const { makeRng } = await import('../../../src/lib/trainers/rng.js');
     const a = makeRng(42);
     const b = makeRng(42);
     const seqA = [a(), a(), a(), a()];
@@ -21,7 +21,7 @@ describe('makeRng (mulberry32)', () => {
   });
 
   it('diverges for different seeds and stays in [0,1)', async () => {
-    const { makeRng } = await import('#lib/trainers/rng.js');
+    const { makeRng } = await import('../../../src/lib/trainers/rng.js');
     const a = makeRng(1);
     const b = makeRng(2);
     let diverged = false;
@@ -35,7 +35,7 @@ describe('makeRng (mulberry32)', () => {
   });
 
   it('handles seed 0 without locking up', async () => {
-    const { makeRng } = await import('#lib/trainers/rng.js');
+    const { makeRng } = await import('../../../src/lib/trainers/rng.js');
     const r = makeRng(0);
     expect(r()).not.toBeNaN();
   });
@@ -43,7 +43,7 @@ describe('makeRng (mulberry32)', () => {
 
 describe('emojiSets catalog', () => {
   it('exposes six categories with at least eight emojis each', async () => {
-    const { CATEGORIES } = await import('#lib/trainers/emojiSets.js');
+    const { CATEGORIES } = await import('../../../src/lib/trainers/emojiSets.js');
     const names = Object.keys(CATEGORIES);
     expect(names.sort()).toEqual(['animals', 'food', 'nature', 'sea', 'toys', 'vehicles']);
     for (const name of names) {
@@ -53,7 +53,7 @@ describe('emojiSets catalog', () => {
   });
 
   it('lookalike pairs reference distinct emojis', async () => {
-    const { LOOKALIKES } = await import('#lib/trainers/emojiSets.js');
+    const { LOOKALIKES } = await import('../../../src/lib/trainers/emojiSets.js');
     expect(LOOKALIKES.length).toBeGreaterThanOrEqual(6);
     for (const [a, b] of LOOKALIKES) {
       expect(a).not.toBe(b);
@@ -65,7 +65,7 @@ describe('emojiSets catalog', () => {
 
 describe('pickTarget / pickDistractors', () => {
   it('pickTarget picks uniformly from the pool', async () => {
-    const { pickTarget } = await import('#lib/trainers/emojiSets.js');
+    const { pickTarget } = await import('../../../src/lib/trainers/emojiSets.js');
     const pool = ['🍎', '🍌', '🍒'];
     for (let s = 1; s <= 10; s++) {
       expect(pool).toContain(pickTarget(pool, s));
@@ -73,7 +73,7 @@ describe('pickTarget / pickDistractors', () => {
   });
 
   it('cross tier excludes the target category entirely', async () => {
-    const { pickDistractors, CATEGORIES } = await import('#lib/trainers/emojiSets.js');
+    const { pickDistractors, CATEGORIES } = await import('../../../src/lib/trainers/emojiSets.js');
     const target = '🐶'; // animals
     const animalSet = new Set(CATEGORIES.animals);
     for (let s = 1; s <= 20; s++) {
@@ -87,7 +87,7 @@ describe('pickTarget / pickDistractors', () => {
   });
 
   it('same tier draws only from the target category', async () => {
-    const { pickDistractors, CATEGORIES } = await import('#lib/trainers/emojiSets.js');
+    const { pickDistractors, CATEGORIES } = await import('../../../src/lib/trainers/emojiSets.js');
     const target = '🍎';
     const foodSet = new Set(CATEGORIES.food);
     for (let s = 1; s <= 20; s++) {
@@ -100,7 +100,7 @@ describe('pickTarget / pickDistractors', () => {
   });
 
   it('lookalike tier draws only from the target lookalike partners', async () => {
-    const { pickDistractors, LOOKALIKES } = await import('#lib/trainers/emojiSets.js');
+    const { pickDistractors, LOOKALIKES } = await import('../../../src/lib/trainers/emojiSets.js');
     const target = '🍎';
     const partners = new Set(
       LOOKALIKES.filter(([a, b]) => a === target || b === target).flat()
@@ -113,7 +113,7 @@ describe('pickTarget / pickDistractors', () => {
   });
 
   it('never returns duplicates nor the target, even when count is high', async () => {
-    const { pickDistractors } = await import('#lib/trainers/emojiSets.js');
+    const { pickDistractors } = await import('../../../src/lib/trainers/emojiSets.js');
     const picks = pickDistractors('🍎', 'cross', 5, 9);
     expect(new Set(picks).size).toBe(picks.length);
     expect(picks).not.toContain('🍎');

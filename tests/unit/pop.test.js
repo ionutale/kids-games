@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { levelConfig, targetFor } from '#lib/pop/config.js';
+import { levelConfig, targetFor } from '../../src/lib/pop/config.js';
 
 describe('Pop game', () => {
   it('level 1 config is easiest', () => {

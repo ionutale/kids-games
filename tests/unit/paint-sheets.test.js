@@ -4,7 +4,7 @@ import {
   DEFAULT_SHEET_ID,
   getSheets,
   getSheet
-} from '#lib/paint/sheets.js';
+} from '../../src/lib/paint/sheets.js';
 
 const IDS = ['blank', 'dino-valley', 'butterfly-garden', 'under-the-sea'];
 

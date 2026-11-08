@@ -5,7 +5,7 @@ import {
   openAim,
   shotResult,
   targetScoreFor
-} from '#lib/soccer/engine.js';
+} from '../../src/lib/soccer/engine.js';
 
 describe('Soccer game behavior', () => {
   it('a shot into the open side of the goal scores', () => {

@@ -5,7 +5,7 @@ import {
   DINO_VALLEY_LINES,
   DINO_VALLEY_DOTS,
   DINO_VALLEY_SMILES
-} from '#lib/paint/paper/dinoValley.js';
+} from '../../src/lib/paint/paper/dinoValley.js';
 
 /**
  * The Paint page, the bucket, the brush clip and the e2e tests all look regions

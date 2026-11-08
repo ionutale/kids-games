@@ -5,7 +5,7 @@ import {
   movePlacement,
   removePlacement,
   canAdd
-} from '#lib/stickers/placements.js';
+} from '../../src/lib/stickers/placements.js';
 
 const a = { id: 'a', type: 'trex', x: 10, y: 10 };
 const b = { id: 'b', type: 'fern', x: 20, y: 20 };

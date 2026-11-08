@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { equationTypeFor, makeQuestion, FRUITS } from '#lib/emoji-math/game.js';
+import { equationTypeFor, makeQuestion, FRUITS } from '../../src/lib/emoji-math/game.js';
 
 describe('age → equation type', () => {
   it('maps age bands per spec', () => {
