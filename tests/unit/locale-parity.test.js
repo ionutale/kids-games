@@ -58,6 +58,10 @@ const NEW_KEYS = [
   'postcardAdded',
   'spotHarborComplete',
   'spotCompleteSub',
+  'spotFoundCount',
+  'spotSetProgress',
+  'spotAlbumEmpty',
+  'spotPostcardCount',
   'spotLook',
   'spotWhatChanged',
   'spotPeek',
@@ -110,6 +114,16 @@ describe('locale parity', () => {
       expect(translations[code].ftJarFill, `${code}.ftJarFill`).toContain('{n}');
       expect(translations[code].ftJarFill, `${code}.ftJarFill`).toContain('{m}');
       expect(translations[code].ftRemaining, `${code}.ftRemaining`).toContain('{n}');
+    }
+  });
+
+  it('keeps the spot-the-difference count placeholders in every locale', () => {
+    for (const code of LOCALES) {
+      expect(translations[code].spotFoundCount, `${code}.spotFoundCount`).toContain('{n}');
+      expect(translations[code].spotFoundCount, `${code}.spotFoundCount`).toContain('{m}');
+      expect(translations[code].spotSetProgress, `${code}.spotSetProgress`).toContain('{n}');
+      expect(translations[code].spotSetProgress, `${code}.spotSetProgress`).toContain('{m}');
+      expect(translations[code].spotPostcardCount, `${code}.spotPostcardCount`).toContain('{n}');
     }
   });
 
