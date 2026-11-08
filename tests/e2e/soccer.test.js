@@ -1,157 +1,465 @@
 import { test, expect } from '@playwright/test';
 
-async function kickOpen(page) {
-  const field = page.locator('.field');
-  const box = await field.boundingBox();
-  const sx = box.x + box.width * 0.5;
-  const sy = box.y + box.height * 0.72;
-  await page.mouse.move(sx, sy);
+const ROOT = '[data-testid="soccer-root"]';
+const FIELD = '[data-testid="soccer-field"]';
+const CALL = '[data-testid="soccer-callout"]';
+
+async function fieldBox(page) {
+  const box = await page.locator(FIELD).boundingBox();
+  if (!box) throw new Error('soccer field has no box');
+  return box;
+}
+
+/** The live open-side aim the route exposes for tests and aim aids. */
+async function openAim(page) {
+  const field = page.locator(FIELD);
+  return {
+    x: parseFloat(await field.getAttribute('data-open-x')),
+    y: parseFloat(await field.getAttribute('data-open-y'))
+  };
+}
+
+async function keeperX(page) {
+  return parseFloat(await page.locator('.keeper').getAttribute('data-x'));
+}
+
+async function swipeTo(page, endFn) {
+  const box = await fieldBox(page);
+  const startX = box.x + box.width * 0.5;
+  const startY = box.y + box.height * 0.7;
+  await page.mouse.move(startX, startY);
   await page.mouse.down();
-  await page.waitForTimeout(40);
-  const ox = parseFloat(await field.getAttribute('data-open-x'));
-  const oy = parseFloat(await field.getAttribute('data-open-y'));
-  const ex = box.x + box.width * (ox / 100);
-  const ey = box.y + box.height * (oy / 100);
-  await page.mouse.move(ex, ey, { steps: 5 });
-  await page.waitForTimeout(40);
+  await page.waitForTimeout(25);
+  // Read the moving keeper after the finger is down, so the end point is the
+  // open side at nearly the release moment.
+  const end = await endFn(box);
+  await page.mouse.move(box.x + (end.x / 100) * box.width, box.y + (end.y / 100) * box.height, {
+    steps: 5
+  });
+  await page.waitForTimeout(25);
   await page.mouse.up();
 }
 
-test.describe('Soccer E2E', () => {
-  test('loads and shows field, ball, and keeper', async ({ page }) => {
+async function shootOpen(page) {
+  // Read the open side right before the release so the patrolling keeper has
+  // barely moved; the far corner room is much wider than that drift.
+  await swipeTo(page, async () => openAim(page));
+  await expect(page.locator(CALL)).toContainText('GOAL', { timeout: 4000 });
+  await expect(page.locator(CALL)).toHaveCount(0, { timeout: 4000 });
+}
+
+async function shootAtKeeper(page) {
+  await swipeTo(page, async () => ({ x: await keeperX(page), y: 10 }));
+  await expect(page.locator(CALL)).toContainText('SAVED', { timeout: 4000 });
+  await expect(page.locator('.keeper.diving')).toHaveCount(1);
+  await expect(page.locator(CALL)).toHaveCount(0, { timeout: 4000 });
+}
+
+async function shootWide(page) {
+  await swipeTo(page, async () => ({ x: 4, y: 10 }));
+  await expect(page.locator(CALL)).toContainText('MISS', { timeout: 4000 });
+  await expect(page.locator(CALL)).toHaveCount(0, { timeout: 4000 });
+}
+
+test.describe('Soccer — the Night Penalty', () => {
+  test('opens as a night stadium with a goal, a net, a keeper, a striker and five pips', async ({
+    page
+  }) => {
     await page.goto('/games/soccer');
-    await expect(page.locator('.field')).toBeVisible();
-    await expect(page.locator('.ball')).toBeVisible();
+    const root = page.getByTestId('soccer-root');
+    await expect(root).toHaveAttribute('data-level', '1');
+    await expect(root).toHaveAttribute('data-state', 'playing');
+    await expect(root).toHaveAttribute('data-shots', '5');
+    await expect(root).toHaveAttribute('data-target', '3');
+    await expect(page.locator(FIELD)).toBeVisible();
+    await expect(page.locator('.goal')).toBeVisible();
+    await expect(page.locator('.goal .net')).toBeVisible();
     await expect(page.locator('.keeper')).toBeVisible();
-  });
-
-  test('swipe into the open side scores', async ({ page }) => {
-    await page.goto('/games/soccer');
-    await kickOpen(page);
-    await page.waitForTimeout(900);
-    await expect(page.locator('.score-display')).toContainText('1/');
-  });
-
-  test('scores increment on shots past the keeper', async ({ page }) => {
-    await page.goto('/games/soccer');
-    // Play level 5 (target 7) so three kicks stay below the win threshold.
-    await page.locator('.ladder-step').nth(4).click();
-    await page.waitForTimeout(400);
-
-    for (let i = 0; i < 3; i++) {
-      await kickOpen(page);
-      await page.waitForTimeout(1400);
-    }
-
-    const scoreText = await page.locator('.score-display').textContent();
-    expect(parseInt(scoreText.split('/')[0].replace('Score: ', ''))).toBe(3);
-  });
-
-  test('swipe away from goal does not score', async ({ page }) => {
-    await page.goto('/games/soccer');
-    const field = page.locator('.field');
-    const box = await field.boundingBox();
-    const sx = box.x + box.width * 0.5, sy = box.y + box.height * 0.8;
-    const ex = box.x + box.width * 0.5, ey = box.y + box.height * 0.9;
-
-    await page.mouse.move(sx, sy);
-    await page.mouse.down();
-    await page.waitForTimeout(50);
-    await page.mouse.move(ex, ey, { steps: 5 });
-    await page.waitForTimeout(50);
-    await page.mouse.up();
-    await page.waitForTimeout(1000);
-
-    const s = await page.locator('.score-display').textContent();
-    expect(parseInt(s.split('/')[0].replace('Score: ', ''))).toBe(0);
-  });
-
-  test('kid swipes all over the field', async ({ page }) => {
-    await page.goto('/games/soccer');
-    const box = await page.locator('.field').boundingBox();
-
-    for (let i = 0; i < 5; i++) {
-      const sx = box.x + box.width * (0.2 + Math.random() * 0.6);
-      const sy = box.y + box.height * (0.3 + Math.random() * 0.5);
-      const ex = box.x + box.width * (0.2 + Math.random() * 0.6);
-      const ey = box.y + box.height * (0.1 + Math.random() * 0.8);
-      await page.mouse.move(sx, sy);
-      await page.mouse.down();
-      await page.waitForTimeout(30);
-      await page.mouse.move(ex, ey, { steps: 5 });
-      await page.waitForTimeout(30);
-      await page.mouse.up();
-      await page.waitForTimeout(500);
-    }
-
-    await expect(page.locator('.score-display')).toBeVisible();
-  });
-
-  test('ball moves on swipe', async ({ page }) => {
-    await page.goto('/games/soccer');
-    const field = page.locator('.field');
-    const ball = page.locator('.ball');
-    const box = await field.boundingBox();
-    const initialTop = await ball.evaluate(el => el.style.top);
-    const sx = box.x + box.width * 0.5, sy = box.y + box.height * 0.72;
-    const ex = box.x + box.width * 0.5, ey = box.y + box.height * 0.12;
-
-    await page.mouse.move(sx, sy);
-    await page.mouse.down();
-    await page.waitForTimeout(50);
-    await page.mouse.move(ex, ey, { steps: 5 });
-    await page.waitForTimeout(50);
-    await page.mouse.up();
-    await page.waitForTimeout(300);
-
-    const newTop = await ball.evaluate(el => el.style.top);
-    expect(newTop).not.toBe(initialTop);
-  });
-
-  test('level buttons exist', async ({ page }) => {
-    await page.goto('/games/soccer');
+    await expect(page.locator('.keeper svg')).toBeVisible();
+    await expect(page.locator('.striker svg')).toBeVisible();
+    await expect(page.locator('.ball')).toBeVisible();
+    await expect(page.locator('.pips')).toHaveCount(1);
+    await expect(page.locator('.pips .pip')).toHaveCount(5);
+    await expect(page.locator('.open-glow')).toHaveCount(1);
+    await expect(page.getByTestId('soccer-hint')).toContainText('Swipe anywhere');
     await expect(page.locator('.ladder-step')).toHaveCount(10);
+    await expect(page.locator('[data-testid="soccer-stars"] .star')).toHaveCount(3);
+    await expect(page.locator('[data-testid="soccer-stars"] .star.on')).toHaveCount(0);
+    await expect(page.getByTestId('soccer-status')).not.toBeEmpty();
   });
 
-  test('level change resets score', async ({ page }) => {
+  test('the local star row sits above the shared ladder and the ladder has no stars', async ({
+    page
+  }) => {
     await page.goto('/games/soccer');
-    await page.locator('.ladder-step').nth(5).click();
-    const s = await page.locator('.score-display').textContent();
-    expect(s).toContain('0');
+    const stars = await page.getByTestId('soccer-stars').boundingBox();
+    const ladder = await page.locator('.ladder-bar').boundingBox();
+    expect(stars.y + stars.height).toBeLessThanOrEqual(ladder.y + 1);
+    await expect(page.locator('.ladder-bar .star')).toHaveCount(0);
+    await expect(page.getByTestId('soccer-stars')).toHaveAttribute('aria-label', 'Best stars: 0 of 3');
   });
-});
 
-test.describe('Soccer — touch input (legacy migration)', () => {
-  test('touch swipe-kick launches the ball; up outside the field still fires', async ({ page }) => {
+  test('a swipe into the open side scores, the net flashes and the pips update', async ({
+    page
+  }) => {
     await page.goto('/games/soccer');
-    await page.waitForTimeout(500);
-    const field = page.locator('.field');
-    const ball = page.locator('.ball');
-    const box = await field.boundingBox();
+    await shootOpen(page);
+    const root = page.getByTestId('soccer-root');
+    await expect(root).toHaveAttribute('data-goals', '1');
+    await expect(root).toHaveAttribute('data-shots', '4');
+    await expect(page.locator(CALL)).toHaveCount(0);
+    await expect(page.locator('.pip.used')).toHaveCount(1);
+    await expect(page.getByTestId('soccer-pips')).toHaveAttribute('data-goals', '1');
+    await expect(page.getByTestId('soccer-pips')).toHaveAttribute('data-shots', '4');
+  });
+
+  test('a swipe at the keeper is a save and a wide swipe is a calm miss', async ({ page }) => {
+    await page.goto('/games/soccer');
+    await shootAtKeeper(page);
+    await expect(page.getByTestId('soccer-root')).toHaveAttribute('data-goals', '0');
+    await expect(page.getByTestId('soccer-root')).toHaveAttribute('data-shots', '4');
+    await expect(page.locator('.keeper.diving')).toHaveCount(0);
+    await shootWide(page);
+    await expect(page.getByTestId('soccer-root')).toHaveAttribute('data-shots', '3');
+  });
+
+  test('all five shots are played even after the target is reached', async ({ page }) => {
+    await page.goto('/games/soccer');
+    const root = page.getByTestId('soccer-root');
+
+    await shootOpen(page);
+    await shootOpen(page);
+    await shootOpen(page);
+    // The target of three is already reached, but the round is not over.
+    await expect(root).toHaveAttribute('data-goals', '3');
+    await expect(root).toHaveAttribute('data-shots', '2');
+    await expect(root).toHaveAttribute('data-state', 'playing');
+    await expect(page.getByTestId('soccer-win')).toHaveCount(0);
+
+    await shootWide(page);
+    await expect(root).toHaveAttribute('data-shots', '1');
+    await expect(root).toHaveAttribute('data-state', 'playing');
+    await shootWide(page);
+
+    await expect(root).toHaveAttribute('data-shots', '0');
+    await expect(root).toHaveAttribute('data-state', 'won', { timeout: 5000 });
+    await expect(page.getByTestId('soccer-win')).toBeVisible();
+    await expect(page.getByTestId('soccer-win').locator('.win-title')).toContainText(
+      'What a shot'
+    );
+    await expect(page.getByTestId('next-level')).toBeVisible();
+    await expect(page.getByTestId('replay')).toBeVisible();
+
+    await page.getByTestId('next-level').click();
+    await expect(root).toHaveAttribute('data-level', '2');
+    await expect(root).toHaveAttribute('data-state', 'playing');
+    await expect(root).toHaveAttribute('data-shots', '5');
+  });
+
+  test('five goals earn three stars, saved per level and kept after a reload', async ({
+    page
+  }) => {
+    await page.goto('/games/soccer');
+    for (let i = 0; i < 5; i += 1) await shootOpen(page);
+    await expect(page.getByTestId('soccer-root')).toHaveAttribute('data-state', 'won', {
+      timeout: 5000
+    });
+    await expect(page.getByTestId('soccer-root')).toHaveAttribute('data-best', '3');
+    await expect(page.locator('[data-testid="soccer-stars"] .star.on')).toHaveCount(3);
+    expect(await page.evaluate(() => JSON.parse(localStorage.getItem('soccerStars')))).toEqual({
+      1: 3
+    });
+
+    await page.reload();
+    await expect(page.getByTestId('soccer-root')).toHaveAttribute('data-best', '3');
+    await expect(page.locator('[data-testid="soccer-stars"] .star.on')).toHaveCount(3);
+    await expect(page.getByTestId('soccer-root')).toHaveAttribute('data-state', 'playing');
+    await expect(page.getByTestId('soccer-stars')).toHaveAttribute('aria-label', 'Best stars: 3 of 3');
+  });
+
+  test('a better round sets the best; a lower round never removes it', async ({ page }) => {
+    await page.goto('/games/soccer');
+    await shootOpen(page);
+    await shootOpen(page);
+    await shootOpen(page);
+    await shootOpen(page);
+    await shootWide(page);
+    await expect(page.getByTestId('soccer-root')).toHaveAttribute('data-state', 'won', {
+      timeout: 5000
+    });
+    await expect(page.getByTestId('soccer-root')).toHaveAttribute('data-best', '2');
+    await expect(page.locator('[data-testid="soccer-stars"] .star.on')).toHaveCount(2);
+
+    await page.getByTestId('replay').click();
+    await expect(page.getByTestId('soccer-root')).toHaveAttribute('data-state', 'playing');
+    await shootOpen(page);
+    await shootOpen(page);
+    await shootOpen(page);
+    await shootWide(page);
+    await shootWide(page);
+    await expect(page.getByTestId('soccer-root')).toHaveAttribute('data-state', 'won', {
+      timeout: 5000
+    });
+    await expect(page.getByTestId('soccer-root')).toHaveAttribute('data-best', '2');
+  });
+
+  test('missing the target shows the calm Good Try with try again and back', async ({ page }) => {
+    await page.goto('/games/soccer');
+    for (let i = 0; i < 5; i += 1) await shootWide(page);
+
+    const root = page.getByTestId('soccer-root');
+    await expect(root).toHaveAttribute('data-shots', '0');
+    await expect(root).toHaveAttribute('data-state', 'good', { timeout: 5000 });
+    const card = page.getByTestId('soccer-card');
+    await expect(card).toBeVisible();
+    await expect(card).toContainText('Good try');
+    await expect(card).toContainText('You scored 0');
+    await expect(page.getByTestId('soccer-win')).toHaveCount(0);
+    await expect(page.locator('[data-testid="soccer-stars"] .star.on')).toHaveCount(0);
+    await expect(page.getByTestId('soccer-back')).toHaveAttribute('href', '/');
+
+    await card.getByRole('button', { name: 'Try Again' }).click();
+    await expect(root).toHaveAttribute('data-state', 'playing');
+    await expect(root).toHaveAttribute('data-shots', '5');
+    await expect(page.getByTestId('soccer-card')).toHaveCount(0);
+  });
+
+  test('the ladder switches levels, saves the choice and resets the round', async ({ page }) => {
+    await page.goto('/games/soccer');
+    await page.locator('.ladder-step').nth(4).click();
+    const root = page.getByTestId('soccer-root');
+    await expect(root).toHaveAttribute('data-level', '5');
+    await expect(root).toHaveAttribute('data-target', '4');
+    await expect(root).toHaveAttribute('data-shots', '5');
+    await expect(root).toHaveAttribute('data-best', '0');
+    expect(await page.evaluate(() => localStorage.getItem('soccerLevel'))).toBe('5');
+    await expect(page.locator('.open-glow')).toHaveCount(0);
+
+    await page.locator('.ladder-step').nth(1).click();
+    await expect(root).toHaveAttribute('data-level', '2');
+    await expect(root).toHaveAttribute('data-target', '3');
+    await expect(page.locator('.open-glow')).toHaveCount(1);
+  });
+
+  test('level 10 keeps the mastery moment and asks for five goals', async ({ page }) => {
+    await page.addInitScript(() => localStorage.setItem('soccerLevel', '10'));
+    await page.goto('/games/soccer');
+    const root = page.getByTestId('soccer-root');
+    await expect(root).toHaveAttribute('data-level', '10');
+    await expect(root).toHaveAttribute('data-target', '5');
+    for (let i = 0; i < 5; i += 1) await shootOpen(page);
+
+    await expect(root).toHaveAttribute('data-state', 'won', { timeout: 5000 });
+    await expect(page.getByTestId('soccer-win')).toBeVisible();
+    await expect(page.getByTestId('ladder-done')).toHaveText('🎓');
+    await expect(page.getByTestId('next-level')).toHaveCount(0);
+    expect(await page.evaluate(() => localStorage.getItem('soccerMastered'))).toBe('1');
+    expect(await page.evaluate(() => JSON.parse(localStorage.getItem('soccerStars')))).toEqual({
+      10: 3
+    });
+  });
+
+  test('the reticle and dashed arc show the impact point while the finger drags', async ({
+    page
+  }) => {
+    await page.goto('/games/soccer');
+    const box = await fieldBox(page);
+    await page.mouse.move(box.x + box.width * 0.5, box.y + box.height * 0.7);
+    await page.mouse.down();
+    await page.waitForTimeout(30);
+    const aim = await openAim(page);
+    await page.mouse.move(box.x + (aim.x / 100) * box.width, box.y + (aim.y / 100) * box.height, {
+      steps: 4
+    });
+    await expect(page.locator('.reticle')).toBeVisible();
+    await expect(page.locator('.aim path')).toBeVisible();
+    const reticle = await page.locator('.reticle').boundingBox();
+    const expectedX = box.x + (aim.x / 100) * box.width;
+    const expectedY = box.y + (aim.y / 100) * box.height;
+    expect(Math.abs(reticle.x + reticle.width / 2 - expectedX)).toBeLessThan(6);
+    expect(Math.abs(reticle.y + reticle.height / 2 - expectedY)).toBeLessThan(6);
+    await expect(page.getByTestId('soccer-aim')).toContainText('Aim:');
+    await page.mouse.up();
+  });
+
+  test('a touch swipe released outside the field still shoots', async ({ page }) => {
+    await page.goto('/games/soccer');
+    const box = await fieldBox(page);
     const x0 = box.x + box.width * 0.5;
-    const y0 = box.y + box.height * 0.75;
-    const x1 = box.x + box.width * 0.5;
-    const y1 = box.y + box.height * 0.25;
+    const y0 = box.y + box.height * 0.7;
+    const aim = await openAim(page);
 
-    // before: ball at rest (kicking class absent)
-    await expect(ball).not.toHaveClass(/kicking/);
-
-    await field.dispatchEvent('pointerdown', { pointerId: 13, pointerType: 'touch', isPrimary: true, clientX: x0, clientY: y0, buttons: 1, bubbles: true, cancelable: true });
-    for (let i = 1; i <= 8; i++) {
-      const cx = x0 + ((x1 - x0) * i) / 8;
-      const cy = y0 + ((y1 - y0) * i) / 8;
-      await page.dispatchEvent(':root', 'pointermove', { pointerId: 13, pointerType: 'touch', isPrimary: true, clientX: cx, clientY: cy, buttons: 1, bubbles: true, cancelable: true });
-      await page.waitForTimeout(25);
+    await page.locator(FIELD).dispatchEvent('pointerdown', {
+      pointerId: 13,
+      pointerType: 'touch',
+      isPrimary: true,
+      clientX: x0,
+      clientY: y0,
+      buttons: 1,
+      bubbles: true,
+      cancelable: true
+    });
+    for (let i = 1; i <= 6; i += 1) {
+      await page.dispatchEvent(':root', 'pointermove', {
+        pointerId: 13,
+        pointerType: 'touch',
+        isPrimary: true,
+        clientX: x0 + ((box.x + (aim.x / 100) * box.width - x0) * i) / 6,
+        clientY: y0 + ((box.y + (aim.y / 100) * box.height - y0) * i) / 6,
+        buttons: 1,
+        bubbles: true,
+        cancelable: true
+      });
     }
-    // mid-swipe: power meter filled + arrow preview visible
-    await expect(page.locator('.arrow-line')).toBeVisible({ timeout: 2000 });
-    const pw = await page.locator('.power-fill').evaluate((el) => parseFloat(el.style.width) || 0);
-    expect(pw).toBeGreaterThan(15);
+    await expect(page.locator('.reticle')).toBeVisible();
+    // Lift far above the field: the shot still fires from the released aim.
+    await page.dispatchEvent(':root', 'pointerup', {
+      pointerId: 13,
+      pointerType: 'touch',
+      isPrimary: true,
+      clientX: box.x + (aim.x / 100) * box.width,
+      clientY: box.y - 60,
+      buttons: 1,
+      bubbles: true,
+      cancelable: true
+    });
+    await expect(page.getByTestId('soccer-root')).toHaveAttribute('data-shots', '4');
+    await expect(page.locator(CALL)).toBeVisible({ timeout: 4000 });
+  });
 
-    // release OUTSIDE the field (above it)
-    await page.dispatchEvent(':root', 'pointerup', { pointerId: 13, pointerType: 'touch', isPrimary: true, clientX: x1, clientY: y1 - 60, buttons: 1, bubbles: true, cancelable: true });
-    await page.waitForTimeout(150);
-    // ball enters flight (kicking class) even though the finger lifted off-field
-    await expect(ball).toHaveClass(/kicking/, { timeout: 3000 });
+  test('reduced motion calms the floodlights and crowd, stops the ball spin and still plays', async ({
+    page
+  }) => {
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    await page.goto('/games/soccer');
+    await expect(page.locator('.stadium')).toHaveClass(/reduced/);
+    const floodlight = await page
+      .locator('.floodlight')
+      .first()
+      .evaluate((el) => getComputedStyle(el).animationName);
+    expect(floodlight).toBe('none');
+    const crowd = await page
+      .locator('.crowd')
+      .evaluate((el) => getComputedStyle(el).animationName);
+    expect(crowd).toBe('none');
+
+    await swipeTo(page, async () => openAim(page));
+    const spun = await page.evaluate(async () => {
+      const el = document.querySelector('.ball-spin');
+      let seen = false;
+      for (let i = 0; i < 25; i += 1) {
+        if (el?.classList.contains('spin')) seen = true;
+        await new Promise((resolve) => setTimeout(resolve, 20));
+      }
+      return seen;
+    });
+    expect(spun).toBe(false);
+    await expect(page.locator(CALL)).toContainText('GOAL', { timeout: 4000 });
+  });
+
+  test('the ball spins during a normal shot', async ({ page }) => {
+    await page.goto('/games/soccer');
+    await swipeTo(page, async () => openAim(page));
+    const spun = await page.evaluate(async () => {
+      const el = document.querySelector('.ball-spin');
+      let seen = false;
+      for (let i = 0; i < 35; i += 1) {
+        if (el?.classList.contains('spin')) seen = true;
+        await new Promise((resolve) => setTimeout(resolve, 15));
+      }
+      return seen;
+    });
+    expect(spun).toBe(true);
+  });
+
+  test('the sound toggle mutes the stadium cues with no errors', async ({ page }) => {
+    const errors = [];
+    page.on('pageerror', (error) => errors.push(error.message));
+    await page.addInitScript(() => {
+      window.__tones = 0;
+      const Ctx = window.AudioContext || window.webkitAudioContext;
+      if (!Ctx) return;
+      const create = Ctx.prototype.createOscillator;
+      Ctx.prototype.createOscillator = function (...args) {
+        window.__tones += 1;
+        return create.apply(this, args);
+      };
+    });
+    await page.goto('/games/soccer');
+
+    await shootWide(page);
+    await expect
+      .poll(() => page.evaluate(() => window.__tones), { timeout: 3000 })
+      .toBeGreaterThan(0);
+
+    await page.locator('.sound-btn').click();
+    expect(
+      await page.evaluate(
+        () => JSON.parse(localStorage.getItem('kids-games-settings')).soundEnabled
+      )
+    ).toBe(false);
+
+    const before = await page.evaluate(() => window.__tones);
+    await shootWide(page);
+    expect(await page.evaluate(() => window.__tones)).toBe(before);
+    expect(errors).toEqual([]);
+  });
+
+  test('fits 320×568 and 390×844 with the whole goal and striker visible', async ({ page }) => {
+    for (const viewport of [
+      { width: 320, height: 568 },
+      { width: 390, height: 844 }
+    ]) {
+      await page.setViewportSize(viewport);
+      await page.goto('/games/soccer');
+      await expect(page.locator(FIELD)).toBeVisible();
+      await expect(page.locator('.goal')).toBeVisible();
+      await expect(page.locator('.keeper')).toBeVisible();
+      await expect(page.locator('.striker svg')).toBeVisible();
+      await expect(page.locator('.ball')).toBeVisible();
+      await expect(page.locator('.ladder-bar')).toBeVisible();
+      await expect(page.locator('.ladder-step')).toHaveCount(10);
+
+      const box = await fieldBox(page);
+      for (const selector of ['.goal', '.ball', '.striker']) {
+        const el = await page.locator(selector).boundingBox();
+        expect(el.x).toBeGreaterThanOrEqual(box.x - 1);
+        expect(el.x + el.width).toBeLessThanOrEqual(box.x + box.width + 1);
+        expect(el.y).toBeGreaterThanOrEqual(box.y - 1);
+        expect(el.y + el.height).toBeLessThanOrEqual(box.y + box.height + 1);
+      }
+
+      const steps = page.locator('.ladder-step');
+      const ladderTops = new Set();
+      for (let i = 0; i < 10; i += 1) {
+        const step = steps.nth(i);
+        await expect(step).toBeVisible();
+        const stepBox = await step.boundingBox();
+        expect(stepBox.x).toBeGreaterThanOrEqual(0);
+        expect(stepBox.x + stepBox.width).toBeLessThanOrEqual(viewport.width + 0.5);
+        expect(stepBox.width).toBeGreaterThanOrEqual(24);
+        ladderTops.add(Math.round(stepBox.y));
+      }
+      expect(ladderTops.size).toBe(1);
+
+      const overflow = await page.evaluate(() => ({
+        scrollWidth: document.documentElement.scrollWidth,
+        innerWidth: window.innerWidth
+      }));
+      expect(overflow.scrollWidth).toBeLessThanOrEqual(overflow.innerWidth + 1);
+
+      await shootOpen(page);
+      await expect(page.getByTestId('soccer-root')).toHaveAttribute('data-goals', '1');
+    }
+  });
+
+  test('leaving mid-round returns to the hub cleanly', async ({ page }) => {
+    const errors = [];
+    page.on('pageerror', (error) => errors.push(error.message));
+    await page.goto('/games/soccer');
+    await shootWide(page);
+    await page.goto('/');
+    await expect(page.locator('.hub')).toBeVisible();
+    expect(errors).toEqual([]);
   });
 });

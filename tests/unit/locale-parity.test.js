@@ -35,6 +35,16 @@ const NEW_KEYS = [
   'soccerSaved',
   'soccerMiss',
   'soccerWhatAShot',
+  'soccerField',
+  'soccerGoals',
+  'soccerShots',
+  'soccerBest',
+  'soccerGoodTrySub',
+  'soccerWinSub',
+  'soccerAimAt',
+  'soccerZoneLeft',
+  'soccerZoneCentre',
+  'soccerZoneRight',
   'qcBasketFull',
   'spotFindChanged',
   'picture1',
@@ -79,6 +89,19 @@ describe('locale parity', () => {
   it('preserves placeholders in every locale', () => {
     for (const code of LOCALES) {
       expect(translations[code].catchTarget, code).toContain('{e}');
+    }
+  });
+
+  it('keeps the soccer status and star-row placeholders in every locale', () => {
+    const two = ['soccerGoals', 'soccerBest', 'soccerGoodTrySub'];
+    for (const code of LOCALES) {
+      for (const key of two) {
+        expect(translations[code][key], `${code}.${key}`).toContain('{n}');
+        expect(translations[code][key], `${code}.${key}`).toContain('{m}');
+      }
+      expect(translations[code].soccerShots, code).toContain('{n}');
+      expect(translations[code].soccerWinSub, code).toContain('{n}');
+      expect(translations[code].soccerAimAt, code).toContain('{zone}');
     }
   });
 });
