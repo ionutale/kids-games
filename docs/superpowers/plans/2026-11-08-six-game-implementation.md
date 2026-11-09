@@ -36,12 +36,12 @@ For each game:
 
 ## Task Order
 
-- [ ] **1. Path Builder** — `docs/superpowers/specs/2026-11-07-path-builder-road-prd.md`, tickets 03–06, ADR 0005, `prototype/path-builder` winner A.
-- [ ] **2. Pop** — `2026-11-07-pop-gentle-arcade-prd.md`, tickets 01–04, `prototype/pop` winner A.
-- [ ] **3. Soccer** — `2026-11-07-soccer-night-penalty-prd.md`, tickets 01–04, `prototype/soccer` winner A, ADR 0001 addendum.
-- [ ] **4. Focus Tap** — `2026-11-07-focus-tap-pond-catch-prd.md`, tickets 03–06, `prototype/focus-tap` winner A.
-- [ ] **5. Quick Count** — `2026-11-07-quick-count-flash-picnic-prd.md`, tickets 03–06, `prototype/quick-count` winner A.
-- [ ] **6. Spot the Difference** — `2026-11-07-spot-the-difference-twin-postcards-prd.md`, tickets 02–05, `prototype/spot-the-difference` winner A.
+- [x] **1. Path Builder** — `docs/superpowers/specs/2026-11-07-path-builder-road-prd.md`, tickets 03–06, ADR 0005, `prototype/path-builder` winner A.
+- [x] **2. Pop** — `2026-11-07-pop-gentle-arcade-prd.md`, tickets 01–04, `prototype/pop` winner A.
+- [x] **3. Soccer** — `2026-11-07-soccer-night-penalty-prd.md`, tickets 01–04, `prototype/soccer` winner A, ADR 0001 addendum.
+- [x] **4. Focus Tap** — `2026-11-07-focus-tap-pond-catch-prd.md`, tickets 03–06, `prototype/focus-tap` winner A.
+- [x] **5. Quick Count** — `2026-11-07-quick-count-flash-picnic-prd.md`, tickets 03–06, `prototype/quick-count` winner A.
+- [x] **6. Spot the Difference** — `2026-11-07-spot-the-difference-twin-postcards-prd.md`, tickets 02–05, `prototype/spot-the-difference` winner A.
 
 ## Final Integration
 
