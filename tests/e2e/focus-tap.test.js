@@ -334,6 +334,42 @@ test.describe('Focus Tap — Pond Catch E2E', () => {
     expect(errors).toEqual([]);
   });
 
+  test('the win card stops the trainer music so the fill is the only beat', async ({ page }) => {
+    test.setTimeout(60000);
+    await page.addInitScript(() => {
+      window.__audios = [];
+      const Orig = window.Audio;
+      window.Audio = class extends Orig {
+        constructor(...args) {
+          super(...args);
+          this.__intendedPlay = false;
+          window.__audios.push(this);
+        }
+        play() {
+          this.__intendedPlay = true;
+          const p = super.play();
+          if (p && typeof p.catch === 'function') p.catch(() => {});
+          return p;
+        }
+        pause() {
+          this.__intendedPlay = false;
+          return super.pause();
+        }
+      };
+    });
+    await page.goto('/games/focus-tap/play/1?seed=42');
+
+    const musicIntended = () =>
+      page.evaluate(
+        () => window.__audios.find((a) => a.src.includes('/sounds/music/'))?.__intendedPlay ?? null
+      );
+    await expect.poll(musicIntended).toBe(true);
+
+    await solveRound(page);
+    await expect(winOverlay(page)).toBeVisible({ timeout: 15000 });
+    await expect.poll(musicIntended).toBe(false);
+  });
+
   test('fits 320×568 and 390×844 without overflow', async ({ page }) => {
     test.setTimeout(60000);
     for (const viewport of [

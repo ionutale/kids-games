@@ -159,6 +159,9 @@
   function finish() {
     won = true;
     stopSpawning();
+    // The jar fill is the one positive audio beat: drop the trainer loop so it
+    // does not play underneath the chime and the silent win card.
+    stopTrainerMusic();
     // Let the catch plop and croak land before the jar chime. The win card is
     // silent (see WinOverlay below), so the fill is the one positive audio beat.
     later(() => sound.fill(), 240);
@@ -176,6 +179,7 @@
     burst = null;
     touchLock = false;
     idSeq = 0;
+    startTrainerMusic('focus-tap');
     startSpawning();
   }
 
