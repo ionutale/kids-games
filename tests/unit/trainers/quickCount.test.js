@@ -3,6 +3,7 @@ import {
   countMax,
   levelConfig,
   makePrompt,
+  tickSchedule,
   THEMES
 } from '../../../src/lib/trainers/quickCount.js';
 
@@ -17,6 +18,18 @@ describe('levelConfig', () => {
     const c = levelConfig(30);
     expect(c.flashMs).toBe(800);
     expect(c.goal).toBe(15); // 5 + min(30, 10)
+  });
+});
+
+describe('tickSchedule — count ticks teach only on L1–2', () => {
+  it('ticks once per object on L1–2', () => {
+    expect(tickSchedule(1, 3)).toEqual([0, 90, 180]);
+    expect(tickSchedule(2, 2)).toEqual([0, 90]);
+  });
+
+  it('stays silent from L3 on', () => {
+    expect(tickSchedule(3, 6)).toEqual([]);
+    expect(tickSchedule(10, 10)).toEqual([]);
   });
 });
 

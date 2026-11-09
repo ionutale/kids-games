@@ -36,6 +36,15 @@ export function levelConfig(level) {
   };
 }
 
+/**
+ * The flash count ticks are the teaching aid for the first two levels only.
+ * Returns the delay (ms) of each tick, empty from L3 on.
+ */
+export function tickSchedule(level, count) {
+  if (level > 2) return [];
+  return Array.from({ length: Math.max(0, Math.floor(count) || 0) }, (_, i) => i * 90);
+}
+
 function buildCells(count, rng) {
   // One object per jittered grid cell, so repeated objects never overlap.
   const side = Math.ceil(Math.sqrt(Math.max(count, 1)));

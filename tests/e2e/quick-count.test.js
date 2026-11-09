@@ -34,6 +34,24 @@ test.describe('Quick Count E2E', () => {
     await page.waitForURL(/\/games\/quick-count\/play\/2/);
   });
 
+  test('the final berry lands before the win card covers the basket', async ({ page }) => {
+    test.setTimeout(120000);
+    await page.goto('/games/quick-count/play/1?seed=5');
+    for (let i = 0; i < 5; i += 1) {
+      const pill = page.getByTestId('correct-pill');
+      await expect(pill).toBeVisible({ timeout: 20000 });
+      await pill.click({ force: true });
+      await page.waitForTimeout(520);
+    }
+    await expect(basket(page)).toHaveAttribute('data-count', '5');
+
+    await page.getByTestId('correct-pill').click({ force: true });
+    await page.waitForTimeout(120);
+    await expect(basket(page)).toHaveAttribute('data-count', '6');
+    await expect(page.locator('.win-overlay')).toBeHidden();
+    await expect(page.locator('.win-overlay')).toBeVisible({ timeout: 3000 });
+  });
+
   test('Next Level loads a fresh picnic basket for the new level', async ({ page }) => {
     test.setTimeout(120000);
     await page.goto('/games/quick-count/play/1?seed=5');

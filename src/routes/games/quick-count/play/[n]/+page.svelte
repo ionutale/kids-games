@@ -16,7 +16,7 @@
   import { createPicnicSound } from '#lib/quick-count/sound.js';
   import '#lib/trainers/fx.css';
 
-  import { makePrompt, levelConfig } from '#lib/trainers/quickCount.js';
+  import { makePrompt, levelConfig, tickSchedule } from '#lib/trainers/quickCount.js';
   import { startTrainerMusic, stopTrainerMusic } from '#lib/sounds/trainerMusic.js';
 
   let { data } = $props();
@@ -68,9 +68,7 @@
       if (phase !== 'ready') return;
       phase = 'flash';
       // Count ticks are the teaching aid for the first two levels only.
-      if (level <= 2) {
-        for (let i = 0; i < prompt.n; i += 1) later(() => sound.tick(), i * 90);
-      }
+      for (const delay of tickSchedule(level, prompt.n)) later(() => sound.tick(), delay);
       later(() => {
         if (phase === 'flash') phase = 'answer';
       }, config.flashMs);
@@ -93,10 +91,14 @@
     solved += 1;
     sound.berry();
     if (solved >= config.goal) {
-      won = true;
       // Let the berry plop land before the basket chime; the win card itself
       // is silent so the fill is the one positive audio beat.
       later(() => sound.fill(), 260);
+      // Hold the card back briefly so the child sees the last berry drop into
+      // the basket instead of the overlay covering it on the same frame.
+      later(() => {
+        won = true;
+      }, 420);
     } else {
       later(nextPrompt, 480);
     }

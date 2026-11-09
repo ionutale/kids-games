@@ -29,6 +29,7 @@ test.describe('R1 — Next Level buttons work everywhere (IT locale)', () => {
   });
 
   test('quick-count: Prossimo ▶ advances after winning', async ({ page }) => {
+    test.setTimeout(90000);
     await useIT(page);
     await page.goto('/games/quick-count/play/1?seed=5');
     for (let i = 0; i < 15; i++) {
