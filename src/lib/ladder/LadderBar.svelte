@@ -34,21 +34,23 @@
 <style>
   .ladder-bar {
     display: flex;
-    justify-content: center;
-    flex-wrap: nowrap;
-    gap: 3px;
+    /* Center each row; `safe` avoids clipping if a row ever overflows. */
+    justify-content: safe center;
+    /* Ten 24px steps need 258px. A narrow win-card content box wraps onto a
+       second row instead of squeezing every step below a tappable size. */
+    flex-wrap: wrap;
+    gap: 4px 2px;
     padding-bottom: calc(8px + var(--safe-bottom));
-    padding-left: 8px;
-    padding-right: 8px;
-    overflow-x: auto;
-    scrollbar-width: none;
+    padding-left: 2px;
+    padding-right: 2px;
   }
-  .ladder-bar::-webkit-scrollbar { display: none; }
   .ladder-step {
+    /* One row of ~28px steps on a 320px header; two rows of ~32px in a win card. */
     width: 32px;
     height: 32px;
-    min-width: 32px;
-    flex: 0 0 auto;
+    min-width: 24px;
+    flex: 1 1 28px;
+    max-width: 32px;
     border-radius: 8px;
     font-size: 12px;
     font-weight: 600;

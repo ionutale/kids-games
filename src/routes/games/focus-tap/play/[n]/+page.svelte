@@ -1,31 +1,74 @@
 <script>
+  // Focus Tap — the Pond Catch. A moonlit pond fills the screen: the target
+  // emoji rises through the middle, the frog waits bottom-left with the target
+  // on its wooden sign, and every catch lights one firefly in the jar at the
+  // bottom-right. Distractors wobble silently. There is no timer and no fail.
   import { onMount, untrack } from 'svelte';
   import { _ } from '#lib/stores/locale.js';
+  import { reducedMotion } from '#lib/stores/reducedMotion.js';
   import GameShell from '#lib/components/ui/GameShell.svelte';
   import HudPill from '#lib/components/ui/HudPill.svelte';
   import WinOverlay from '#lib/components/ui/WinOverlay.svelte';
   import LadderActions from '#lib/ladder/LadderActions.svelte';
+  import Pond from '#lib/focus-tap/Pond.svelte';
+  import Frog from '#lib/focus-tap/Frog.svelte';
+  import FireflyJar from '#lib/focus-tap/FireflyJar.svelte';
+  import { createPondSound } from '#lib/focus-tap/sound.js';
+  import { streamX } from '#lib/focus-tap/layout.js';
   import '#lib/trainers/fx.css';
 
   import { makeRoundState, nextSpawn } from '#lib/trainers/focusTap.js';
   import { startTrainerMusic, stopTrainerMusic } from '#lib/sounds/trainerMusic.js';
-  import { playPop } from '#lib/sounds/audioManager.js';
-  import { playSparkle } from '#lib/sounds/trainerSounds.js';
 
   let { data } = $props();
+
   const level = $derived(data.level);
   const round = $derived(makeRoundState(level, data.seed));
+  const goal = $derived(round.config.goal);
+  const reduced = $derived($reducedMotion);
   const FANFARE_PITCH = 1.0;
+
+  // Where the frog's mouth sits inside the pond, in percent. The dock is
+  // bottom-left, so the tongue starts low and slightly in from the edge.
+  const MOUTH = { x: 16, y: 93 };
 
   let items = $state([]);
   let caught = $state(0);
   let won = $state(false);
-  let wrongFxId = $state(-1);
-  let catchFx = $state(null); // { x, y } stream-relative % for burst
+  let wrongId = $state(-1);
+  let tongue = $state(null);
+  let burst = $state(null);
   let idSeq = 0;
   let spawnTimer = null;
   let touchLock = false;
   let streamEl = $state(null);
+  let frogEl = $state(null);
+  let jarEl = $state(null);
+  let timers = new Set();
+
+  const sound = createPondSound();
+
+  const jarLabel = $derived($_('ftJarFill', { n: Math.min(caught, goal), m: goal }));
+  const signLabel = $derived($_('ftSign', { e: round.target }));
+  const jarStatus = $derived(
+    won
+      ? `${$_('jarFull')} ${jarLabel}`
+      : `${jarLabel}. ${$_('ftRemaining', { n: Math.max(0, goal - caught) })}`
+  );
+
+  function later(fn, ms) {
+    const id = setTimeout(() => {
+      timers.delete(id);
+      fn();
+    }, ms);
+    timers.add(id);
+    return id;
+  }
+
+  function clearTimers() {
+    for (const id of timers) clearTimeout(id);
+    timers.clear();
+  }
 
   function spawn() {
     if (won) return;
@@ -33,56 +76,78 @@
     items = next.items;
     if (!next.item) return;
     idSeq += 1;
-    if (next.forced && next.item.isTarget) playSparkle();
   }
 
   function removeItem(id) {
-    items = items.filter((i) => i.id !== id);
+    items = items.filter((item) => item.id !== id);
   }
 
-  function tap(item) {
+  function pointFor(el) {
+    const pond = streamEl?.getBoundingClientRect();
+    const rect = el.getBoundingClientRect();
+    if (!pond || !pond.width || !pond.height) return null;
+    return {
+      // Positions inside an overflow container are layout-relative: add back
+      // the container's scroll offset so a focus/click scroll cannot displace
+      // the tongue or the sparkle from the tapped emoji.
+      x:
+        ((rect.left + rect.width / 2 - pond.left + streamEl.scrollLeft) / pond.width) * 100,
+      y: ((rect.top + rect.height / 2 - pond.top + streamEl.scrollTop) / pond.height) * 100
+    };
+  }
+
+  // The docks sit above the stream. Never let a tap that lands on the frog or
+  // the jar activate an emoji hidden behind it.
+  function overDock(event) {
+    const x = event.clientX ?? 0;
+    const y = event.clientY ?? 0;
+    if (!x && !y) return false; // keyboard / assistive activation has no point
+    return [frogEl, jarEl].some((el) => {
+      const rect = el?.getBoundingClientRect();
+      return Boolean(rect) && x >= rect.left && x <= rect.right && y >= rect.top && y <= rect.bottom;
+    });
+  }
+
+  function tap(event, item) {
+    if (overDock(event)) return;
+    // A pointer press normally emits pointerdown then click. Handle the press
+    // once; a later keyboard/AT click has no pointer mark and still lands here.
+    if (event.type === 'pointerdown') item.pointerAt = performance.now();
+    else if (item.pointerAt != null && performance.now() - item.pointerAt < 700) return;
+
     if (touchLock || won || item.popping) return;
     touchLock = true;
-    setTimeout(() => (touchLock = false), 60);
+    later(() => (touchLock = false), 70);
+    sound.unlock();
+
+    const point = pointFor(event.currentTarget);
     if (item.isTarget) {
       item.popping = true;
-      playPop(0.94 + (caught % 4) * 0.04); // slight variation per catch
-      if (lastTouch) {
-        catchFx = lastTouch;
-        setTimeout(() => (catchFx = null), 450);
+      if (point) {
+        tongue = point;
+        later(() => (tongue = null), 300);
+        if (!reduced) {
+          burst = point;
+          later(() => (burst = null), 450);
+        }
       }
+      sound.catch();
+      sound.croak();
       caught += 1;
-      setTimeout(() => removeItem(item.id), 180);
-      if (caught >= round.config.goal) {
-        won = true;
-        stopSpawning();
-      }
+      later(() => removeItem(item.id), 190);
+      if (caught >= goal) finish();
     } else {
-      item.wobbling = true; // silent — positive-only
-      wrongFxId = item.id;
-      setTimeout(() => {
-        item.wobbling = false;
-        if (wrongFxId === item.id) wrongFxId = -1;
+      wrongId = item.id;
+      later(() => {
+        if (wrongId === item.id) wrongId = -1;
       }, 420);
     }
   }
 
-  let lastTouch = null;
-  function touchY(e) {
-    if (!streamEl) return;
-    const rect = streamEl.getBoundingClientRect();
-    const el = e.currentTarget.getBoundingClientRect();
-    // Positions inside an overflow container are layout-relative: add back the
-    // container's own scroll offset so the burst lands on the tapped emoji even
-    // if a focus scroll nudged the stream.
-    lastTouch = {
-      x: el.left + el.width / 2 - rect.left + streamEl.scrollLeft,
-      y: el.top + el.height / 2 - rect.top + streamEl.scrollTop
-    };
-  }
-
-  function startSpawning() {
+  function startSpawning(immediate = true) {
     stopSpawning();
+    if (won) return;
+    if (immediate) spawn();
     spawnTimer = setInterval(spawn, round.config.spawnMs);
   }
 
@@ -91,14 +156,26 @@
     spawnTimer = null;
   }
 
+  function finish() {
+    won = true;
+    stopSpawning();
+    // Let the catch plop and croak land before the jar chime. The win card is
+    // silent (see WinOverlay below), so the fill is the one positive audio beat.
+    later(() => sound.fill(), 240);
+  }
+
   function resetRound() {
+    clearTimers();
+    sound.stop();
     stopSpawning();
     items = [];
     caught = 0;
     won = false;
-    wrongFxId = -1;
-    catchFx = null;
+    wrongId = -1;
+    tongue = null;
+    burst = null;
     touchLock = false;
+    idSeq = 0;
     startSpawning();
   }
 
@@ -112,7 +189,7 @@
 
   function visibility() {
     if (document.hidden) stopSpawning();
-    else if (!won) startSpawning();
+    else if (!won) startSpawning(false);
   }
 
   onMount(() => {
@@ -121,124 +198,282 @@
     return () => {
       document.removeEventListener('visibilitychange', visibility);
       stopSpawning();
+      clearTimers();
       stopTrainerMusic();
+      sound.dispose();
     };
   });
 </script>
 
 <GameShell accent="#F87171">
   {#snippet hudLeft()}
-    <HudPill icon="🎯" label={round.target} />
-    <HudPill icon="✅" label={`${caught}/${round.config.goal}`} />
+    <span data-testid="hud-target" aria-hidden="true">
+      <HudPill icon="🎯" label={round.target} />
+    </span>
   {/snippet}
 
-  <div class="stream" data-testid="stream" bind:this={streamEl}>
-    <p class="hint">{$_('catchTarget', { e: round.target })}</p>
-    {#if catchFx}
-      <div
-        class="catch-fx"
-        style:left="{catchFx.x}px"
-        style:top="{catchFx.y}px"
-        data-testid="catch-fx"
-      >
-        ⭐
-      </div>
-    {/if}
-    {#each items as item (item.id)}
-      <button
-        class="emoji"
-        class:popping={item.popping}
-        class:wrong-fx={wrongFxId === item.id}
-        onpointerdown={(e) => { touchY(e); tap(item); }}
-        style:left="{item.x}%"
-        style:animation-duration="{round.config.riseSec}s"
-        data-testid={item.isTarget ? 'target' : 'distractor'}
-                oncontextmenu={(e) => e.preventDefault()}
-      >
-        <span class="emoji-body" class:wobbling={item.wobbling} class:popping={item.popping}>{item.emoji}</span>
-      </button>
-    {/each}
-  </div>
+  <div class="pond-catch" data-testid="focus-tap" data-level={level} data-tier={round.tier}>
+    <div class="pond" data-testid="pond" role="group" aria-label={$_('ftPond')}>
+      <Pond {reduced} />
 
-  {#if won}
-    <WinOverlay title={$_('wellDone')} subtitle={`🎯 ${caught}/${round.config.goal}`}>
-      {#snippet badge()}<img class="win-badge" src="/art/trainers/focus-tap/win-badge.png" alt="" />{/snippet}
-      <LadderActions gameId="focus-tap" {level} pitch={FANFARE_PITCH} />
-    </WinOverlay>
-  {/if}
+      <div class="stream" data-testid="stream" bind:this={streamEl}>
+        {#each items as item (item.id)}
+          <button
+            class="emoji"
+            class:popping={item.popping}
+            class:wrong={wrongId === item.id}
+            type="button"
+            onpointerdown={(event) => tap(event, item)}
+            onclick={(event) => tap(event, item)}
+            aria-label={item.isTarget ? $_('catchTarget', { e: item.emoji }) : $_('ftFriend')}
+            style:left="{streamX(item.x)}%"
+            style:--rise="{round.config.riseSec}s"
+            data-testid={item.isTarget ? 'target' : 'distractor'}
+            oncontextmenu={(event) => event.preventDefault()}
+          >
+            <span class="emoji-body">{item.emoji}</span>
+          </button>
+        {/each}
+
+        {#if tongue}
+          <svg
+            class="tongue"
+            data-testid="tongue"
+            viewBox="0 0 100 100"
+            preserveAspectRatio="none"
+            aria-hidden="true"
+          >
+            <path
+              d={`M ${MOUTH.x} ${MOUTH.y} Q ${(MOUTH.x + tongue.x) / 2} ${Math.min(90, tongue.y + 8)} ${tongue.x} ${tongue.y}`}
+              fill="none"
+              stroke="#E4572E"
+              stroke-width="5"
+              stroke-linecap="round"
+              vector-effect="non-scaling-stroke"
+            />
+          </svg>
+        {/if}
+
+        {#if burst}
+          <span
+            class="sparkle"
+            data-testid="catch-fx"
+            style:left="{burst.x}%"
+            style:top="{burst.y}%"
+            aria-hidden="true"
+          >
+            <svg viewBox="0 0 24 24" width="34" height="34">
+              <path
+                d="M12 1.5l2.7 7.8 7.8 2.7-7.8 2.7L12 22.5l-2.7-7.8L1.5 12l7.8-2.7z"
+                fill="#FFE3A3"
+              />
+            </svg>
+          </span>
+        {/if}
+      </div>
+
+      <div class="frog-dock" data-testid="frog" bind:this={frogEl}>
+        <Frog target={round.target} />
+      </div>
+
+      <div
+        class="jar-dock"
+        data-testid="jar"
+        data-count={caught}
+        data-goal={goal}
+        bind:this={jarEl}
+        aria-hidden="true"
+      >
+        <FireflyJar caught={caught} {goal} {reduced} />
+      </div>
+    </div>
+
+    <p class="sr-only" data-testid="target-status">{signLabel}</p>
+    <p class="sr-only" role="status" data-testid="jar-status">{jarStatus}</p>
+  </div>
 </GameShell>
 
+{#if won}
+  <div class="win-wrap" class:calm={reduced}>
+    <WinOverlay title={$_('jarFull')} subtitle={$_('ftWinSub')} sound={false}>
+      {#snippet badge()}<img
+          class="win-badge"
+          src="/art/trainers/focus-tap/win-badge.png"
+          alt=""
+        />{/snippet}
+      <LadderActions gameId="focus-tap" {level} pitch={FANFARE_PITCH} />
+    </WinOverlay>
+  </div>
+{/if}
+
 <style>
-  .stream {
+  .pond-catch {
     position: relative;
     flex: 1;
+    min-height: 0;
+    display: flex;
+    padding: 4px 8px 8px;
     overflow: hidden;
+    background: #0f1d26;
   }
-  .hint {
-    text-align: center;
-    font-size: 20px;
-    font-weight: 700;
-    color: var(--text-hi);
-    padding-top: 10px;
+  .pond {
+    position: relative;
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+    border-radius: 22px;
+    border: 2px solid rgba(134, 239, 172, 0.3);
+    box-shadow:
+      inset 0 10px 30px rgba(0, 0, 0, 0.35),
+      0 10px 26px rgba(0, 0, 0, 0.28);
+    touch-action: none;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+  .stream {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    pointer-events: none;
+    z-index: 2;
   }
   .emoji {
     position: absolute;
-    top: 105%;
-    font-size: 46px;
-    line-height: 1;
-    background: none;
+    top: 104%;
+    transform: translateX(-50%);
+    padding: 5px;
     border: none;
+    background: none;
+    line-height: 1;
+    font-size: clamp(38px, 10vw, 48px);
+    pointer-events: auto;
     animation-name: floatUp;
     animation-timing-function: linear;
     animation-fill-mode: forwards;
-    filter: drop-shadow(0 0 6px var(--accent-glow));
+    animation-duration: var(--rise, 7s);
+    filter: drop-shadow(0 0 7px rgba(255, 227, 163, 0.45));
+    cursor: pointer;
   }
   .emoji-body {
     display: inline-block;
   }
-  .emoji.wrong-fx {
-    outline: 3px solid rgba(255, 120, 120, 0.9);
+  .emoji.wrong {
+    opacity: 0.82;
+    border-radius: 14px;
+    outline: 2px solid rgba(255, 155, 155, 0.65);
     outline-offset: -2px;
-    border-radius: 12px;
-    opacity: 0.75;
   }
-  .emoji-body.wobbling {
-    animation: fxWobble 0.3s ease-in-out;
+  .emoji.wrong .emoji-body {
+    animation: wobble 0.3s ease-in-out;
   }
-  .catch-fx {
+  .emoji.popping .emoji-body {
+    animation: pop 0.19s ease-out forwards;
+  }
+  .tongue {
     position: absolute;
-    width: 40px;
-    height: 40px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin-left: -20px;
-    margin-top: -20px;
-    font-size: 40px;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    overflow: visible;
+    pointer-events: none;
+    z-index: 3;
+    filter: drop-shadow(0 0 3px rgba(228, 87, 46, 0.45));
+  }
+  .sparkle {
+    position: absolute;
+    transform: translate(-50%, -50%);
     pointer-events: none;
     z-index: 4;
-    animation: catchBurst 0.45s ease-out forwards;
+    animation: sparkle 0.45s ease-out forwards;
+    filter: drop-shadow(0 0 8px rgba(255, 227, 163, 0.9));
   }
-  @keyframes catchBurst {
-    0% { transform: scale(0.4); opacity: 1; }
-    100% { transform: scale(2.2); opacity: 0; }
+  .frog-dock {
+    position: absolute;
+    left: 2%;
+    bottom: 2%;
+    width: clamp(88px, 27vw, 122px);
+    z-index: 5;
+    pointer-events: auto;
   }
-  .emoji-body.popping {
-    animation: fxPop 0.18s ease-out forwards;
+  .jar-dock {
+    position: absolute;
+    right: 3%;
+    bottom: 3%;
+    width: clamp(50px, 15vw, 66px);
+    z-index: 5;
+    pointer-events: auto;
+  }
+  .win-wrap {
+    display: contents;
+  }
+  /* WinOverlay always mounts Confetti/Starfield. A child who asked for reduced
+     motion should not get a falling celebration; the static starfield and the
+     win card stay. */
+  .win-wrap.calm :global(.confetti-container) {
+    display: none;
+  }
+  .win-badge {
+    width: 64px;
+    height: 64px;
+    filter: drop-shadow(0 0 12px var(--glow-gold));
+  }
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    clip-path: inset(50%);
+    white-space: nowrap;
+    border: 0;
   }
   @keyframes floatUp {
-    from { top: 105%; }
-    to { top: -18%; }
+    from {
+      top: 104%;
+    }
+    to {
+      top: -16%;
+    }
   }
-  @keyframes fxWobble {
-    0%, 100% { transform: translateX(0); }
-    25% { transform: translateX(-5px); }
-    50% { transform: translateX(5px); }
-    75% { transform: translateX(-2px); }
+  @keyframes wobble {
+    0%,
+    100% {
+      transform: translateX(0);
+    }
+    25% {
+      transform: translateX(-5px);
+    }
+    50% {
+      transform: translateX(5px);
+    }
+    75% {
+      transform: translateX(-2px);
+    }
   }
-  @keyframes fxPop {
-    to { transform: scale(1.6); opacity: 0; }
+  @keyframes pop {
+    to {
+      transform: scale(1.6);
+      opacity: 0;
+    }
   }
-
-  .win-badge { width: 64px; height: 64px; filter: drop-shadow(0 0 12px var(--glow-gold)); }
+  @keyframes sparkle {
+    0% {
+      transform: translate(-50%, -50%) scale(0.35) rotate(0deg);
+      opacity: 1;
+    }
+    100% {
+      transform: translate(-50%, -50%) scale(1.9) rotate(45deg);
+      opacity: 0;
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    /* The global calm rule stops every animation. The rising stream is
+       functional, not decorative: keep its real per-item duration so the pond
+       stays playable while the fireflies and sparkle stay still. */
+    .emoji {
+      animation-duration: var(--rise, 7s) !important;
+    }
+  }
 </style>

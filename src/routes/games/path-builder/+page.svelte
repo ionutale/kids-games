@@ -1,270 +1,860 @@
 <script>
+  // Path Builder — the Forest Road. A continuous portrait forest: draw a
+  // freehand road from the cottage to the cabin, avoid rocks/ponds/hedges,
+  // then the fox walks it and gathers Stars. No timer, no fail state.
   import { onMount } from 'svelte';
-  import { page } from '$app/state';
-  import { seedFromUrl } from '#lib/game/seed.js';
   import { _ } from '#lib/stores/locale.js';
   import GameShell from '#lib/components/ui/GameShell.svelte';
-  import '#lib/trainers/fx.css';
   import HudPill from '#lib/components/ui/HudPill.svelte';
-  import BigButton from '#lib/components/ui/BigButton.svelte';
-  import Confetti from '#lib/components/Confetti.svelte';
   import WinOverlay from '#lib/components/ui/WinOverlay.svelte';
   import LadderBar from '#lib/ladder/LadderBar.svelte';
   import LadderActions from '#lib/ladder/LadderActions.svelte';
-  import { loadLevel, saveLevel, loadMastered, saveMastered, MAX_LEVEL } from '#lib/ladder/progress.js';
-  import { playTap, playMatch, playWin } from '#lib/sounds/audioManager.js';
-  import { generatePuzzle, validatePath, hintCell, levelSpec } from '#lib/path-builder/engine.js';
+  import { loadLevel, saveLevel, loadMastered, saveMastered } from '#lib/ladder/progress.js';
+  import { prefersReducedMotion, reducedMotion } from '#lib/stores/reducedMotion.js';
+  import Icons from '#lib/path-builder/Icons.svelte';
+  import { createForestSound } from '#lib/path-builder/sound.js';
+  import {
+    W,
+    H,
+    LEVELS,
+    LAYOUTS,
+    BLOCKER_PAD,
+    TRUNCATE_RADIUS,
+    CONTINUE_RADIUS,
+    sceneFor,
+    roadReachesDestination,
+    blockerHit,
+    blockerArtSize,
+    clipSegmentToCircle,
+    dist,
+    near,
+    nearestRoadIndex,
+    pointAt,
+    pathLength,
+    starCollected,
+    requiredStarsCollected,
+    hasRequiredStars
+  } from '#lib/path-builder/scene.js';
 
-  const PUZZLES_PER_LEVEL = 5;
+  const GHOST_KEY = 'path-builderGhostSeen';
+  const IDLE_MS = 6000;
+  const GUIDE_MS = 3800;
 
-  let level = $state(loadLevel('path-builder')); // migrates the old path-builder-level key
+  const initialLevel = loadLevel('path-builder');
+  const firstScene = sceneFor(initialLevel, 0);
+
+  let level = $state(initialLevel);
   let mastered = $state(loadMastered('path-builder'));
-  let puzzleNum = $state(1); // 1..5 within the level
-  let puzzle = $state(null);
-  let path = $state([]);
-  let hint = $state(null);
-  let solvedTotal = $state(0);
-  let complete = $state(false); // puzzle solved
-  let levelDone = $state(false);
-  let won = $state(false); // ladder mastered at the top level
+  let layout = $state(0);
+  let scene = $state(firstScene);
+  let road = $state([]);
+  let walker = $state({ ...firstScene.home, angle: 0 });
+  let drawing = $state(false);
+  let walking = $state(false);
+  let collected = $state([]);
+  let solved = $state(false);
+  let needsStars = $state(false);
+  let guide = $state(false);
+  let ghost = $state(null);
+  let hitBlocker = $state(-1);
+  let nudgeTick = $state(0);
+  let roundDone = $state(false);
+  let levelDone = $state(null);
+  let won = $state(false);
 
-  let timers = [];
-  function clearTimers() {
-    for (const t of timers) clearTimeout(t);
-    timers = [];
+  let svgEl;
+  let raf = 0;
+  let ghostRaf = 0;
+  let idleTimer = null;
+  let guideTimer = null;
+  let advanceTimer = null;
+  let pulseTimer = null;
+  let levelDoneTimer = null;
+  let ghostTimer = null;
+
+  const sound = createForestSound();
+
+  const reduced = $derived($reducedMotion);
+  const starsNeeded = $derived(scene.required - requiredStarsCollected(scene, collected));
+  const optionalLeft = $derived(
+    scene.stars.filter((star) => !star.required && !collected.includes(star.id)).length
+  );
+
+  function ghostAlreadySeen() {
+    try {
+      return localStorage.getItem(GHOST_KEY) === '1';
+    } catch {
+      return true;
+    }
   }
 
-  function newPuzzle(seedOffset = Date.now() % 100000) {
-    clearTimers();
-    puzzle = generatePuzzle(level, seedOffset + puzzleNum * 977);
-    path = [{ r: puzzle.start.r, c: puzzle.start.c }]; // path always begins at Start
-    hint = null;
-    complete = false;
-    levelDone = false;
+  function markGhostSeen() {
+    try {
+      localStorage.setItem(GHOST_KEY, '1');
+    } catch {
+      // Private mode: the demonstration simply appears again next time.
+    }
   }
 
-  function tapCell(r, c) {
-    if (!puzzle || complete) return;
-    const cell = { r, c };
+  function toScene(event) {
+    const ctm = svgEl?.getScreenCTM?.();
+    if (!ctm) return null;
+    const point = new DOMPoint(event.clientX, event.clientY).matrixTransform(ctm.inverse());
+    return { x: point.x, y: point.y };
+  }
 
-    // undo: tapping a path cell truncates back to (excluding) it
-    const idx = path.findIndex((p) => p.r === r && p.c === c);
-    if (idx !== -1 && idx !== 0) {
-      path = path.slice(0, idx);
-      playTap();
-      hint = null;
+  function roadConnects() {
+    return roadReachesDestination(scene, road);
+  }
+
+  function armIdle() {
+    clearTimeout(idleTimer);
+    idleTimer = setTimeout(() => {
+      if (walking || drawing || solved || roundDone || roadConnects()) return;
+      guide = true;
+      clearTimeout(guideTimer);
+      guideTimer = setTimeout(() => {
+        guide = false;
+        armIdle();
+      }, GUIDE_MS);
+    }, IDLE_MS);
+  }
+
+  function dismissGuidance() {
+    guide = false;
+    clearTimeout(guideTimer);
+    if (ghost) {
+      cancelAnimationFrame(ghostRaf);
+      clearTimeout(ghostTimer);
+      ghost = null;
+      markGhostSeen();
+    }
+  }
+
+  function playGhost() {
+    if (ghostAlreadySeen()) return;
+    const start = pointAt(scene.route, 0.04);
+    if (!start) return;
+    if (prefersReducedMotion()) {
+      // No drift under reduced motion: a still hand rests on the first road.
+      ghost = start;
+      ghostTimer = setTimeout(() => {
+        ghost = null;
+        markGhostSeen();
+      }, 2600);
       return;
     }
-    if (idx === 0) return; // start cell is permanent
+    ghost = start;
+    const began = performance.now();
+    const duration = 2400;
+    const frame = (now) => {
+      const t = Math.min(1, (now - began) / duration);
+      ghost = pointAt(scene.route, t);
+      if (t < 1) ghostRaf = requestAnimationFrame(frame);
+      else {
+        ghost = null;
+        // Only a finished demonstration counts as seen, so a first-visit reload
+        // that interrupts it plays the hand again.
+        markGhostSeen();
+      }
+    };
+    ghostRaf = requestAnimationFrame(frame);
+  }
 
-    // only allow extending from the current tip
-    const tip = path.length > 0 ? path[path.length - 1] : puzzle.start;
-    const adjacent = Math.abs(cell.r - tip.r) + Math.abs(cell.c - tip.c) === 1;
-    if (!adjacent) {
-      hint = null;
-      return; // ignore far taps silently — kid taps next to the tip
+  function resetRound() {
+    cancelAnimationFrame(raf);
+    cancelAnimationFrame(ghostRaf);
+    clearTimeout(advanceTimer);
+    clearTimeout(pulseTimer);
+    clearTimeout(ghostTimer);
+    drawing = false;
+    walking = false;
+    solved = false;
+    roundDone = false;
+    needsStars = false;
+    guide = false;
+    ghost = null;
+    hitBlocker = -1;
+    road = [];
+    collected = [];
+    walker = { ...scene.home, angle: 0 };
+    armIdle();
+  }
+
+  function loadRound() {
+    scene = sceneFor(level, layout);
+    resetRound();
+  }
+
+  function nudgeBlocker(blocker) {
+    const index = scene.blockers.indexOf(blocker);
+    if (index < 0) return;
+    if (hitBlocker !== index) {
+      hitBlocker = index;
+      nudgeTick += 1;
     }
-    if (puzzle.grid[r][c] === 'obstacle') return; // obstacle: silent reject
+    sound.bump();
+    clearTimeout(pulseTimer);
+    pulseTimer = setTimeout(() => {
+      hitBlocker = -1;
+    }, 360);
+  }
 
-    const candidate = [...path, cell];
-    const verdict = validatePath(puzzle, candidate);
-    if (verdict === 'invalid') return;
+  /** Point where a→b has to stop for a Blocker, or null when the stroke is clear. */
+  function stoppedAt(a, b) {
+    const hit = blockerHit(scene.blockers, a, b);
+    if (!hit) return { point: b, blocker: null };
+    const edge = clipSegmentToCircle(a, b, hit, hit.r + BLOCKER_PAD);
+    return { point: edge, blocker: hit };
+  }
 
-    path = candidate;
-    playTap();
-    hint = null;
+  function startDrawing(event) {
+    if (walking || solved || roundDone || won) return;
+    if (event.pointerType === 'mouse' && event.button !== 0) return;
+    const p = toScene(event);
+    if (!p) return;
+    if (p.x < 0 || p.x > W || p.y < 0 || p.y > H) return;
 
-    if (verdict === 'complete') {
-      complete = true;
-      solvedTotal += 1;
-      playMatch();
-      timers.push(setTimeout(() => {
-        if (puzzleNum >= PUZZLES_PER_LEVEL) {
-          if (level >= MAX_LEVEL) {
-            // Top of the ladder: no auto-advance, just the 🎓 mastery moment.
-            saveMastered('path-builder');
-            mastered = true;
-            won = true;
-            playWin();
-          } else {
-            levelDone = true;
-            level += 1;
-            saveLevel('path-builder', level);
-            playWin();
-            timers.push(setTimeout(() => {
-              puzzleNum = 1;
-              newPuzzle();
-            }, 2200));
-          }
-        } else {
-          puzzleNum += 1;
-          timers.push(setTimeout(() => newPuzzle(), 1400));
+    dismissGuidance();
+    sound.unlock();
+
+    if (road.length === 0) {
+      // Start anywhere: seed the road at Home, then draw toward the press.
+      road = [{ ...scene.home }];
+      const seed = stoppedAt(scene.home, p);
+      if (dist(p, scene.home) > 6) {
+        if (seed.blocker) nudgeBlocker(seed.blocker);
+        if (seed.point && dist(seed.point, scene.home) > 6) road = [...road, seed.point];
+      }
+    } else {
+      const tip = road[road.length - 1];
+      const idx = nearestRoadIndex(road, p, TRUNCATE_RADIUS);
+      if (idx >= 0) {
+        // Rubbing back over the road erases everything after that point.
+        road = road.slice(0, Math.max(1, idx + 1));
+      } else if (!near(p, tip, CONTINUE_RADIUS)) {
+        // Pressing far from the tip follows the start-anywhere rule: the road
+        // still reaches toward the press (stopping at a Blocker edge) instead
+        // of silently ignoring the child.
+        const bridge = stoppedAt(tip, p);
+        if (bridge.blocker) nudgeBlocker(bridge.blocker);
+        if (bridge.point && dist(bridge.point, tip) > 6) road = [...road, bridge.point];
+      }
+    }
+
+    drawing = true;
+    needsStars = false;
+    window.addEventListener('pointermove', moveDrawing);
+    window.addEventListener('pointerup', endDrawing);
+    window.addEventListener('pointercancel', endDrawing);
+    event.preventDefault?.();
+  }
+
+  function moveDrawing(event) {
+    if (!drawing) return;
+    const p = toScene(event);
+    if (!p) return;
+    if (p.x < 14 || p.x > W - 14 || p.y < 14 || p.y > H - 14) return;
+    const last = road[road.length - 1];
+    if (!last || dist(p, last) < 6) return;
+
+    const hit = blockerHit(scene.blockers, last, p);
+    if (hit) {
+      // Stop at the Blocker edge and keep the last valid point. A tip that is
+      // already resting on that edge is free to slide away on the next move.
+      const edge = clipSegmentToCircle(last, p, hit, hit.r + BLOCKER_PAD);
+      if (edge && dist(edge, last) > 5) road = [...road, edge];
+      nudgeBlocker(hit);
+      return;
+    }
+
+    road = [...road, p];
+    sound.scratch();
+    event.preventDefault?.();
+  }
+
+  function endDrawing() {
+    if (!drawing) return;
+    drawing = false;
+    window.removeEventListener('pointermove', moveDrawing);
+    window.removeEventListener('pointerup', endDrawing);
+    window.removeEventListener('pointercancel', endDrawing);
+    if (roadConnects()) walk();
+    else armIdle();
+  }
+
+  function walk() {
+    if (walking || solved || road.length < 2) return;
+    const path = road.map((p) => ({ x: p.x, y: p.y }));
+    walking = true;
+    guide = false;
+    needsStars = false;
+    walker = pointAt(path, 0);
+    const duration = Math.min(5200, Math.max(750, pathLength(path) * 1.9));
+    const began = performance.now();
+    let lastStep = 0;
+
+    const frame = (now) => {
+      const t = Math.min(1, (now - began) / duration);
+      walker = pointAt(path, t);
+      if (now - lastStep > 200) {
+        sound.step();
+        lastStep = now;
+      }
+      for (const star of scene.stars) {
+        if (!collected.includes(star.id) && starCollected(walker, star)) {
+          collected = [...collected, star.id];
+          sound.star();
         }
-      }, 900));
+      }
+      if (t < 1) raf = requestAnimationFrame(frame);
+      else finishWalk();
+    };
+    raf = requestAnimationFrame(frame);
+  }
+
+  function finishWalk() {
+    walking = false;
+    if (hasRequiredStars(scene, collected)) {
+      solved = true;
+      roundDone = true;
+      sound.arrive();
+      clearTimeout(advanceTimer);
+      advanceTimer = setTimeout(advance, 1500);
+    } else {
+      // A missed required Star: the fox goes home, the road stays editable.
+      walker = { ...scene.home, angle: 0 };
+      needsStars = true;
+      armIdle();
     }
+  }
+
+  function advance() {
+    clearTimeout(advanceTimer);
+    if (layout < LAYOUTS - 1) {
+      layout += 1;
+      loadRound();
+      return;
+    }
+    if (level < LEVELS) {
+      const finished = level;
+      level += 1;
+      layout = 0;
+      saveLevel('path-builder', level);
+      loadRound();
+      levelDone = finished;
+      clearTimeout(levelDoneTimer);
+      levelDoneTimer = setTimeout(() => {
+        levelDone = null;
+      }, 1800);
+      return;
+    }
+    // Top of the ladder: keep the mastery moment and never auto-advance past it.
+    mastered = true;
+    saveMastered('path-builder');
+    won = true;
+  }
+
+  function redraw() {
+    if (won) return;
+    resetRound();
   }
 
   function pickLevel(n) {
+    clearTimeout(levelDoneTimer);
     level = n;
-    saveLevel('path-builder', n);
-    puzzleNum = 1;
-    newPuzzle();
-  }
-
-  function replayLevel(e) {
-    e?.preventDefault();
+    layout = 0;
+    levelDone = null;
     won = false;
-    puzzleNum = 1;
-    newPuzzle();
+    saveLevel('path-builder', n);
+    loadRound();
   }
 
-  function showHint() {
-    if (!puzzle || complete) return;
-    hint = hintCell(puzzle, path);
-    if (hint) {
-      playTap();
-      timers.push(setTimeout(() => (hint = null), 1600));
-    }
+  function replayLevel(event) {
+    event?.preventDefault();
+    won = false;
+    layout = 0;
+    loadRound();
   }
 
-  function restartPuzzle() {
-    if (!puzzle || complete) return;
-    // The path always includes Start. An empty path fails every later tap.
-    path = [{ r: puzzle.start.r, c: puzzle.start.c }];
-    hint = null;
+  function routeD() {
+    return scene.route
+      .map((p, i) => `${i === 0 ? 'M' : 'L'}${p.x.toFixed(1)} ${p.y.toFixed(1)}`)
+      .join(' ');
+  }
+
+  function roadD() {
+    return road
+      .map((p, i) => `${i === 0 ? 'M' : 'L'}${p.x.toFixed(1)} ${p.y.toFixed(1)}`)
+      .join(' ');
   }
 
   onMount(() => {
-    newPuzzle(seedFromUrl(page.url) ?? undefined);
-    return clearTimers;
+    resetRound();
+    playGhost();
+    return () => {
+      cancelAnimationFrame(raf);
+      cancelAnimationFrame(ghostRaf);
+      clearTimeout(idleTimer);
+      clearTimeout(guideTimer);
+      clearTimeout(advanceTimer);
+      clearTimeout(pulseTimer);
+      clearTimeout(levelDoneTimer);
+      clearTimeout(ghostTimer);
+      window.removeEventListener('pointermove', moveDrawing);
+      window.removeEventListener('pointerup', endDrawing);
+      window.removeEventListener('pointercancel', endDrawing);
+      sound.dispose();
+    };
   });
-
-  function cellContent(r, c) {
-    if (puzzle.start.r === r && puzzle.start.c === c) return '🚩';
-    if (puzzle.goal.r === r && puzzle.goal.c === c) return '🏁';
-    if (puzzle.grid[r][c] === 'obstacle') return '🧱';
-    const onPath = path.findIndex((p) => p.r === r && p.c === c);
-    if (onPath !== -1) return '🔵';
-    if (hint && hint.r === r && hint.c === c) return '💡';
-    return '';
-  }
 </script>
 
-<GameShell accent="#FDBA74">
+<GameShell accent="#F6B26B">
   {#snippet hudLeft()}
-    <HudPill icon="🚩" label={`${$_('level')} ${level}`} />
-    <HudPill icon="🧩" label={`${puzzleNum}/5`} />
-    <HudPill icon="✅" label={String(solvedTotal)} />
+    <HudPill icon="🚩" label={`${level}/${LEVELS}`} />
+    {#if scene.stars.length > 0}
+      <HudPill icon="⭐" label={`${collected.length}/${scene.stars.length}`} />
+    {/if}
   {/snippet}
 
-  <div class="pb" data-testid="pb-root">
-    <p class="prompt">🚩 → 🏁</p>
-    <div class="stage">
-      {#if puzzle}
-        <div
-          class="grid"
-          style:--size="{puzzle.size}"
-          data-testid="grid"
-        >
-          {#each Array(puzzle.size) as _, r}
-            {#each Array(puzzle.size) as __, c}
-              {@const content = cellContent(r, c)}
-              <button
-                class="cell"
-                class:path-cell={content === '🔵'}
-                class:obstacle={puzzle.grid[r][c] === 'obstacle'}
-                onclick={() => tapCell(r, c)}
-                data-testid={`cell-${r}-${c}`}
-              >
-                {content}
-              </button>
-            {/each}
-          {/each}
-        </div>
-      {/if}
+  <div
+    class="pb"
+    data-testid="pb-root"
+    data-level={level}
+    data-road={layout + 1}
+    data-state={solved
+      ? 'solved'
+      : needsStars
+        ? 'missed'
+        : walking
+          ? 'walking'
+          : drawing
+            ? 'drawing'
+            : road.length > 1
+              ? 'ready'
+              : 'idle'}
+  >
+    <div class="pb-board-wrap">
+      <svg
+        bind:this={svgEl}
+        class="board"
+        viewBox="0 0 {W} {H}"
+        preserveAspectRatio="xMidYMid meet"
+        role="img"
+        aria-label={$_('pbDrawRoad')}
+        data-testid="scene"
+        onpointerdown={startDrawing}
+      >
+        <defs>
+          <linearGradient id="pb-sky" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#3b2b4a" />
+            <stop offset=".55" stop-color="#5a3d45" />
+            <stop offset="1" stop-color="#6b4a2f" />
+          </linearGradient>
+          <filter id="pb-soft" x="-30%" y="-30%" width="160%" height="160%">
+            <feDropShadow dx="0" dy="8" stdDeviation="8" flood-color="#000" flood-opacity=".35" />
+          </filter>
+        </defs>
 
-      {#if complete}
-        <Confetti />
+        <rect width={W} height={H} fill="url(#pb-sky)" />
+        <circle cx="500" cy="110" r="42" fill="#ffe3a3" opacity=".28" />
+        <ellipse cx="310" cy="560" rx="330" ry="470" fill="#4a5a34" opacity=".55" />
+        <ellipse
+          cx={scene.clearing.x}
+          cy={scene.clearing.y}
+          rx={scene.clearing.rx}
+          ry={scene.clearing.ry}
+          fill="#6f7d47"
+          opacity=".45"
+        />
+        <ellipse cx="310" cy="620" rx="296" ry="400" fill="#5d6b3c" opacity=".55" />
+
+        <g aria-hidden="true">
+          {#each scene.decor.filter((d) => d.kind === 'tree') as t (t.x + '-' + t.y)}
+            <g transform="translate({t.x - t.s / 2},{t.y - t.s / 2})" opacity=".9">
+              <Icons id="tree" size={t.s} />
+            </g>
+          {/each}
+        </g>
+
+        {#if !reduced}
+          <g aria-hidden="true" data-testid="fireflies">
+            {#each scene.decor.filter((d) => d.kind === 'firefly') as f, i (i)}
+              <circle class="fly" cx={f.x} cy={f.y} r="3.2" fill="#ffe3a3" style:animation-delay="{-i * 1.3}s" />
+            {/each}
+          </g>
+        {/if}
+
+        <g aria-hidden="true">
+          {#each scene.decor.filter((d) => d.kind === 'mushroom') as m, i (i)}
+            <g transform="translate({m.x - m.s / 2},{m.y - m.s / 2})" opacity=".9">
+              <Icons id="mushroom" size={m.s} />
+            </g>
+          {/each}
+        </g>
+
+        <g
+          role="img"
+          aria-label={$_('pbHome')}
+          data-testid="home"
+          data-x={scene.home.x}
+          data-y={scene.home.y}
+          transform="translate({scene.home.x - 43},{scene.home.y - 43})"
+        >
+          <Icons id="home" size={86} />
+        </g>
+        <g
+          role="img"
+          aria-label={$_('pbDest')}
+          data-testid="destination"
+          data-x={scene.dest.x}
+          data-y={scene.dest.y}
+          transform="translate({scene.dest.x - 43},{scene.dest.y - 43})"
+        >
+          <Icons id="dest" size={86} />
+        </g>
+
+        {#each scene.blockers as b, i (i)}
+          {@const art = blockerArtSize(b)}
+          <g
+            transform="translate({b.x - art / 2},{b.y - art / 2})"
+            style:filter="url(#pb-soft)"
+            data-testid="blocker"
+            data-kind={b.kind}
+            data-x={b.x}
+            data-y={b.y}
+            data-r={b.r}
+            data-art={art}
+          >
+            {#key nudgeTick}
+              <g class:blocked={hitBlocker === i}>
+                <Icons id={b.kind} size={art} />
+              </g>
+            {/key}
+          </g>
+        {/each}
+
+        {#if guide}
+          <path
+            class="guide"
+            class:still={reduced}
+            data-testid="guide"
+            d={routeD()}
+            fill="none"
+            stroke="#ffe3a3"
+            stroke-width="7"
+            stroke-linecap="round"
+            stroke-dasharray="2 18"
+            opacity=".55"
+            aria-hidden="true"
+          />
+        {/if}
+
+        <path
+          data-testid="road"
+          data-points={road.length}
+          d={roadD()}
+          fill="none"
+          stroke="#8a5a34"
+          stroke-width="22"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        />
+        <path
+          d={roadD()}
+          fill="none"
+          stroke="#ffe9c9"
+          stroke-width="3"
+          stroke-linecap="round"
+          stroke-dasharray="10 16"
+          opacity=".8"
+          aria-hidden="true"
+        />
+
+        {#each scene.stars as star (star.id)}
+          {@const got = collected.includes(star.id)}
+          <g
+            data-testid="star"
+            data-x={star.x}
+            data-y={star.y}
+            data-required={star.required}
+            data-collected={got}
+            aria-hidden="true"
+          >
+            <circle class="star-glow" cx={star.x} cy={star.y} r="42" opacity={got ? 0 : 0.16} />
+            {#if got && !reduced}
+              <g transform="translate({star.x},{star.y})">
+                <g class="sparkle">
+                  {#each [0, 45, 90, 135, 180, 225, 270, 315] as angle (angle)}
+                    <line
+                      x1="0"
+                      y1="-16"
+                      x2="0"
+                      y2="-25"
+                      transform="rotate({angle})"
+                      stroke="#ffe3a3"
+                      stroke-width="3"
+                      stroke-linecap="round"
+                    />
+                  {/each}
+                </g>
+              </g>
+            {/if}
+            <g transform="translate({star.x - 22},{star.y - 22})">
+              <g class:got>
+                <Icons id="star" size={44} />
+              </g>
+            </g>
+          </g>
+        {/each}
+
+        <g
+          data-testid="walker"
+          data-x={walker.x}
+          data-y={walker.y}
+          transform="translate({walker.x - 50},{walker.y - 66})"
+          style:filter="url(#pb-soft)"
+        >
+          <g class:bob={walking && !reduced}>
+            <Icons id="fox" size={80} />
+          </g>
+        </g>
+
+        {#if ghost}
+          <g
+            data-testid="ghost-hand"
+            transform="translate({ghost.x - 22},{ghost.y - 22})"
+            opacity=".85"
+            aria-hidden="true"
+          >
+            <Icons id="hand" size={44} />
+          </g>
+        {/if}
+      </svg>
+
+      <button class="pb-redraw" type="button" onclick={redraw} aria-label={$_('pbRedraw')}>
+        <span aria-hidden="true">↺</span>
+        <span class="pb-redraw-text">{$_('pbRedraw')}</span>
+      </button>
+
+      {#if roundDone && !won}
+        <div class="pb-round-done" data-testid="round-done">
+          <p class="pb-round-title">{$_('pbMadeIt')}</p>
+          <button class="pb-next" type="button" onclick={advance}>{$_('pbNextRoad')} ▶</button>
+        </div>
       {/if}
 
       {#if levelDone}
-        <div class="overlay" data-testid="level-overlay">
-          <p class="ov-title">🏆</p>
-          <p class="done-line">{$_('level')} {level - 1} ✓</p>
+        <div class="pb-level-done" data-testid="level-overlay">
+          <p>{$_('levelComplete', { n: levelDone })}</p>
         </div>
       {/if}
     </div>
 
-    <div class="actions">
-      <button class="act ghosty" onclick={restartPuzzle}>↺</button>
-      <BigButton variant="ghost" onclick={showHint}>💡 {$_('hint')}</BigButton>
-    </div>
+    <!-- The single live region: drawing, walking, solved and missed-Star copy. -->
+    <p class="pb-status" data-testid="pb-status" aria-live="polite">
+      {#if solved}
+        {$_('pbMadeIt')}
+      {:else if needsStars}
+        {$_('pbMissedStar')}
+      {:else if walking}
+        {$_('pbWalking')}
+      {:else}
+        {$_('pbDrawRoad')}
+      {/if}
+    </p>
+
+    <p class="pb-summary" data-testid="pb-summary">
+      {$_('pbLevelOf', { n: level, m: LEVELS })}, {$_('pbRoadOf', { n: layout + 1, m: LAYOUTS })}.
+      {#if starsNeeded > 0}
+        {$_('pbStarsLeft', { n: starsNeeded })}
+      {/if}
+      {#if optionalLeft > 0}
+        {$_('pbOptionalLeft', { n: optionalLeft })}
+      {/if}
+    </p>
 
     <LadderBar current={level} {mastered} onchange={pickLevel} />
   </div>
-
-  {#if won}
-    <WinOverlay title={$_('wellDone')} subtitle={`🏆 ${$_('level')} ${level}`}>
-      <LadderActions
-        gameId="path-builder"
-        {level}
-        backHref="/"
-        replayHref="/games/path-builder"
-        onreplay={replayLevel}
-      />
-    </WinOverlay>
-  {/if}
 </GameShell>
+
+{#if won}
+  <WinOverlay title={$_('wellDone')} subtitle={$_('pbMadeIt')}>
+    <LadderActions
+      gameId="path-builder"
+      {level}
+      backHref="/"
+      replayHref="/games/path-builder"
+      onreplay={replayLevel}
+    />
+  </WinOverlay>
+{/if}
 
 <style>
   .pb {
     flex: 1;
     display: flex;
     flex-direction: column;
+    gap: 4px;
+    min-height: 0;
+    padding: 2px 8px 0;
+    background: #1f1722;
+    overflow: hidden;
+  }
+  .pb-board-wrap {
+    position: relative;
+    flex: 1;
+    min-height: 0;
+    display: flex;
     align-items: center;
     justify-content: center;
-    gap: 16px;
-    padding: 10px;
-    overflow-y: auto;
+    container-type: size;
   }
-  .prompt { font-size: 24px; margin: 0; letter-spacing: 4px; }
-  .stage { position: relative; }
-  .grid {
-    display: grid;
-    grid-template-columns: repeat(var(--size), minmax(56px, 76px));
+  .board {
+    display: block;
+    width: 100%;
+    height: 100%;
+    border-radius: 20px;
+    border: 2px solid rgba(255, 205, 140, 0.35);
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.35);
+    touch-action: none;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+  /* Keep the portrait Scene's 620:1000 ratio so the art never stretches. */
+  @supports (width: 1cqw) {
+    .board {
+      width: min(100cqw, 62cqh);
+      height: min(100cqh, 161.29cqw);
+    }
+  }
+  .pb-redraw {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    z-index: 3;
+    display: inline-flex;
+    align-items: center;
     gap: 6px;
-    background: var(--panel-glass);
-    border: 2px solid var(--panel-border);
+    min-height: 48px;
+    padding: 8px 16px;
+    border-radius: 16px;
+    font-size: 14px;
+    font-weight: 700;
+    color: #3a271b;
+    background: #f6b26b;
+    box-shadow: 0 3px 0 #c98445;
+  }
+  .pb-redraw:active { transform: scale(0.96); }
+  .pb-redraw span[aria-hidden] { font-size: 18px; }
+  .pb-status {
+    margin: 2px 0 0;
+    min-height: 18px;
+    text-align: center;
+    font-size: 13px;
+    font-weight: 600;
+    color: #ffe6c4;
+  }
+  .pb-summary {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    clip-path: inset(50%);
+    white-space: nowrap;
+    border: 0;
+  }
+  .pb-round-done {
+    position: absolute;
+    inset: 0;
+    z-index: 4;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    border-radius: 20px;
+    background: rgba(20, 12, 10, 0.55);
+  }
+  .pb-round-title {
+    font-size: 24px;
+    font-weight: 700;
+    color: #ffe3a3;
+    text-align: center;
+    padding: 0 16px;
+  }
+  .pb-next {
+    min-height: 52px;
+    padding: 10px 22px;
     border-radius: 18px;
-    padding: 10px;
+    font-size: 15px;
+    font-weight: 700;
+    color: #3a271b;
+    background: #f6b26b;
+    box-shadow: 0 3px 0 #c98445;
   }
-  .cell {
-    aspect-ratio: 1;
-    border-radius: 12px;
-    font-size: clamp(20px, 7vw, 30px);
-    line-height: 1;
-    background: rgba(255, 255, 255, 0.05);
-    transition: transform 0.1s, background 0.15s;
+  .pb-level-done {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    z-index: 5;
+    transform: translate(-50%, -50%);
+    padding: 18px 26px;
+    border-radius: 20px;
+    text-align: center;
+    font-size: 20px;
+    font-weight: 700;
+    color: #ffe3a3;
+    background: rgba(20, 12, 10, 0.8);
+    pointer-events: none;
   }
-  .cell:active { transform: scale(0.92); }
-  .cell.path-cell { background: rgba(127, 216, 255, 0.35); box-shadow: inset 0 0 10px rgba(127, 216, 255, 0.5); }
-  .cell.obstacle { background: rgba(255, 155, 155, 0.12); }
-  .overlay {
-    position: absolute; inset: -8px; z-index: 6;
-    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px;
-    background: rgba(4, 8, 24, 0.85); backdrop-filter: blur(6px); border-radius: 18px;
+  .guide { animation: pbGuideFade 3.8s ease-in-out; }
+  .guide.still { animation: none; opacity: 0.55; }
+  .blocked { animation: pbNudge 0.3s ease-in-out; }
+  .bob { animation: pbBob 0.35s ease-in-out infinite; }
+  .fly {
+    animation: pbDrift 7s ease-in-out infinite;
+    filter: drop-shadow(0 0 6px rgba(255, 214, 140, 0.8));
   }
-  .ov-title { font-size: 52px; margin: 0; }
-  .done-line { font-size: 26px; color: var(--gold); margin: 0; }
-  .actions { display: flex; align-items: center; gap: 14px; }
-  .act {
-    width: calc(var(--touch-min) * 1.2);
-    height: calc(var(--touch-min) * 1.2);
-    border-radius: 18px;
-    font-size: 22px;
-    color: var(--text-lo);
-    background: var(--panel-glass);
-    border: 1px solid var(--panel-border);
+  .got {
+    opacity: 0.3;
+    transform: scale(0.65);
+    transform-box: fill-box;
+    transform-origin: center;
+    transition: opacity 0.3s ease, transform 0.3s ease;
   }
-  .act:active { transform: scale(0.94); }
+  .star-glow {
+    transition: opacity 0.3s ease;
+  }
+  .sparkle {
+    animation: pbSpark 0.7s ease-out both;
+    transform-box: fill-box;
+    transform-origin: center;
+  }
+  @keyframes pbGuideFade {
+    0% { opacity: 0; }
+    15%, 80% { opacity: 0.55; }
+    100% { opacity: 0; }
+  }
+  @keyframes pbNudge {
+    0%, 100% { transform: translate(0, 0); }
+    30% { transform: translate(-4px, 2px); }
+    70% { transform: translate(4px, -2px); }
+  }
+  @keyframes pbBob {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-4px); }
+  }
+  @keyframes pbSpark {
+    0% { opacity: 1; transform: scale(0.5); }
+    100% { opacity: 0; transform: scale(1.6); }
+  }
+  @keyframes pbDrift {
+    0%, 100% { transform: translate(0, 0); opacity: 0.2; }
+    35% { transform: translate(12px, -18px); opacity: 0.95; }
+    70% { transform: translate(-8px, -30px); opacity: 0.5; }
+  }
 </style>

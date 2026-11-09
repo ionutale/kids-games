@@ -25,6 +25,10 @@ test.describe('Memory E2E', () => {
     test.setTimeout(120000);
     await page.goto('/games/memory');
     const cards = page.locator('.card');
+    await expect(cards.first()).toBeVisible({ timeout: 10000 });
+    await expect
+      .poll(async () => (await cards.first().locator('.card-front').textContent()) ?? '')
+      .not.toBe('');
     const count = await cards.count();
 
     // The emoji renders unconditionally in .card-front (CSS-hidden until flipped),
@@ -77,6 +81,8 @@ test.describe('Memory E2E', () => {
     test.setTimeout(90000);
     await page.goto('/games/memory');
     const cards = page.locator('.card');
+    await expect(cards).toHaveCount(4);
+    await expect(cards.first().locator('.card-front')).not.toHaveText('');
 
     // Read the facing emojis without flipping anything (same trick as the win test).
     const count = await cards.count(); // level 1 -> 4 cards

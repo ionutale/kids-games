@@ -1,154 +1,398 @@
 <script>
-  import { onMount } from 'svelte';
+  // Spot the Difference — Twin Postcards. Two stacked harbor pictures; tap a
+  // changed spot in either one and both ring it. Five pictures make a set, each
+  // solve adds a postcard to the album. No timer, no fail, no mistake count.
+  import { onDestroy, onMount, tick } from 'svelte';
   import { page } from '$app/state';
-  import { seedFromUrl } from '#lib/game/seed.js';
+  import { makeSeed, seedFromUrl } from '#lib/game/seed.js';
   import { _ } from '#lib/stores/locale.js';
   import { settings } from '#lib/stores/settings.js';
+  import { reducedMotion } from '#lib/stores/reducedMotion.js';
   import GameShell from '#lib/components/ui/GameShell.svelte';
-  import '#lib/trainers/fx.css';
-  import HudPill from '#lib/components/ui/HudPill.svelte';
-  import BigButton from '#lib/components/ui/BigButton.svelte';
-  import WinOverlay from '#lib/components/ui/WinOverlay.svelte';
-  import { playTap, playMatch, playWin } from '#lib/sounds/audioManager.js';
-  import { makePuzzle, isDifference } from '#lib/spot-difference/game.js';
+  import Harbor from '#lib/spot-difference/Harbor.svelte';
+  import ProgressHud from '#lib/spot-difference/ProgressHud.svelte';
+  import PostcardAlbum from '#lib/spot-difference/PostcardAlbum.svelte';
+  import {
+    SET_SIZE,
+    ageSpec,
+    findDiffAt,
+    foundDiffAt,
+    makeScenePuzzle,
+    sceneFor
+  } from '#lib/spot-difference/scene.js';
+  import { addPostcard, loadPostcards } from '#lib/spot-difference/postcards.js';
+  import { createHarborSound } from '#lib/spot-difference/sound.js';
 
+  const HINT_DELAY = 8000;
+  const HINT_DURATION = 2400;
+  const TOAST_DURATION = 1150;
+
+  const sound = createHarborSound();
+
+  let setAge = $state(3);
+  let baseSeed = $state(1);
+  let step = $state(0);
+  let setDone = $state(0);
   let puzzle = $state(null);
   let found = $state([]);
-  let wrongCell = $state(-1);
-  let sideShake = $state('');
-  let solvedCount = $state(0);
-  let complete = $state(false);
+  let hintId = $state(null);
+  let wrong = $state(null);
+  let phase = $state('play'); // play → toast → done
+  let postcards = $state([]);
+  let catReacts = $state(0);
+  let playAgainButton = $state(null);
 
   let timers = [];
+  let hintTimer = null;
+  let hintClearTimer = null;
+  let wrongKey = 0;
 
-  function next(seedOffset = Date.now() % 100000) {
-    for (const t of timers) clearTimeout(t);
-    timers = [];
-    puzzle = makePuzzle($settings.ageLevel, seedOffset);
-    found = [];
-    wrongCell = -1;
-    complete = false;
+  const reduced = $derived($reducedMotion);
+  const total = $derived(puzzle?.diffs.length ?? 0);
+  const hintDiff = $derived(
+    hintId != null && puzzle ? (puzzle.diffs.find((diff) => diff.id === hintId) ?? null) : null
+  );
+  const promptLabel = $derived($_('spotFindChanged'));
+  const foundLabel = $derived($_('spotFoundCount', { n: found.length, m: total }));
+  const setLabel = $derived(
+    $_('spotSetProgress', { n: Math.min(step + 1, SET_SIZE), m: SET_SIZE })
+  );
+  const statusText = $derived(`${foundLabel}. ${setLabel}`);
+
+  // The set-complete card is modal: move focus to its primary action so a
+  // keyboard or switch user is not left behind on the hidden picture.
+  $effect(() => {
+    if (phase === 'done') {
+      tick().then(() => playAgainButton?.focus());
+    }
+  });
+
+  function later(fn, ms) {
+    const id = setTimeout(() => {
+      timers = timers.filter((timer) => timer !== id);
+      fn();
+    }, ms);
+    timers.push(id);
+    return id;
   }
 
-  function tap(index, side) {
-    if (!puzzle || complete) return;
-    if (isDifference(puzzle, index)) {
-      if (found.includes(index)) return;
-      found = [...found, index]; // reassigned ⇒ reliably reactive
-      playTap();
-      if (found.length === puzzle.diffCells.size) {
-        complete = true;
-        solvedCount += 1;
-        playMatch();
-        timers.push(setTimeout(() => playWin(), 350));
-      }
+  function clearHint() {
+    if (hintTimer) clearTimeout(hintTimer);
+    if (hintClearTimer) clearTimeout(hintClearTimer);
+    hintTimer = null;
+    hintClearTimer = null;
+    hintId = null;
+  }
+
+  function clearTimers() {
+    for (const id of timers) clearTimeout(id);
+    timers = [];
+    clearHint();
+  }
+
+  function armHint() {
+    clearHint();
+    if (phase !== 'play' || !puzzle) return;
+    hintTimer = setTimeout(() => {
+      hintTimer = null;
+      if (phase !== 'play' || !puzzle) return;
+      const next = puzzle.diffs.find((diff) => !found.includes(diff.id));
+      if (!next) return;
+      hintId = next.id;
+      hintClearTimer = setTimeout(() => {
+        hintClearTimer = null;
+        hintId = null;
+        armHint();
+      }, HINT_DURATION);
+    }, HINT_DELAY);
+  }
+
+  function startPuzzle(index) {
+    clearTimers();
+    step = index;
+    const seed = ((baseSeed + index * 97) % 1000000) || 1;
+    puzzle = makeScenePuzzle(setAge, seed);
+    found = [];
+    hintId = null;
+    wrong = null;
+    phase = 'play';
+    sound.reset();
+    sound.gull();
+    armHint();
+  }
+
+  function startSet() {
+    clearTimers();
+    sound.stop();
+    // Read the band once: changing Settings mid-set changes the *next* set.
+    setAge = ageSpec($settings.ageLevel).age;
+    baseSeed = seedFromUrl(page.url) ?? makeSeed(setAge + 1);
+    step = 0;
+    setDone = 0;
+    phase = 'play';
+    postcards = loadPostcards();
+    startPuzzle(0);
+  }
+
+  function pick(side, point) {
+    if (phase !== 'play' || !puzzle) return;
+    sound.unlock();
+    const diff = findDiffAt(puzzle, point.px, point.py, point.w, point.h, found);
+    if (diff) {
+      if (found.includes(diff.id)) return;
+      found = [...found, diff.id];
+      catReacts += 1;
+      sound.find();
+      clearHint();
+      if (found.length === puzzle.diffs.length) solve();
+      else armHint();
+    } else if (foundDiffAt(puzzle, point.px, point.py, point.w, point.h, found)) {
+      // Tapping a difference that is already ringed is not a wrong answer.
+      return;
     } else {
-      wrongCell = index; // brief shake on the tapped cell — silent, no penalty
-      sideShake = side;
-      timers.push(setTimeout(() => { wrongCell = -1; sideShake = ''; }, 420));
+      wrongKey += 1;
+      wrong = { x: point.x, y: point.y, side, key: wrongKey };
+      sound.miss();
+      later(() => {
+        wrong = null;
+      }, 430);
     }
   }
 
-  onMount(() => {
-    next(seedFromUrl(page.url) ?? undefined);
-    return () => { for (const t of timers) clearTimeout(t); };
-  });
-
-  function cellState(index, side) {
-    const isFound = found.includes(index);
-    const isWrong = wrongCell === index && sideShake === side;
-    return { isFound, isWrong };
+  function solve() {
+    phase = 'toast';
+    clearHint();
+    sound.jingle();
+    setDone += 1;
+    postcards = addPostcard({ age: setAge, seed: puzzle.seed }, postcards);
+    later(() => {
+      if (step < SET_SIZE - 1) {
+        startPuzzle(step + 1);
+      } else {
+        phase = 'done';
+        // Keep the accumulated session album. Re-reading storage here would
+        // erase the in-memory fallback when localStorage is blocked or full.
+        sound.bell();
+      }
+    }, TOAST_DURATION);
   }
+
+  onMount(startSet);
+
+  onDestroy(() => {
+    clearTimers();
+    sound.dispose();
+  });
 </script>
 
 <GameShell accent="#7FD8FF">
   {#snippet hudLeft()}
-    <HudPill icon="🔍" label={`${found.length}/${puzzle ? puzzle.diffCells.size : 0}`} />
-    <HudPill icon="✅" label={String(solvedCount)} />
+    <ProgressHud
+      found={found.length}
+      total={total}
+      step={setDone}
+      steps={SET_SIZE}
+    />
   {/snippet}
 
-  <div class="spot" data-testid="spot-root">
+  <div
+    class="twin"
+    class:calm={reduced}
+    data-testid="spot-root"
+    data-age={setAge}
+    data-step={step}
+    data-solved={setDone}
+    data-found={found.length}
+  >
+    <p class="prompt">{promptLabel}</p>
+
     {#if puzzle}
-      <p class="prompt">🔍 {$_('findDiffs')}</p>
-      <div class="boards" data-testid="boards">
-        {#each ['left', 'right'] as side}
-          <div class="grid" style:--size="{puzzle.size}" data-testid="grid-{side}">
-            {#each Array(puzzle.size * puzzle.size) as _, i}
-              {@const emoji = side === 'left' ? puzzle.left[i] : puzzle.right[i]}
-              {@const st = cellState(i, side)}
-              <button
-                class="cell"
-                class:found={st.isFound}
-                class:wrong={st.isWrong}
-                class:diff-cell={st.isFound}
-                onclick={() => tap(i, side)}
-                data-testid={`${side}-${i}`}
-              >
-                <span class="emoji">{emoji}</span>
-                {#if st.isFound}<span class="ring">💚</span>{/if}
-              </button>
-            {/each}
-          </div>
+      <div class="panels">
+        {#each ['left', 'right'] as side (side)}
+          <Harbor
+            scene={sceneFor(puzzle, side)}
+            {side}
+            diffs={puzzle.diffs}
+            {found}
+            hint={hintDiff}
+            wrong={wrong && wrong.side === side ? wrong : null}
+            onpick={(point) => pick(side, point)}
+            label={side === 'left' ? $_('picture1') : $_('picture2')}
+            testid={`panel-${side}`}
+            catReact={catReacts}
+            {reduced}
+          />
         {/each}
       </div>
+    {/if}
 
-      {#if complete}
-        <WinOverlay
-          title={$_('wellDone')}
-          subtitle={`✅ ${solvedCount}`}
-          sound={false}
-          testid="complete-overlay"
+    <p class="sr-only" role="status" data-testid="spot-status">{statusText}</p>
+
+    {#if phase === 'toast'}
+      <div class="toast" data-testid="postcard-toast">✉️ {$_('postcardAdded')}</div>
+    {/if}
+
+    {#if phase === 'done'}
+      <div class="card-wrap">
+        <div
+          class="card"
+          data-testid="set-complete"
+          role="dialog"
+          aria-modal="true"
+          aria-label={$_('spotHarborComplete')}
         >
-          <BigButton onclick={() => next((Date.now() + solvedCount * 13) % 100000)}>
-            {$_('nextPuzzle')}
-          </BigButton>
-        </WinOverlay>
-      {/if}
+          <p class="card-title">{$_('spotHarborComplete')}</p>
+          <p class="card-sub">{$_('spotCompleteSub')}</p>
+          <PostcardAlbum
+            {postcards}
+            limit={12}
+            emptyLabel={$_('spotAlbumEmpty')}
+            countLabel={$_('spotPostcardCount', { n: postcards.length })}
+          />
+          <div class="actions">
+            <button
+              class="primary"
+              type="button"
+              bind:this={playAgainButton}
+              onclick={startSet}
+            >{$_('playAgain')}</button>
+            <a class="ghost" href="/" data-testid="spot-back">{$_('back')}</a>
+          </div>
+        </div>
+      </div>
     {/if}
   </div>
 </GameShell>
 
 <style>
-  .spot {
+  .twin {
+    position: relative;
     flex: 1;
     display: flex;
     flex-direction: column;
-    align-items: center;
-    justify-content: safe center;
-    gap: 14px;
-    padding: 10px;
-    overflow-y: auto;
+    gap: 6px;
+    padding: 2px 10px 8px;
+    min-height: 0;
   }
-  .prompt { font-size: 20px; font-weight: 700; color: var(--text-hi); margin: 0; }
-  .boards {
-    position: relative;
+  .prompt {
+    margin: 0;
+    text-align: center;
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--text-hi);
+  }
+  .panels {
+    flex: 1;
+    min-height: 0;
+    display: grid;
+    grid-template-rows: 1fr 1fr;
+    gap: 6px;
+  }
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+  .toast {
+    position: absolute;
+    left: 50%;
+    top: 46%;
+    transform: translate(-50%, -50%);
+    z-index: 15;
+    padding: 10px 18px;
+    border-radius: 16px;
+    background: rgba(255, 248, 236, 0.96);
+    border: 2px solid #57c785;
+    color: #1f5c3a;
+    font-size: 14px;
+    font-weight: 800;
+    box-shadow: 0 10px 26px rgba(0, 0, 0, 0.35);
+    animation: toastIn 0.3s ease-out;
+    pointer-events: none;
+  }
+  .calm .toast {
+    animation: none;
+  }
+  .card-wrap {
+    position: absolute;
+    inset: 0;
+    z-index: 20;
+    display: grid;
+    place-items: center;
+    padding: 10px;
+    background: rgba(8, 18, 26, 0.62);
+  }
+  .card {
     display: flex;
     flex-direction: column;
-    gap: 14px;
-    width: min(94vw, 380px);
-  }
-  .grid {
-    display: grid;
-    grid-template-columns: repeat(var(--size), 1fr);
-    gap: 5px;
-    background: var(--panel-glass);
-    border: 2px solid var(--panel-border);
-    border-radius: 14px;
-    padding: 8px;
-  }
-  .cell {
-    position: relative;
-    aspect-ratio: 1;
-    border-radius: 10px;
-    background: rgba(255, 255, 255, 0.06);
-    display: flex;
     align-items: center;
-    justify-content: center;
-    transition: transform 0.1s, box-shadow 0.15s, opacity 0.3s;
+    gap: 8px;
+    width: min(94%, 380px);
+    max-height: 96%;
+    overflow-y: auto;
+    padding: 18px 20px;
+    border-radius: 24px;
+    background: linear-gradient(160deg, #fff8ec, #ffe7c2);
+    border: 2px solid rgba(255, 212, 121, 0.85);
+    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.45);
+    animation: cardIn 0.3s ease-out;
   }
-  .cell .emoji { font-size: clamp(18px, 6vw, 30px); line-height: 1; }
-  .cell:active { transform: scale(0.93); }
-  .cell.found { opacity: 0.45; pointer-events: none; }
-  .cell.diff-cell .ring { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 22px; }
-  .cell.wrong { animation: fxWobble 0.4s ease-in-out; }
+  .calm .card {
+    animation: none;
+  }
+  .card-title {
+    margin: 0;
+    font-size: 21px;
+    font-weight: 800;
+    color: #5a3b12;
+    text-align: center;
+  }
+  .card-sub {
+    margin: 0;
+    text-align: center;
+    font-size: 12px;
+    color: #7a5a33;
+  }
+  .actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 4px;
+  }
+  .primary {
+    padding: 10px 20px;
+    border-radius: 16px;
+    font-size: 14px;
+    font-weight: 700;
+    color: #2a1b3d;
+    background: #ffd479;
+    box-shadow: 0 3px 0 #c9a836;
+  }
+  .ghost {
+    padding: 10px 18px;
+    border-radius: 16px;
+    font-size: 14px;
+    font-weight: 700;
+    color: #5a3b12;
+    background: rgba(255, 212, 121, 0.18);
+    border: 2px solid rgba(90, 59, 18, 0.2);
+    text-decoration: none;
+  }
+  .primary:active,
+  .ghost:active {
+    transform: translateY(1px);
+  }
+  @keyframes toastIn {
+    from { transform: translate(-50%, -50%) scale(0.8); opacity: 0; }
+    to { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+  }
+  @keyframes cardIn {
+    from { transform: scale(0.9); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+  }
 </style>

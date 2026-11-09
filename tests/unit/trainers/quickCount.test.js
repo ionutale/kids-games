@@ -1,23 +1,44 @@
 import { describe, it, expect } from 'vitest';
-import { levelConfig, makePrompt } from '../../../src/lib/trainers/quickCount.js';
+import {
+  countMax,
+  levelConfig,
+  makePrompt,
+  THEMES
+} from '../../../src/lib/trainers/quickCount.js';
 
 describe('levelConfig', () => {
-  it('matches spec formulas at L1', () => {
-    const c = levelConfig(1);
-    expect(c.goal).toBe(6);
-    expect(c.flashMs).toBe(2850);
-    expect(c.max).toBe(5);
-    expect(c.optionClampMax).toBe(7);
+  it('keeps the flash and goal formulas', () => {
+    expect(levelConfig(1)).toEqual({ goal: 6, flashMs: 2850 });
+    expect(levelConfig(4)).toEqual({ goal: 9, flashMs: 2400 });
+    expect(levelConfig(10)).toEqual({ goal: 15, flashMs: 1500 });
   });
 
-  it('caps flash at 800ms and count at 20', () => {
-    const c = levelConfig(15);
+  it('caps the flash at 800ms and the goal at 15', () => {
+    const c = levelConfig(30);
     expect(c.flashMs).toBe(800);
-    expect(c.max).toBe(19); // 4 + 15
-    const c30 = levelConfig(30);
-    expect(c30.max).toBe(20); // capped
-    expect(c30.flashMs).toBe(800);
-    expect(c30.goal).toBe(15); // 5 + min(30,10)
+    expect(c.goal).toBe(15); // 5 + min(30, 10)
+  });
+});
+
+describe('countMax — the explicit Flash Picnic ramp', () => {
+  it('matches the ticket ramp at L1, L4, L7 and L10', () => {
+    expect(countMax(1)).toBe(3);
+    expect(countMax(4)).toBe(6);
+    expect(countMax(7)).toBe(8);
+    expect(countMax(10)).toBe(10);
+  });
+
+  it('never shrinks as the level grows', () => {
+    for (let level = 1; level < 20; level += 1) {
+      expect(countMax(level + 1)).toBeGreaterThanOrEqual(countMax(level));
+    }
+  });
+
+  it('is independent of levelConfig.max (the old distinct-emoji cap)', () => {
+    for (let level = 1; level <= 12; level += 1) {
+      expect(countMax(level)).toBeLessThanOrEqual(10);
+      expect(countMax(level)).not.toBe(4 + level);
+    }
   });
 });
 
@@ -25,69 +46,83 @@ describe('makePrompt', () => {
   it('is deterministic per seed and diverse across seeds', () => {
     const a = makePrompt(1, 99);
     const b = makePrompt(1, 99);
-    expect(a.count).toBe(b.count);
+    expect(a.n).toBe(b.n);
+    expect(a.theme.id).toBe(b.theme.id);
     expect(a.options).toEqual(b.options);
+    expect(a.cells).toEqual(b.cells);
+
     const counts = new Set();
-    for (let s = 1; s <= 25; s++) counts.add(makePrompt(2, s).count);
-    expect(counts.size).toBeGreaterThan(2);
+    for (let s = 1; s <= 40; s += 1) counts.add(makePrompt(2, s).n);
+    expect(counts.size).toBeGreaterThan(1);
   });
 
   it('always offers exactly 3 unique pills including the correct count', () => {
-    for (let level = 1; level <= 12; level++) {
-      for (let s = 1; s <= 20; s++) {
+    for (let level = 1; level <= 12; level += 1) {
+      for (let s = 1; s <= 20; s += 1) {
         const p = makePrompt(level, s);
-        expect(p.options.length).toBe(3);
+        expect(p.options.length, `L${level} s${s}`).toBe(3);
         expect(new Set(p.options).size).toBe(3);
         expect(p.options).toContain(p.correct);
-        const cfg = levelConfig(level);
+        const max = countMax(level);
         for (const o of p.options) {
-          expect(o).toBeGreaterThanOrEqual(0);
-          expect(o).toBeLessThanOrEqual(cfg.optionClampMax);
+          expect(o).toBeGreaterThanOrEqual(1);
+          expect(o).toBeLessThanOrEqual(max + 2);
         }
       }
     }
   });
 
-  it('places emojis on distinct cells (no overlap)', () => {
-    for (let s = 1; s <= 20; s++) {
-      const p = makePrompt(3, s);
-      expect(p.emojis.length).toBe(p.cells.length);
-      const keys = p.cells.map((c) => `${c.x.toFixed(1)},${c.y.toFixed(1)}`);
-      expect(new Set(keys).size).toBe(keys.length);
-      for (const c of p.cells) {
-        expect(c.x).toBeGreaterThanOrEqual(8);
-        expect(c.x).toBeLessThanOrEqual(88);
+  it('counts stay inside the explicit level range', () => {
+    for (let level = 1; level <= 10; level += 1) {
+      for (let s = 1; s <= 60; s += 1) {
+        const p = makePrompt(level, s);
+        expect(p.n).toBeGreaterThanOrEqual(1);
+        expect(p.n).toBeLessThanOrEqual(countMax(level));
+        expect(p.correct).toBe(p.n);
       }
     }
   });
 
-  it('count respects the level range', () => {
-    for (let s = 1; s <= 30; s++) {
-      const cfg = levelConfig(6);
-      const p = makePrompt(6, s);
-      expect(p.count).toBeGreaterThanOrEqual(cfg.min);
-      expect(p.count).toBeLessThanOrEqual(cfg.max);
+  it('repeats one themed object N times instead of distinct emoji', () => {
+    for (let level = 1; level <= 10; level += 1) {
+      const p = makePrompt(level, 17);
+      expect(p.objects.length).toBe(p.n);
+      expect(new Set(p.objects.map((o) => o.emoji)).size).toBe(1);
+      expect(p.objects.every((o) => o.emoji === p.theme.emoji)).toBe(true);
     }
   });
 
-  it('correct always equals the number of emojis actually shown (no phantom counts)', () => {
-    for (let level = 1; level <= 30; level++) {
-      for (let s = 0; s < 12; s++) {
-        const p = makePrompt(level, s * 31 + 1);
-        expect(p.emojis.length).toBe(p.correct);
-        expect(p.cells.length).toBe(p.correct);
-        expect(p.count).toBe(p.correct);
-        expect(p.options).toContain(p.correct);
+  it('reaches counts past the old distinct-emoji cap at level 10', () => {
+    let largest = 0;
+    for (let s = 1; s <= 300; s += 1) {
+      const p = makePrompt(10, s);
+      largest = Math.max(largest, p.objects.length);
+    }
+    expect(largest).toBe(10);
+    expect(largest).toBeGreaterThan(8); // the old category pool capped below this
+  });
+
+  it('rotates berries, eggs, cookies and apples by prompt index', () => {
+    for (let i = 0; i < 8; i += 1) {
+      const p = makePrompt(3, 5, i);
+      expect(p.theme.id).toBe(THEMES[i % THEMES.length].id);
+    }
+  });
+
+  it('places one object per non-overlapping cell, inside the cloth', () => {
+    for (let level = 1; level <= 10; level += 1) {
+      for (let s = 1; s <= 15; s += 1) {
+        const p = makePrompt(level, s);
+        expect(p.cells.length).toBe(p.n);
+        const keys = p.cells.map((c) => `${c.x.toFixed(1)},${c.y.toFixed(1)}`);
+        expect(new Set(keys).size).toBe(keys.length);
+        for (const c of p.cells) {
+          expect(c.x).toBeGreaterThanOrEqual(12);
+          expect(c.x).toBeLessThanOrEqual(88);
+          expect(c.y).toBeGreaterThanOrEqual(12);
+          expect(c.y).toBeLessThanOrEqual(88);
+        }
       }
     }
-  });
-
-  it('never advertises more emojis than the category pool can show', () => {
-    let maxSeen = 0;
-    for (let s = 1; s <= 300; s++) {
-      maxSeen = Math.max(maxSeen, makePrompt(30, s).emojis.length);
-    }
-    // the smallest pool has 8 emojis; no prompt may show more than the largest pool
-    expect(maxSeen).toBeLessThanOrEqual(10);
   });
 });

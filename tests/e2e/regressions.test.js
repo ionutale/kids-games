@@ -77,7 +77,7 @@ test.describe('R2 — Focus Tap explicit catch / wrong feedback', () => {
     }
     expect(tapped).toBe(true);
     // the tapped distractor must carry an explicit visual "not this" state
-    await expect(page.locator('[data-testid="distractor"].wrong-fx').first()).toBeVisible();
+    await expect(page.locator('[data-testid="distractor"].wrong').first()).toBeVisible();
   });
 
   test('correct tap shows a visible catch-fx burst on the target cell', async ({ page }) => {
@@ -86,7 +86,7 @@ test.describe('R2 — Focus Tap explicit catch / wrong feedback', () => {
     await expect(t).toBeVisible({ timeout: 12000 });
     await t.click({ force: true });
     // burst marker appears at the caught position (fx layer), then fades
-    await expect(page.locator('.catch-fx').first()).toBeVisible();
+    await expect(page.locator('[data-testid="catch-fx"]').first()).toBeVisible();
   });
 });
 

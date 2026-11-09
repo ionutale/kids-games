@@ -85,4 +85,44 @@ test.describe('Animal Quiz E2E', () => {
     await back.click();
     await page.waitForURL(/\/$/);
   });
+
+  test('the win-overlay ladder wraps at 320 instead of shrinking below touch size', async ({ page }) => {
+    test.setTimeout(60000);
+    await page.setViewportSize({ width: 320, height: 568 });
+    await useReadMode(page);
+    await page.goto('/games/animal-quiz');
+
+    for (let round = 0; round < 8; round += 1) {
+      if (await page.locator('.win-overlay').isVisible().catch(() => false)) break;
+      await page.waitForTimeout(220);
+      const btn = await correctButton(page);
+      if (!btn) break;
+      await btn.click();
+      await page.waitForTimeout(1700);
+    }
+
+    const win = page.locator('.win-overlay');
+    await expect(win).toBeVisible();
+    const bar = win.locator('.ladder-bar');
+    await expect(bar).toBeVisible();
+    const barBox = await bar.boundingBox();
+    // The win card's content box is ~200px at 320: narrower than ten 24px steps.
+    expect(barBox.width).toBeLessThan(260);
+
+    const steps = win.locator('.ladder-step');
+    await expect(steps).toHaveCount(10);
+    const tops = new Set();
+    for (let i = 0; i < 10; i += 1) {
+      const step = steps.nth(i);
+      await expect(step).toBeVisible();
+      const box = await step.boundingBox();
+      expect(box.width).toBeGreaterThanOrEqual(24);
+      expect(box.x).toBeGreaterThanOrEqual(0);
+      expect(box.x + box.width).toBeLessThanOrEqual(320 + 0.5);
+      tops.add(Math.round(box.y));
+    }
+
+    // Two wrapped rows, all ten steps visible and tappable.
+    expect(tops.size).toBeGreaterThanOrEqual(2);
+  });
 });
