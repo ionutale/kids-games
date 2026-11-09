@@ -196,10 +196,11 @@ test.describe('Path Builder — Forest Road', () => {
       .poll(async () => page.getByTestId('walker').getAttribute('data-x'), { timeout: 4000 })
       .not.toBe(before);
 
-    // Arriving solves the layout and auto-advances to the next road.
-    await expect(page.getByTestId('round-done')).toBeVisible({ timeout: 6000 });
+    // Arriving solves the layout and auto-advances to the next road. Catch the
+    // solved state first: it only holds for the 1.5s auto-advance window.
+    await expect(root).toHaveAttribute('data-state', 'solved', { timeout: 8000 });
+    await expect(page.getByTestId('round-done')).toBeVisible();
     await expect(page.getByTestId('round-done')).toContainText('fox');
-    await expect(root).toHaveAttribute('data-state', 'solved');
     await expect(root).toHaveAttribute('data-road', '2', { timeout: 6000 });
   });
 
@@ -494,6 +495,34 @@ test.describe('Path Builder — Forest Road', () => {
       .toBeCloseTo(home.x, 0);
     expect((await roadPoints(page)).length).toBeGreaterThan(5);
     await expect(page.getByTestId('pb-root')).toHaveAttribute('data-road', '1');
+  });
+
+  test('completing all five roads announces the level and starts the next', async ({ page }) => {
+    test.setTimeout(120000);
+    await page.goto('/games/path-builder');
+    const root = page.getByTestId('pb-root');
+
+    for (let layout = 0; layout < 5; layout += 1) {
+      if (layout > 0) await expect(root).toHaveAttribute('data-road', String(layout + 1));
+      const home = await landmark(page, 'home');
+      const dest = await landmark(page, 'destination');
+      await drawStroke(page, [
+        home,
+        lerp(home, dest, 0.25),
+        lerp(home, dest, 0.5),
+        lerp(home, dest, 0.75),
+        dest
+      ]);
+      await expect(root).toHaveAttribute('data-state', 'solved', { timeout: 8000 });
+      if (layout < 4) {
+        await page.getByTestId('round-done').getByRole('button', { name: /next road/i }).click();
+      }
+    }
+
+    await expect(page.getByTestId('level-overlay')).toBeVisible({ timeout: 6000 });
+    await expect(page.getByTestId('pb-status')).toContainText('Level 1 complete');
+    await expect(root).toHaveAttribute('data-level', '2');
+    await expect(root).toHaveAttribute('data-state', 'idle');
   });
 
   test('the sound toggle mutes the forest without errors', async ({ page }) => {

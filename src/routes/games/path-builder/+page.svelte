@@ -651,9 +651,12 @@
       {/if}
     </div>
 
-    <!-- The single live region: drawing, walking, solved and missed-Star copy. -->
+    <!-- The single live region: level completion, drawing, walking, solved and
+         missed-Star copy. -->
     <p class="pb-status" data-testid="pb-status" aria-live="polite">
-      {#if solved}
+      {#if levelDone}
+        {$_('levelComplete', { n: levelDone })}
+      {:else if solved}
         {$_('pbMadeIt')}
       {:else if needsStars}
         {$_('pbMissedStar')}
