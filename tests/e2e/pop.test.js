@@ -284,7 +284,7 @@ test.describe('Pop — the Rising Pond', () => {
     await expect(win).toBeVisible();
     await expect(win.locator('.win-title')).toContainText('Jar full');
     await expect(win.locator('.confetti-container')).toBeHidden();
-    await expect(win.locator('.starfield')).toBeHidden();
+    await expect(win.locator('.starfield')).toBeVisible();
     await expect(win.getByTestId('replay')).toBeVisible();
   });
 

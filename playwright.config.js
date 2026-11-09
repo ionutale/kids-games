@@ -23,5 +23,9 @@ export default defineConfig({
     command: 'pnpm build && pnpm preview',
     port: 4173,
     reuseExistingServer: !process.env.CI
-  }
+  },
+  projects: [
+    { name: 'app', testIgnore: /offline-pwa\.test\.js/ },
+    { name: 'pwa', testMatch: /offline-pwa\.test\.js/, use: { serviceWorkers: 'allow' } }
+  ]
 });

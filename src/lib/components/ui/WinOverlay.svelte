@@ -1,6 +1,7 @@
 <script>
   import { onMount } from 'svelte';
   import Confetti from '#lib/components/Confetti.svelte';
+  import { reducedMotion } from '#lib/stores/reducedMotion.js';
   import { settings } from '#lib/stores/settings.js';
   import { playWinCheer } from '#lib/sounds/audioManager.js';
   import Starfield from './Starfield.svelte';
@@ -14,7 +15,7 @@
 
 <div class="win-overlay" data-testid={testid}>
   <Starfield count={25} />
-  <Confetti />
+  {#if !$reducedMotion}<Confetti />{/if}
   <div class="win-card">
     {#if badge}{@render badge()}{/if}
     <p class="win-burst">🎉 ✨ 🎉</p>

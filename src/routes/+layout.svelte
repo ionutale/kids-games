@@ -1,6 +1,7 @@
 <script>
   import { onMount } from 'svelte';
   import { dev } from '$app/env';
+  import { setupServiceWorker } from '#lib/pwa/serviceWorker.js';
   import { settings } from '#lib/stores/settings.js';
   import { _ } from '#lib/stores/locale.js';
   import '../app.css';
@@ -11,28 +12,31 @@
 
   onMount(() => {
     settings.markVisited();
-    window.addEventListener('beforeinstallprompt', (e) => {
+
+    const onBeforeInstall = (e) => {
       e.preventDefault();
       deferredPrompt = e;
       showInstall = true;
-    });
-    window.addEventListener('appinstalled', () => {
+    };
+    const onInstalled = () => {
       showInstall = false;
-    });
+    };
+    window.addEventListener('beforeinstallprompt', onBeforeInstall);
+    window.addEventListener('appinstalled', onInstalled);
 
     // Production only: `vite dev` has no sw.js. One registration precaches the
-    // whole build, so every game works offline after a single online visit.
-    if (!dev && 'serviceWorker' in navigator) {
-      let refreshing = false;
-      // A new worker taking over means the shell changed; reload once so
-      // routes match the cached build.
-      navigator.serviceWorker.addEventListener('controllerchange', () => {
-        if (refreshing) return;
-        refreshing = true;
-        location.reload();
-      });
-      navigator.serviceWorker.register('/sw.js', { scope: '/' }).catch(() => {});
-    }
+    // whole build; the helper re-checks on focus/visibility so a long-lived tab
+    // picks up a new shell, and reloads once when the worker takes over.
+    const cleanupServiceWorker = setupServiceWorker({
+      isDev: dev,
+      reload: () => location.reload()
+    });
+
+    return () => {
+      window.removeEventListener('beforeinstallprompt', onBeforeInstall);
+      window.removeEventListener('appinstalled', onInstalled);
+      cleanupServiceWorker();
+    };
   });
 
   async function installApp() {
