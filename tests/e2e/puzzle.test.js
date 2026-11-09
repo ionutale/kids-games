@@ -58,8 +58,10 @@ test.describe('Puzzle E2E', () => {
 
   test('win screen appears when all pieces placed', async ({ page }) => {
     await page.goto('/games/puzzle');
+    await page.waitForSelector('.ghost-cell', { timeout: 10000 });
     const ghosts = page.locator('.ghost-cell');
     const count = await ghosts.count();
+    expect(count).toBeGreaterThan(0);
 
     for (let round = 0; round < count * 3; round++) {
       const trayItem = page.locator('.tray-piece').first();
