@@ -2,7 +2,7 @@
   // The jar is the score: it fills by points and keeps the collected trinkets.
   // A star sticker appears on the rim when a star pops or the jar fills.
   import Icons from '#lib/pop/Icons.svelte';
-  import { jarPercent, jarIsFull } from '#lib/pop/config.js';
+  import { jarPercent, jarIsFull, jarMiniSize } from '#lib/pop/config.js';
 
   let { items = [], target = 6, star = false, reduced = false, label = '' } = $props();
 
@@ -10,8 +10,8 @@
   const full = $derived(jarIsFull(items.length, target));
   // A full round can hold at most 16 points (a 15-point target finished by a
   // giant/star), so every collected trinket gets a mini. Above ten points the
-  // minis shrink a little so the whole collection still fits.
-  const miniSize = $derived(items.length > 10 ? 11 : 14);
+  // minis shrink so all sixteen fit inside the glass even at 360px and below.
+  const miniSize = $derived(jarMiniSize(items.length));
 </script>
 
 <div

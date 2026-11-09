@@ -66,6 +66,7 @@
   let waterEl;
   let jarEl;
   let retryBtn = $state(null);
+  let cardEl = $state(null);
   let raf = 0;
   let last = 0;
   let spawnAcc = 0;
@@ -346,6 +347,26 @@
     startRound();
   }
 
+  // Keep Tab inside the calm card while it is modal: Try Again and Back are
+  // the only two focusable controls.
+  function trapCardFocus(event) {
+    if (event.key !== 'Tab' || !cardEl) return;
+    const focusables = [...cardEl.querySelectorAll('button, a[href]')];
+    if (!focusables.length) return;
+    const first = focusables[0];
+    const last = focusables[focusables.length - 1];
+    const active = document.activeElement;
+    if (event.shiftKey) {
+      if (active === first || active === cardEl) {
+        event.preventDefault();
+        last.focus();
+      }
+    } else if (active === last || active === cardEl) {
+      event.preventDefault();
+      first.focus();
+    }
+  }
+
   // Focus the calm card's only primary action so a keyboard/switch user is not
   // stranded behind the overlay.
   $effect(() => {
@@ -458,8 +479,16 @@
 
     {#if phase === 'good'}
       <div class="card-wrap" data-testid="pop-card">
-        <div class="card" role="dialog" aria-label={$_('goodTry')}>
-          <p class="card-title">{$_('goodTry')}</p>
+        <div
+          class="card"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="pop-good-title"
+          tabindex="-1"
+          bind:this={cardEl}
+          onkeydown={trapCardFocus}
+        >
+          <p class="card-title" id="pop-good-title">{$_('goodTry')}</p>
           <p class="card-sub">{$_('popGoodTrySub')}</p>
           <div class="actions">
             <button class="primary" type="button" bind:this={retryBtn} onclick={retry}>

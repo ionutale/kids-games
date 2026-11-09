@@ -12,7 +12,8 @@ import {
   popValue,
   miniKinds,
   jarPercent,
-  jarIsFull
+  jarIsFull,
+  jarMiniSize
 } from '../../src/lib/pop/config.js';
 
 describe('Pop — the Rising Pond round', () => {
@@ -145,6 +146,10 @@ describe('Pop jar points and trinkets', () => {
     expect(jarIsFull(5, 6)).toBe(false);
     expect(jarIsFull(6, 6)).toBe(true);
     expect(jarIsFull(7, 6)).toBe(true);
+    expect(jarMiniSize(10)).toBe(14);
+    expect(jarMiniSize(11)).toBe(10);
+    // Four 10px minis plus 1px gaps = 43px, inside the 46px content box at 360px.
+    expect(4 * jarMiniSize(16) + 3).toBeLessThanOrEqual(46);
   });
 
   it('grows the surprise variety with the level', () => {

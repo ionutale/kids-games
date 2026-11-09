@@ -210,6 +210,12 @@ test.describe('Pop — the Rising Pond', () => {
     const card = page.getByTestId('pop-card');
     await expect(card).toBeVisible();
     await expect(card).toContainText('Good try');
+    await expect(card.locator('[role="dialog"]')).toHaveAttribute('aria-modal', 'true');
+    await expect(card.getByRole('button', { name: 'Try Again' })).toBeFocused();
+    await page.keyboard.press('Tab');
+    await expect(page.getByTestId('pop-back')).toBeFocused();
+    await page.keyboard.press('Tab');
+    await expect(card.getByRole('button', { name: 'Try Again' })).toBeFocused();
     await expect(page.locator('.win-overlay')).toHaveCount(0);
     await expect(page.locator(JAR)).toHaveAttribute('data-sticker', 'false');
     await expect(page.getByTestId('pop-back')).toBeVisible();
@@ -381,6 +387,7 @@ test.describe('Pop — the Rising Pond', () => {
         expect(box.x).toBeGreaterThanOrEqual(0);
         expect(box.x + box.width).toBeLessThanOrEqual(viewport.width + 0.5);
         expect(box.width).toBeGreaterThanOrEqual(24);
+        expect(box.height).toBeGreaterThanOrEqual(44);
         ladderTops.add(Math.round(box.y));
       }
       // The game header has room for one row; only a narrow win card wraps.

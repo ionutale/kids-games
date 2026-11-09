@@ -93,6 +93,15 @@ export function jarIsFull(points, target) {
 }
 
 /**
+ * Trinket size for the jar contents. Above ten points the row must fit four
+ * 10px minis inside the 46px glass content box at the 360px breakpoint, so all
+ * sixteen collected trinkets (the reachable maximum) stay inside the glass.
+ */
+export function jarMiniSize(points) {
+  return points > 10 ? 10 : 14;
+}
+
+/**
  * Per-level tuning. `spawnMs` and `fallSec` shrink as the level rises (lower is
  * faster), while the concurrent cap and the surprise pool grow. Bubble sizes
  * stay large at every level.
