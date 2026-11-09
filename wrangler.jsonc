@@ -1,8 +1,16 @@
 {
+  "$schema": "./node_modules/wrangler/config-schema.json",
   "name": "kids-games",
   "compatibility_date": "2026-11-08",
+  // Serve the static SvelteKit build as Worker assets. The SPA fallback is what
+  // makes `/games/pop/play/3` deep links resolve to index.html.
   "assets": {
     "directory": "./public",
     "not_found_handling": "single-page-application"
-  }
+  },
+  "workers_dev": true,
+  "preview_urls": false
+  // Optional: attach a custom domain instead of the workers.dev URL. Add a
+  // `routes` entry and drop the DNS record/branded-domain switch in separately.
+  // "routes": [{ "pattern": "kids.example.com", "custom_domain": true }]
 }

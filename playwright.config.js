@@ -1,5 +1,8 @@
 import { defineConfig } from '@playwright/test';
 
+// `PLAYWRIGHT_PORT=4273 pnpm test:e2e` avoids 4173 when another local app owns it.
+const port = Number(process.env.PLAYWRIGHT_PORT ?? 4173);
+
 export default defineConfig({
   testDir: './tests/e2e',
   fullyParallel: true,
@@ -10,7 +13,7 @@ export default defineConfig({
   workers: 1,
   reporter: 'html',
   use: {
-    baseURL: 'http://localhost:4173',
+    baseURL: `http://localhost:${port}`,
     trace: 'on-first-retry',
     headless: !process.env.HEADED,
     viewport: { width: 390, height: 844 },
@@ -20,8 +23,8 @@ export default defineConfig({
     serviceWorkers: 'block'
   },
   webServer: {
-    command: 'pnpm build && pnpm preview',
-    port: 4173,
+    command: `pnpm build && pnpm preview --port ${port}`,
+    port,
     reuseExistingServer: !process.env.CI
   },
   projects: [
