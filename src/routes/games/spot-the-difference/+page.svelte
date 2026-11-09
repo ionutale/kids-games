@@ -46,6 +46,7 @@
   let hintTimer = null;
   let hintClearTimer = null;
   let wrongKey = 0;
+  let greeted = false;
 
   const reduced = $derived($reducedMotion);
   const total = $derived(puzzle?.diffs.length ?? 0);
@@ -115,9 +116,9 @@
     found = [];
     hintId = null;
     wrong = null;
+    greeted = false;
     phase = 'play';
     sound.reset();
-    sound.gull();
     armHint();
   }
 
@@ -137,9 +138,14 @@
   function pick(side, point) {
     if (phase !== 'play' || !puzzle) return;
     sound.unlock();
+    // The greeting waits for a real gesture: scheduling it on mount is often
+    // blocked by autoplay policy. Delay it so the find/miss cue speaks first.
+    if (!greeted) {
+      greeted = true;
+      later(() => sound.gull(), 700);
+    }
     const diff = findDiffAt(puzzle, point.px, point.py, point.w, point.h, found);
     if (diff) {
-      if (found.includes(diff.id)) return;
       found = [...found, diff.id];
       catReacts += 1;
       sound.find();

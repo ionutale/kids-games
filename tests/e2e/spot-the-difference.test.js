@@ -160,6 +160,28 @@ test.describe('Spot the Difference — Twin Postcards', () => {
     await expect(page.getByTestId('spot-status')).toContainText('Picture 1 of 5');
   });
 
+  test('the harbor stays silent until the first real tap', async ({ page }) => {
+    await page.addInitScript(() => {
+      window.__tones = 0;
+      const Ctx = window.AudioContext || window.webkitAudioContext;
+      if (!Ctx) return;
+      const create = Ctx.prototype.createOscillator;
+      Ctx.prototype.createOscillator = function (...args) {
+        window.__tones += 1;
+        return create.apply(this, args);
+      };
+    });
+    await open(page, { age: 3, seed: 2 });
+    await page.waitForTimeout(600);
+    expect(await page.evaluate(() => window.__tones)).toBe(0);
+
+    const diffs = await readDiffs(page);
+    await tapAt(page, 'left', diffs[0].x, diffs[0].y);
+    await expect
+      .poll(() => page.evaluate(() => window.__tones), { timeout: 3000 })
+      .toBeGreaterThan(0);
+  });
+
   test('tapping a difference rings both pictures and fills one token', async ({ page }) => {
     await open(page, { age: 3, seed: 2 });
     const diffs = await readDiffs(page);
@@ -175,7 +197,9 @@ test.describe('Spot the Difference — Twin Postcards', () => {
     // The cat reacts to the find, then settles.
     const cat = page.getByTestId('panel-left').locator('.cat');
     await expect(cat).toHaveAttribute('data-reacting', 'true');
-    await expect(cat).toHaveAttribute('data-reacting', 'false', { timeout: 2500 });
+    await expect
+      .poll(() => cat.getAttribute('data-reacting'), { timeout: 2500 })
+      .toBe('false');
 
     // Tapping the same, already-found spot is a silent no-op, not a wrong tap.
     await tapAt(page, 'left', diffs[0].x, diffs[0].y);
