@@ -45,9 +45,11 @@
     padding-right: 2px;
   }
   .ladder-step {
-    /* One row of ~28px steps on a 320px header; two rows of ~32px in a win card. */
+    /* One row of ~28px-wide steps on a 320px header; 44px tall so the
+       secondary level picker is a comfortable touch target even when ten
+       steps must share one row. A narrow win card still wraps to two rows. */
     width: 32px;
-    height: 32px;
+    height: 44px;
     min-width: 24px;
     flex: 1 1 28px;
     max-width: 32px;
