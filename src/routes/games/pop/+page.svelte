@@ -474,7 +474,7 @@
 </GameShell>
 
 {#if phase === 'won'}
-  <div class="win-wrap" class:calm={reduced}>
+  <div class="win-wrap">
     <WinOverlay
       title={$_('jarFull')}
       subtitle={$_('popWinSub')}
@@ -621,13 +621,6 @@
   }
   .win-wrap {
     display: contents;
-  }
-  /* WinOverlay is shared and always mounts Confetti/Starfield. A child who
-     asked for reduced motion should not get a falling celebration, so the
-     route hides those two layers; the win card and ladder actions stay. */
-  .win-wrap.calm :global(.confetti-container),
-  .win-wrap.calm :global(.starfield) {
-    display: none;
   }
   .sr-only {
     position: absolute;
