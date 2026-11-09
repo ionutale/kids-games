@@ -53,12 +53,16 @@ async function shootAtKeeper(page) {
   // The dive now starts at release, before the ball reaches the keeper.
   await expect(page.locator('.keeper.diving')).toHaveCount(1);
   await expect(page.locator(CALL)).toContainText('SAVED', { timeout: 4000 });
+  await expect(page.getByTestId('soccer-glove')).toBeVisible();
   await expect(page.locator('.keeper.diving')).toHaveCount(1);
   await expect(page.locator(CALL)).toHaveCount(0, { timeout: 4000 });
+  await expect(page.getByTestId('soccer-glove')).toHaveCount(0);
 }
 
 async function shootWide(page) {
   await swipeTo(page, async () => ({ x: 4, y: 10 }));
+  // A shot that never enters the mouth leaves the keeper standing.
+  await expect(page.locator('.keeper.diving')).toHaveCount(0);
   await expect(page.locator(CALL)).toContainText('MISS', { timeout: 4000 });
   await expect(page.locator(CALL)).toHaveCount(0, { timeout: 4000 });
 }

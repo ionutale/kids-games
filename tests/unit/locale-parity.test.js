@@ -42,6 +42,7 @@ const NEW_KEYS = [
   'soccerGoodTrySub',
   'soccerWinSub',
   'soccerAimAt',
+  'soccerAimStatus',
   'soccerOnTarget',
   'soccerOffTarget',
   'soccerZoneLeft',
@@ -145,6 +146,8 @@ describe('locale parity', () => {
       expect(translations[code].soccerShots, code).toContain('{n}');
       expect(translations[code].soccerWinSub, code).toContain('{n}');
       expect(translations[code].soccerAimAt, code).toContain('{zone}');
+      expect(translations[code].soccerAimStatus, code).toContain('{state}');
+      expect(translations[code].soccerAimStatus, code).toContain('{aim}');
     }
   });
 });

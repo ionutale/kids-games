@@ -110,7 +110,7 @@
           ? $_('soccerZoneRight')
           : $_('soccerZoneCentre');
     const state = onTarget ? $_('soccerOnTarget') : $_('soccerOffTarget');
-    return `${state}. ${$_('soccerAimAt', { zone })}`;
+    return $_('soccerAimStatus', { state, aim: $_('soccerAimAt', { zone }) });
   });
   // The single live round status: progress, outcomes, win and Good Try.
   const statusText = $derived.by(() => {
@@ -281,10 +281,11 @@
     // is decided, so swipe timing matters and swipe length never does.
     const keeperAtRelease = keeperX;
     const result = shotResult(BALL_START, end, level, keeperAtRelease);
-    const to = impactPoint(BALL_START, end, level) ?? end;
+    const impact = impactPoint(BALL_START, end, level);
+    const to = impact ?? end;
     const control = controlPoint(BALL_START, to);
     // The dive starts at release, toward the impact, and stays through the
-    // outcome window. The result was already fixed by the release keeper x.
+    // outcome window. A shot that never enters the mouth makes the keeper hold.
     const calm = prefersReducedMotion();
     const duration = flightDuration(travel, { calm });
     const startTime = performance.now();
@@ -293,7 +294,7 @@
     keeperHold = true;
     outcome = null;
     goalFlash = false;
-    dive = to.x < keeperAtRelease ? -1 : 1;
+    dive = impact ? (impact.x < keeperAtRelease ? -1 : 1) : 0;
     shotsLeft = Math.max(0, shotsLeft - 1);
     sound.kick();
 
@@ -478,6 +479,18 @@
             style:top="{aim.y}%"
             aria-hidden="true"
           ></span>
+        {/if}
+
+        {#if outcome === 'save'}
+          <span
+            class="glove-beat"
+            data-testid="soccer-glove"
+            style:left="{ball.x}%"
+            style:top="{ball.y}%"
+            aria-hidden="true"
+          >
+            <SoccerArt id="glove" size={42} />
+          </span>
         {/if}
 
         {#if outcome}
@@ -770,6 +783,28 @@
     border-radius: 50%;
     background: #8ef0a8;
   }
+  .glove-beat {
+    position: absolute;
+    transform: translate(-50%, -50%);
+    z-index: 9;
+    filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.45));
+    pointer-events: none;
+    animation: gloveBeat 0.45s ease-out both;
+  }
+  @keyframes gloveBeat {
+    0% {
+      transform: translate(-50%, -50%) scale(0.5) rotate(-16deg);
+      opacity: 0;
+    }
+    55% {
+      transform: translate(-50%, -50%) scale(1.18) rotate(4deg);
+      opacity: 1;
+    }
+    100% {
+      transform: translate(-50%, -50%) scale(1) rotate(0);
+      opacity: 1;
+    }
+  }
   .callout {
     position: absolute;
     top: 24%;
@@ -904,7 +939,8 @@
   }
   .stadium.reduced .floodlight,
   .stadium.reduced .crowd,
-  .stadium.reduced .open-glow {
+  .stadium.reduced .open-glow,
+  .stadium.reduced .glove-beat {
     animation: none;
   }
   @keyframes flicker {
