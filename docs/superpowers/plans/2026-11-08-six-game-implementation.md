@@ -45,7 +45,7 @@ For each game:
 
 ## Final Integration
 
-- [ ] Full `pnpm test`, `pnpm check`, `pnpm build`, e2e on a fresh port.
-- [ ] Visual pass at 390×844 and 320×568 for all six worlds.
-- [ ] Rebuild and commit `public/`.
+- [x] Full `pnpm test`, `pnpm check`, `pnpm build`, e2e on a fresh port.
+- [x] Visual pass at 390×844 and 320×568 for all six worlds.
+- [x] Rebuild and commit `public/`.
 - [ ] Merge `feat/six-games` to `main`, push, redeploy the Cloudflare Worker.
