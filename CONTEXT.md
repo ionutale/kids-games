@@ -60,6 +60,7 @@
 - **Hotspot**: the generous circle around a Difference. A Moved prop's hotspot spans both positions.
 - **Found Difference**: a Difference that has been tapped; it rings in both pictures.
 - **Hint**: after about eight seconds with no find, one unfound Difference pulses softly. No penalty.
+- **Gull**: a distant two-call greeting on the first tap of each picture (deferred so autoplay policy cannot drop it).
 - **Postcard**: the reward for a solved puzzle; stored in the album.
 - **Set**: five puzzles at the Settings age band (2 / 3 / 4 Differences). Flat difficulty.
 - **Postcard Album**: the persisted collection (`spotPostcards`); the latest twelve show on the set-complete card.
@@ -81,7 +82,7 @@
 
 ## Path Builder Game
 
-The game is moving from a grid puzzle to a continuous freehand road (ADR 0005). The grid terms are legacy until the migration ships.
+The game is a continuous freehand road (ADR 0005); the old grid terms are retired.
 
 - **Scene**: the continuous illustrated world for one Layout; no visible grid or blocks.
 - **Road**: the freehand line the child draws from Home to Destination. It cannot enter a Blocker. The Road persists between strokes; backtracking over it erases to that point.
@@ -93,6 +94,7 @@ The game is moving from a grid puzzle to a continuous freehand road (ADR 0005). 
 - **Guide**: the teaching aid — a one-time ghost hand that traces the first Road, and a faint suggested Road shown after idling.
 - **Layout**: one generated Scene; five Layouts make a Level.
 - **Level**: one step of the shared 10-step Ladder; difficulty grows by distance, Blockers and required Stars.
+- **Level Complete**: after the fifth Layout the live Road status announces the completed Level while the next Level loads.
 - **Legacy grid terms**: Puzzle, Start, Goal, Obstacle (cell-based) are retired by ADR 0005.
 
 ## Pop Game
@@ -146,7 +148,7 @@ The following games have been proposed but not yet designed or implemented. Each
 
 - **Ladder**: Every level game offers exactly 10 levels; the current level persists per game. Finishing level 10 marks the game **Mastered** (🎓); deeper links clamp to 10.
 - **Ladder Store** (`src/lib/ladder/progress.js`): the one progress store — camelCase localStorage keys (`{gameId}Level`, `{gameId}Mastered`), clamps 1–10, plus one-time migration from pre-ladder keys (`memory-unlocked-level`, `path-builder-level`).
-- **LadderBar** (`src/lib/ladder/LadderBar.svelte`): the one level indicator/picker — done steps below the current level, 🎓 on step 10 once mastered; free pick, nothing is ever locked. It does not show stars.
+- **LadderBar** (`src/lib/ladder/LadderBar.svelte`): the one level indicator/picker — done steps below the current level, 🎓 on step 10 once mastered; free pick, nothing is ever locked. Steps are 44px tall touch targets and wrap to a second row in narrow win cards. It does not show stars.
 - **LadderActions** (`src/lib/ladder/LadderActions.svelte`): the one win-overlay action row — Replay / Next Level ▶ / Back; at level 10 the Next action is replaced by 🎓, and mastery is saved when the overlay renders at the top level.
 - **Ladder Games**: memory, puzzle, glossary-puzzle, sorting, category-sort, path-builder, pop, soccer, grammar, focus-tap, quick-count, speed-match, what-comes-next. Free-play games (paint, stickers, splash) and score games (sequence-memory, emoji-math, spot-the-difference) have no ladder.
 
@@ -155,7 +157,9 @@ The following games have been proposed but not yet designed or implemented. Each
 - **Pitch**: the night stadium seen from behind the ball. SVG ball, child striker, bear keeper, crowd and net. No emoji on the pitch.
 - **Shot**: a swipe anywhere. A reticle and dashed trajectory show the impact point; the swipe length only sets the flight time.
 - **Flight**: the ball's arc to the impact. A Goal flashes the net; the arc does not change the result.
-- **Keeper**: the bear in the goal mouth. He patrols continuously and dives late; the far corner always has room.
+- **Keeper**: the bear in the goal mouth. He patrols continuously, dives toward an on-target impact at release, and holds on a shot that never enters the mouth; the far corner always has room.
+- **Glove Beat**: on a Save, a goalkeeper glove pops at the impact point.
+- **Aim Status**: the screen-reader sentence combines the localized on/off-target state and the aim zone (`soccerAimStatus`), so punctuation follows the locale.
 - **Reach**: the band around the Keeper that turns an impact in the goal into a Save.
 - **Goal**: an impact in the goal mouth outside the Keeper's Reach. A Save is the same impact inside the Reach. A Miss is outside the mouth.
 - **Shots**: five per Round, shown as ball pips.
@@ -187,7 +191,7 @@ The following games have been proposed but not yet designed or implemented. Each
 - **Stream**: the floating emojis rising up the pond; spawn interval shrinks and rise time drops with level.
 - **Sneaky Tier**: distractor difficulty band — L1–2 cross-category, L3–5 same-category, L6+ lookalikes.
 - **Goal**: 6 + level Catches, capped at 20. No timer, no fail.
-- **Trainer Music**: the shared focus-tap music keeps playing under the pond; catch plops, a soft croak and a fill chime sit on top.
+- **Trainer Music**: the shared focus-tap music plays under the pond; it stops when the win card opens so the fill chime is the single positive beat, and restarts on Replay.
 
 ## Quick Count Game
 
@@ -201,6 +205,7 @@ The following games have been proposed but not yet designed or implemented. Each
 - **Flash**: the brief display of the Cloth. Its duration is `max(800, 3000 − 150·level)` ms.
 - **Count Tick**: a soft tick per Flash Object during the Flash, on levels 1–2 only, as a counting aid.
 - **Goal**: 5 + min(level, 10) prompts. No timer, no fail.
+- **Win Beat**: the last berry drops into the Basket for about 400ms before the Basket full card appears, so the final answer stays visible.
 - **Trainer Music**: the shared quick-count music stays under the picnic effects.
 
 ## Speed Match Game

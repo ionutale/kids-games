@@ -1,6 +1,7 @@
 # PRD — Focus Tap: the Pond Catch
 
 - **Date:** 2026-11-07
+- **Status:** Implemented (shipped 2026-11-09).
 - **Decision:** prototype winner A on `prototype/focus-tap` (`8c2d47a9`, refined `2335fc6d`)
 - **Baseline:** the rising emoji trainer with a text target
 

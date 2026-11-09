@@ -1,6 +1,7 @@
 # PRD — Spot the Difference: Twin Postcards
 
 - **Date:** 2026-11-07
+- **Status:** Implemented (shipped 2026-11-09).
 - **Decision:** prototype winner A on `prototype/spot-the-difference` (`b2182edf`, refined `18df6908`)
 - **Baseline:** the shipped two-emoji-grid game with a foreign-emoji toddler aid
 

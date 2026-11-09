@@ -1,6 +1,7 @@
 # PRD — Pop: the Rising Pond
 
 - **Date:** 2026-11-07
+- **Status:** Implemented (shipped 2026-11-09).
 - **Decision:** prototype winner A on `prototype/pop` (`fb6d614e`)
 - **Baseline:** the shipped 20-second emoji bubble game
 

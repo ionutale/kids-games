@@ -1,6 +1,7 @@
 # PRD — Quick Count: the Flash Picnic
 
 - **Date:** 2026-11-07
+- **Status:** Implemented (shipped 2026-11-09).
 - **Decision:** prototype winner A on `prototype/quick-count` (`772fa5ee`, refined `a7e4cff8`)
 - **Baseline:** the abstract flash trainer with a starry panel
 

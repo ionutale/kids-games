@@ -1,6 +1,7 @@
 # PRD — Path Builder: the Forest Road
 
 - **Date:** 2026-11-07
+- **Status:** Implemented (shipped 2026-11-09).
 - **Decision:** ADR 0005, prototype winner A on `prototype/path-builder`
 - **Baseline:** grid puzzle shipped in the current game
 

@@ -1,6 +1,7 @@
 # PRD — Soccer: the Night Penalty
 
 - **Date:** 2026-11-07
+- **Status:** Implemented (shipped 2026-11-09).
 - **Decision:** prototype winner A on `prototype/soccer` (`172e7826`, refined `f46dcb96`)
 - **Baseline:** the shipped green-card penalty with a glove keeper
 
