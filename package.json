@@ -15,6 +15,7 @@
 		"test:e2e:headed": "HEADED=true playwright test",
 		"test:all": "vitest run tests/unit tests/behavioral && playwright test",
 		"deploy": "pnpm dlx vercel@latest --prod --yes && node scripts/pin-brand-alias.mjs",
+		"deploy:cloudflare": "pnpm build && NODE_OPTIONS=--no-network-family-autoselection wrangler deploy --config wrangler.jsonc",
 		"alias:brand": "node scripts/pin-brand-alias.mjs",
 		"prepare": "svelte-kit sync || echo ''"
 	},
@@ -35,7 +36,8 @@
 		"svelte-check": "^4.7.5",
 		"typescript": "^6.0.3",
 		"vite": "^8.3.6",
-		"vitest": "^5.1.0"
+		"vitest": "^5.1.0",
+		"wrangler": "^4.158.0"
 	},
 	"dependencies": {
 		"@fontsource-variable/fredoka": "^5.3.0",
