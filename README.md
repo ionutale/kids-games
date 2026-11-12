@@ -50,7 +50,8 @@ pnpm dev
 
 ### Deploying to Vercel
 
-Use `pnpm deploy`, not a bare `vercel --prod`.
+Use `pnpm deploy`, not a bare `vercel --prod`. The Vercel CLI is pinned to
+`65.12.1` (override with `VERCEL_CLI`) so the alias step is reproducible.
 
 The child-facing domain `kids-2-5.aiu-media.com` is served through a Cloudflare
 proxy that fetches `kids-games-lac.vercel.app` with an `x-aiu-proxy` header.

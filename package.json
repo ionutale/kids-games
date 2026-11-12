@@ -14,7 +14,7 @@
 		"test:e2e:pwa": "playwright test --project=pwa",
 		"test:e2e:headed": "HEADED=true playwright test",
 		"test:all": "vitest run tests/unit tests/behavioral && playwright test",
-		"deploy": "pnpm dlx vercel@latest --prod --yes && node scripts/pin-brand-alias.mjs",
+		"deploy": "pnpm dlx vercel@65.12.1 --prod --yes && node scripts/pin-brand-alias.mjs",
 		"deploy:cloudflare": "pnpm build && NODE_OPTIONS=--no-network-family-autoselection wrangler deploy --config wrangler.jsonc",
 		"alias:brand": "node scripts/pin-brand-alias.mjs",
 		"prepare": "svelte-kit sync || echo ''"

@@ -12,13 +12,13 @@
  *   node scripts/pin-brand-alias.mjs                  # newest READY production deploy
  *   node scripts/pin-brand-alias.mjs <deployment-url> # explicit deployment
  *
- * Override the CLI lookup with VERCEL_CLI (default: `pnpm dlx vercel@latest`).
+ * Override the CLI lookup with VERCEL_CLI (default: `pnpm dlx vercel@65.12.1`).
  */
 import { execFileSync } from 'node:child_process';
 
 const PROJECT = 'kids-games';
 const ALIAS = 'kids-games-lac.vercel.app';
-const CLI = (process.env.VERCEL_CLI ?? 'pnpm dlx vercel@latest').split(' ');
+const CLI = (process.env.VERCEL_CLI ?? 'pnpm dlx vercel@65.12.1').split(' ');
 
 function run(args) {
   return execFileSync(CLI[0], [...CLI.slice(1), ...args], {
