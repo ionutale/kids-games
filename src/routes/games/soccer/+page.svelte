@@ -720,7 +720,7 @@
   .striker {
     position: absolute;
     left: 42%;
-    top: 89%;
+    top: 86%;
     transform: translate(-50%, -50%) rotate(-4deg);
     filter: drop-shadow(0 5px 6px rgba(0, 0, 0, 0.35));
     pointer-events: none;

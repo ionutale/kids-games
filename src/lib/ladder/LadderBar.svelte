@@ -45,9 +45,8 @@
     padding-right: 2px;
   }
   .ladder-step {
-    /* One row of ~28px-wide steps on a 320px header; 44px tall so the
-       secondary level picker is a comfortable touch target even when ten
-       steps must share one row. A narrow win card still wraps to two rows. */
+    /* 44px tall everywhere; on narrow phones the width grows to 44px and the
+       row wraps rather than shrinking the touch target. */
     width: 32px;
     height: 44px;
     min-width: 24px;
@@ -74,5 +73,14 @@
     background: var(--cyan);
     border-color: var(--cyan);
     box-shadow: 0 0 8px rgba(127,216,255,0.6);
+  }
+  /* Ten 44px steps cannot share a 320px row, so narrow phones wrap them onto
+     two centered rows instead of shrinking below the 44px touch target. */
+  @media (max-width: 360px) {
+    .ladder-step {
+      flex: 1 1 44px;
+      min-width: 44px;
+      max-width: 44px;
+    }
   }
 </style>

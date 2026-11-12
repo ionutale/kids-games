@@ -522,10 +522,12 @@ test.describe('Soccer — the Night Penalty', () => {
         const stepBox = await step.boundingBox();
         expect(stepBox.x).toBeGreaterThanOrEqual(0);
         expect(stepBox.x + stepBox.width).toBeLessThanOrEqual(viewport.width + 0.5);
-        expect(stepBox.width).toBeGreaterThanOrEqual(24);
+        expect(stepBox.width).toBeGreaterThanOrEqual(viewport.width <= 360 ? 44 : 24);
+        expect(stepBox.height).toBeGreaterThanOrEqual(44);
         ladderTops.add(Math.round(stepBox.y));
       }
-      expect(ladderTops.size).toBe(1);
+      // 44px targets wrap to two rows on a 320 header; 390 stays on one row.
+      expect(ladderTops.size).toBe(viewport.width <= 360 ? 2 : 1);
 
       const overflow = await page.evaluate(() => ({
         scrollWidth: document.documentElement.scrollWidth,

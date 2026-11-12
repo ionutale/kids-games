@@ -386,12 +386,12 @@ test.describe('Pop — the Rising Pond', () => {
         const box = await step.boundingBox();
         expect(box.x).toBeGreaterThanOrEqual(0);
         expect(box.x + box.width).toBeLessThanOrEqual(viewport.width + 0.5);
-        expect(box.width).toBeGreaterThanOrEqual(24);
+        expect(box.width).toBeGreaterThanOrEqual(viewport.width <= 360 ? 44 : 24);
         expect(box.height).toBeGreaterThanOrEqual(44);
         ladderTops.add(Math.round(box.y));
       }
-      // The game header has room for one row; only a narrow win card wraps.
-      expect(ladderTops.size).toBe(1);
+      // 44px targets wrap to two rows on a 320 header; 390 still uses one row.
+      expect(ladderTops.size).toBe(viewport.width <= 360 ? 2 : 1);
 
       const overflow = await page.evaluate(() => ({
         scrollWidth: document.documentElement.scrollWidth,

@@ -86,6 +86,7 @@ The game is a continuous freehand road (ADR 0005); the old grid terms are retire
 
 - **Scene**: the continuous illustrated world for one Layout; no visible grid or blocks.
 - **Road**: the freehand line the child draws from Home to Destination. It cannot enter a Blocker. The Road persists between strokes; backtracking over it erases to that point.
+- **Start-anywhere**: a press far from the tip bridges the Road toward that point (stopping at a Blocker). It is an intentional toddler affordance, so a very short road can still reach the cabin.
 - **Walker**: the character that travels the Road after it connects (a fox in the current world).
 - **Home**: the fixed starting place of a Scene, on one side.
 - **Destination**: the fixed goal place, on the opposite side.
@@ -148,7 +149,7 @@ The following games have been proposed but not yet designed or implemented. Each
 
 - **Ladder**: Every level game offers exactly 10 levels; the current level persists per game. Finishing level 10 marks the game **Mastered** (🎓); deeper links clamp to 10.
 - **Ladder Store** (`src/lib/ladder/progress.js`): the one progress store — camelCase localStorage keys (`{gameId}Level`, `{gameId}Mastered`), clamps 1–10, plus one-time migration from pre-ladder keys (`memory-unlocked-level`, `path-builder-level`).
-- **LadderBar** (`src/lib/ladder/LadderBar.svelte`): the one level indicator/picker — done steps below the current level, 🎓 on step 10 once mastered; free pick, nothing is ever locked. Steps are 44px tall touch targets and wrap to a second row in narrow win cards. It does not show stars.
+- **LadderBar** (`src/lib/ladder/LadderBar.svelte`): the one level indicator/picker — done steps below the current level, 🎓 on step 10 once mastered; free pick, nothing is ever locked. Steps are 44px tall, grow to 44px wide and wrap to two rows on narrow phones, and also wrap in narrow win cards. It does not show stars.
 - **LadderActions** (`src/lib/ladder/LadderActions.svelte`): the one win-overlay action row — Replay / Next Level ▶ / Back; at level 10 the Next action is replaced by 🎓, and mastery is saved when the overlay renders at the top level.
 - **Ladder Games**: memory, puzzle, glossary-puzzle, sorting, category-sort, path-builder, pop, soccer, grammar, focus-tap, quick-count, speed-match, what-comes-next. Free-play games (paint, stickers, splash) and score games (sequence-memory, emoji-math, spot-the-difference) have no ladder.
 

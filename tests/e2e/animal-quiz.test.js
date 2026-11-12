@@ -116,13 +116,13 @@ test.describe('Animal Quiz E2E', () => {
       const step = steps.nth(i);
       await expect(step).toBeVisible();
       const box = await step.boundingBox();
-      expect(box.width).toBeGreaterThanOrEqual(24);
+      expect(box.width).toBeGreaterThanOrEqual(44);
       expect(box.x).toBeGreaterThanOrEqual(0);
       expect(box.x + box.width).toBeLessThanOrEqual(320 + 0.5);
       tops.add(Math.round(box.y));
     }
 
-    // Two wrapped rows, all ten steps visible and tappable.
+    // The ten 44px steps wrap into multiple centered rows, all visible.
     expect(tops.size).toBeGreaterThanOrEqual(2);
   });
 });
