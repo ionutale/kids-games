@@ -12,9 +12,15 @@
    */
   let { sheets, activeId, onselect, onclose } = $props();
 
-  // Land keyboard focus on the current paper so Tab stays inside the tray.
+  // Land keyboard focus on the current paper and keep it visible in the
+  // scrolling grid, so a 13-14 card collection never opens off-screen.
   function focusActive(node, active) {
-    if (active) queueMicrotask(() => node.focus());
+    if (active) {
+      queueMicrotask(() => {
+        node.focus();
+        node.scrollIntoView({ block: 'nearest' });
+      });
+    }
   }
 </script>
 
@@ -49,7 +55,7 @@
       </button>
     </div>
 
-    <div class="cards" class:three={sheets.length === 3}>
+    <div class="cards">
       {#each sheets as sheet (sheet.id)}
         <button
           class="card"
@@ -94,8 +100,11 @@
 
   .tray {
     position: relative;
+    display: flex;
+    flex-direction: column;
     width: min(460px, calc(100% - 16px));
-    margin-bottom: calc(10px + var(--safe-bottom));
+    max-height: calc(100dvh - var(--dock-space, 88px) - 20px);
+    margin-bottom: calc(var(--dock-space, 88px) + 10px + var(--safe-bottom));
     padding: 16px 16px 18px;
     border-radius: 30px 30px 20px 20px;
     background: linear-gradient(180deg, #fff9ea 0%, #f8e9cb 100%);
@@ -145,11 +154,17 @@
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 12px;
+    flex: 1 1 auto;
+    min-height: 0;
+    padding: 4px 4px 10px;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-gutter: stable;
   }
 
-  /* Age 2 drops Butterfly Garden: three cards read as a 2+1 collection, with
-     the last paper centred under the first row at the same card width. */
-  .cards.three .card:last-child {
+  /* An odd final card (9 at ages 3-5, 13 at age 2) centres under the rows. */
+  .cards .card:last-child:nth-child(odd) {
     grid-column: 1 / -1;
     width: calc(50% - 6px);
     justify-self: center;

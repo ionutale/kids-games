@@ -167,8 +167,23 @@ async function trayCardBoxes(page) {
   );
 }
 
-const ALL_SHEET_IDS = ['blank', 'dino-valley', 'butterfly-garden', 'under-the-sea'];
-const AGE2_SHEET_IDS = ['blank', 'dino-valley', 'under-the-sea'];
+const ALL_SHEET_IDS = [
+  'blank',
+  'dino-valley',
+  'butterfly-garden',
+  'under-the-sea',
+  'farm',
+  'space',
+  'jungle',
+  'arctic',
+  'castle',
+  'vehicles',
+  'princesses',
+  'snow',
+  'ocean',
+  'robot'
+];
+const AGE2_SHEET_IDS = ALL_SHEET_IDS.filter((id) => id !== 'butterfly-garden');
 
 test.describe('Paint — full-bleed studio', () => {
   test.beforeEach(async ({ page }) => {
@@ -347,14 +362,13 @@ test.describe('Paint — full-bleed studio', () => {
     await paperChip.click();
     await expect(page.getByTestId('paper-tray')).toBeVisible();
 
-    // The standard studio ships the full collection: Blank, Dino Valley,
-    // Butterfly Garden and Under the Sea, as a 2x2 grid of large cards.
+    // The standard studio ships fourteen papers in a scrollable 2-column grid.
     const cards = await trayCardBoxes(page);
+    expect(cards).toHaveLength(ALL_SHEET_IDS.length);
     expect(cards.map((card) => card.id)).toEqual(
       ALL_SHEET_IDS.map((id) => `paper-${id}`)
     );
     expect(cards[0].y).toBe(cards[1].y);
-    expect(cards[2].y).toBe(cards[3].y);
     expect(cards[2].y).toBeGreaterThan(cards[0].y);
     expect(cards[0].x).toBe(cards[2].x);
     expect(cards[1].x).toBe(cards[3].x);
@@ -364,6 +378,15 @@ test.describe('Paint — full-bleed studio', () => {
       expect(card.x + card.width).toBeLessThanOrEqual(390);
       await expect(page.getByTestId(card.id)).toBeVisible();
     }
+
+    const trayScroll = await page.locator('.cards').evaluate((el) => ({
+      scrollHeight: el.scrollHeight,
+      clientHeight: el.clientHeight
+    }));
+    expect(trayScroll.scrollHeight).toBeGreaterThan(trayScroll.clientHeight);
+    const lastCard = page.getByTestId('paper-robot');
+    await lastCard.scrollIntoViewIfNeeded();
+    await expect(lastCard).toBeInViewport();
 
     await expect(page.getByTestId('paper-blank')).toHaveAttribute('aria-pressed', 'true');
     await expect(page.locator('[data-testid="paper-blank"] .check')).toHaveCount(1);
@@ -481,7 +504,7 @@ test.describe('Paint — full-bleed studio', () => {
     expect(saved.sheets['dino-valley'].stamps).toHaveLength(1);
   });
 
-  test('Butterfly Garden and Under the Sea fill, clip, and save alongside all four sheets', async ({ page }) => {
+  test('Butterfly Garden and Under the Sea fill, clip, and save alongside the other papers', async ({ page }) => {
     const errors = [];
     page.on('pageerror', (error) => errors.push(`pageerror: ${error.message}`));
     page.on('console', (message) => {
@@ -536,7 +559,9 @@ test.describe('Paint — full-bleed studio', () => {
     let saved = await readPaint(page);
     expect(saved.version).toBe(1);
     expect(saved.activeSheet).toBe('butterfly-garden');
-    expect(Object.keys(saved.sheets).sort()).toEqual([...ALL_SHEET_IDS].sort());
+    expect(Object.keys(saved.sheets).sort()).toEqual(
+      ['blank', 'butterfly-garden', 'dino-valley', 'under-the-sea'].sort()
+    );
     expect(saved.sheets['butterfly-garden'].fills).toEqual({ 'flower-left': '#FF6B6B' });
     expect(saved.sheets['butterfly-garden'].strokes).toHaveLength(1);
     expect(saved.sheets['butterfly-garden'].strokes[0].region).toBe('sky');
@@ -563,8 +588,28 @@ test.describe('Paint — full-bleed studio', () => {
 
     saved = await readPaint(page);
     expect(saved.activeSheet).toBe('dino-valley');
-    expect(Object.keys(saved.sheets).sort()).toEqual([...ALL_SHEET_IDS].sort());
+    expect(Object.keys(saved.sheets).sort()).toEqual(
+      ['blank', 'butterfly-garden', 'dino-valley', 'under-the-sea'].sort()
+    );
     expect(errors).toEqual([]);
+  });
+
+  test('a new Farm sheet fills and keeps its colour after reload', async ({ page }) => {
+    await openPaint(page);
+    await pickSheet(page, 'farm');
+    await expect(page.locator('[data-outline="barn"]')).toBeVisible();
+    await expect(page.locator('[data-region="barn"]')).toHaveAttribute('fill', '#FFFEFA');
+
+    await fillRegion(page, 130, 400);
+    await expect(page.locator('[data-region="barn"]')).toHaveAttribute('fill', '#FF6B6B');
+
+    await page.reload();
+    await expect(page.getByTestId('paint-canvas')).toBeVisible();
+    await expect(page.locator('[data-outline="barn"]')).toBeVisible();
+    await expect(page.locator('[data-region="barn"]')).toHaveAttribute('fill', '#FF6B6B');
+    const saved = await readPaint(page);
+    expect(saved.activeSheet).toBe('farm');
+    expect(saved.sheets.farm.fills).toEqual({ barn: '#FF6B6B' });
   });
 
   test('age 2 reduces the studio and keeps bucket and brush working', async ({ page }) => {
@@ -593,21 +638,28 @@ test.describe('Paint — full-bleed studio', () => {
     await page.getByTestId('paper-chip').click();
     await expect(page.getByTestId('paper-tray')).toBeVisible();
     const age2Cards = await trayCardBoxes(page);
+    expect(age2Cards).toHaveLength(AGE2_SHEET_IDS.length);
     expect(age2Cards.map((card) => card.id)).toEqual(
       AGE2_SHEET_IDS.map((id) => `paper-${id}`)
     );
-    // Age 2 drops Butterfly Garden and reads as a 2+1 collection: Blank and
-    // Dino Valley on the first row, Under the Sea centred underneath.
+    // Age 2 drops Butterfly Garden and now shows 13 papers; the odd final
+    // card is centred under the last full row.
     await expect(page.getByTestId('paper-butterfly-garden')).toHaveCount(0);
     expect(age2Cards[0].y).toBe(age2Cards[1].y);
     expect(age2Cards[2].y).toBeGreaterThan(age2Cards[0].y);
-    expect(age2Cards[2].width).toBe(age2Cards[0].width);
-    const secondRowCenter = age2Cards[2].x + age2Cards[2].width / 2;
-    expect(Math.abs(secondRowCenter - 195)).toBeLessThan(8);
+    const lastAge2 = age2Cards[age2Cards.length - 1];
+    expect(lastAge2.width).toBe(age2Cards[0].width);
+    const lastCenter = lastAge2.x + lastAge2.width / 2;
+    expect(Math.abs(lastCenter - 195)).toBeLessThan(8);
     for (const card of age2Cards) {
       expect(card.width).toBeGreaterThanOrEqual(120);
       await expect(page.getByTestId(card.id)).toBeVisible();
     }
+    const age2Scroll = await page.locator('.cards').evaluate((el) => ({
+      scrollHeight: el.scrollHeight,
+      clientHeight: el.clientHeight
+    }));
+    expect(age2Scroll.scrollHeight).toBeGreaterThan(age2Scroll.clientHeight);
     await page.keyboard.press('Escape');
     await expect(page.getByTestId('paper-tray')).toBeHidden();
 
@@ -687,6 +739,81 @@ test.describe('Paint — full-bleed studio', () => {
 
   test('paints all six locales without leaking raw keys', async ({ page }) => {
     await openPaint(page);
+
+    const addedLabels = {
+      en: {
+        farm: 'Farm',
+        space: 'Space',
+        jungle: 'Jungle',
+        arctic: 'Arctic',
+        castle: 'Castle',
+        vehicles: 'Vehicles',
+        princesses: 'Princesses',
+        snow: 'Snow',
+        ocean: 'Ocean',
+        robot: 'Robot'
+      },
+      it: {
+        farm: 'Fattoria',
+        space: 'Spazio',
+        jungle: 'Giungla',
+        arctic: 'Artide',
+        castle: 'Castello',
+        vehicles: 'Veicoli',
+        princesses: 'Principesse',
+        snow: 'Neve',
+        ocean: 'Oceano',
+        robot: 'Robot'
+      },
+      ro: {
+        farm: 'Fermă',
+        space: 'Spațiu',
+        jungle: 'Junglă',
+        arctic: 'Arctic',
+        castle: 'Castel',
+        vehicles: 'Vehicule',
+        princesses: 'Prințese',
+        snow: 'Zăpadă',
+        ocean: 'Ocean',
+        robot: 'Robot'
+      },
+      de: {
+        farm: 'Bauernhof',
+        space: 'Weltraum',
+        jungle: 'Dschungel',
+        arctic: 'Arktis',
+        castle: 'Schloss',
+        vehicles: 'Fahrzeuge',
+        princesses: 'Prinzessinnen',
+        snow: 'Schnee',
+        ocean: 'Ozean',
+        robot: 'Roboter'
+      },
+      fr: {
+        farm: 'Ferme',
+        space: 'Espace',
+        jungle: 'Jungle',
+        arctic: 'Arctique',
+        castle: 'Château',
+        vehicles: 'Véhicules',
+        princesses: 'Princesses',
+        snow: 'Neige',
+        ocean: 'Océan',
+        robot: 'Robot'
+      },
+      zh: {
+        farm: '农场',
+        space: '太空',
+        jungle: '丛林',
+        arctic: '北极',
+        castle: '城堡',
+        vehicles: '车辆',
+        princesses: '公主',
+        snow: '雪',
+        ocean: '海洋',
+        robot: '机器人'
+      }
+    };
 
     const locales = [
       {
@@ -794,6 +921,9 @@ test.describe('Paint — full-bleed studio', () => {
         'aria-label',
         locale.sea
       );
+      for (const [id, label] of Object.entries(addedLabels[locale.code])) {
+        await expect(page.getByTestId(`paper-${id}`)).toHaveAttribute('aria-label', label);
+      }
       await page.keyboard.press('Escape');
       await expect(page.getByTestId('paper-tray')).toBeHidden();
     }

@@ -26,6 +26,66 @@ export const SHEETS = Object.freeze([
     kind: 'coloring',
     titleKey: 'paintSheetUnderTheSea',
     ages: Object.freeze([2, 3, 4, 5])
+  }),
+  Object.freeze({
+    id: 'farm',
+    kind: 'coloring',
+    titleKey: 'paintSheetFarm',
+    ages: Object.freeze([2, 3, 4, 5])
+  }),
+  Object.freeze({
+    id: 'space',
+    kind: 'coloring',
+    titleKey: 'paintSheetSpace',
+    ages: Object.freeze([2, 3, 4, 5])
+  }),
+  Object.freeze({
+    id: 'jungle',
+    kind: 'coloring',
+    titleKey: 'paintSheetJungle',
+    ages: Object.freeze([2, 3, 4, 5])
+  }),
+  Object.freeze({
+    id: 'arctic',
+    kind: 'coloring',
+    titleKey: 'paintSheetArctic',
+    ages: Object.freeze([2, 3, 4, 5])
+  }),
+  Object.freeze({
+    id: 'castle',
+    kind: 'coloring',
+    titleKey: 'paintSheetCastle',
+    ages: Object.freeze([2, 3, 4, 5])
+  }),
+  Object.freeze({
+    id: 'vehicles',
+    kind: 'coloring',
+    titleKey: 'paintSheetVehicles',
+    ages: Object.freeze([2, 3, 4, 5])
+  }),
+  Object.freeze({
+    id: 'princesses',
+    kind: 'coloring',
+    titleKey: 'paintSheetPrincesses',
+    ages: Object.freeze([2, 3, 4, 5])
+  }),
+  Object.freeze({
+    id: 'snow',
+    kind: 'coloring',
+    titleKey: 'paintSheetSnow',
+    ages: Object.freeze([2, 3, 4, 5])
+  }),
+  Object.freeze({
+    id: 'ocean',
+    kind: 'coloring',
+    titleKey: 'paintSheetOcean',
+    ages: Object.freeze([2, 3, 4, 5])
+  }),
+  Object.freeze({
+    id: 'robot',
+    kind: 'coloring',
+    titleKey: 'paintSheetRobot',
+    ages: Object.freeze([2, 3, 4, 5])
   })
 ]);
 
@@ -34,7 +94,7 @@ export const SHEET_BY_ID = Object.freeze(
 );
 
 // Age 2 keeps the biggest shapes and drops Butterfly Garden until the art can
-// be simplified for the youngest hands.
+// be simplified for the youngest hands. Every added sheet is age-2 friendly.
 export const AGE2_SHEETS = Object.freeze(
   SHEETS.filter((sheet) => sheet.ages.includes(2))
 );

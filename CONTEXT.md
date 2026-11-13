@@ -252,6 +252,7 @@ The following games have been proposed but not yet designed or implemented. Each
 - **Sheet**: One paper in the Paint Studio — either a Blank Sheet or a Coloring Sheet. One Sheet is active at a time.
 - **Blank Sheet**: A free-paint sheet with no line art; brushes, stamps, and eraser work anywhere.
 - **Coloring Sheet**: A Sheet with original line art and named Regions; the bucket and clipped brush color it.
+- **Sheet Collection**: Fourteen papers — Blank, Dino Valley, Butterfly Garden, Under the Sea and ten added worlds. Age 2 shows thirteen, dropping only Butterfly Garden; the Paper Tray scrolls to reach them all.
 - **Region**: One closed, named shape in a Coloring Sheet's line art (sky, volcano, dino body, etc.) that can be filled or painted.
 - **Line Art**: The charcoal SVG outlines above a Coloring Sheet; paint never covers them.
 - **Bucket**: The tap-to-fill tool that colors one Region with the current color.
